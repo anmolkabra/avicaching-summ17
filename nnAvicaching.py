@@ -4,6 +4,7 @@ import numpy as np
 # import torch packages
 import torch
 import torch.nn as nn
+import torch.nn.functional as torchfun
 from torch.autograd import Variable
 
 # training specs
@@ -71,7 +72,7 @@ def read_Fu_file():
     with open("./loc_feature_with_avicaching_combined.csv", "r") as fufile:
         next(fufile)        # skip header row of fufile
         for idx, line in enumerate(fufile):
-            line_vec = np.array(map(float, line.split(",")[:-1]))  # ignore last col
+            line_vec = np.array(map(float, line.split(",")[:-3]))  # ignore last 3 cols
             if idx == 0:
                 # F init
                 F = line_vec
@@ -110,6 +111,7 @@ read_dist_file()
 # change the input data into pytorch nn variables
 X, Y, R = torchten(X), torchten(Y), torchten(R)
 F, DIST = torchten(F), torchten(DIST) # FloatTensors
+numFeatures = len(F[0])
 print(X)
 print(F)
 print(DIST)
@@ -124,33 +126,54 @@ print(DIST)
 
 # -------------------------------
 # input to NN:
-#   phi(f, r) for each p_{u,v}
+#   for each v:
+#       cat((cat((f_u1, r_u1), dim=0), cat((f_u2, r_u2), dim=0), ... , cat((f_un, r_un), dim=0)), dim=1)
+#       total (numFeatures+1) x J mat, where mat[end][:] is the reward vector 
+#           and mat[i][j] is the ith feature (i != end) at jth location, compared to vth location
 # output from NN:
-#   softmax(w {dot} phi(f, r) + eta {dot} I)
+#   for each v:
+#       [p_u1v, p_u2v, ..., p_uJv] = [softmax(w {dot} mat + eta {dot} I)]
 # loss function
 #   target labels -> y
 #   output labels -> Px
+# -------------------------------
 
 # NN class
 class Net(nn.Module):
-    def __init__(self):
+    def __init__(self, J, numFeatures):
         """
-        Initialiizes the Conv. Neural Network
+        Initialiizes the Conv. Neural Network, takes in a 2D Tensor of size 
+        (J * numFeatures+1) and returns a 1D vector of size J
         """
         super(Net, self).__init__()
-        # 2 hidden layers
-        # size of NN: JxJ x 100x100 x 
+        # 2 hidden layers 
         #
-        self.conv1 = nn.Conv2d()
+        F = numFeatures + 1
+        # orig vol: 1 x J x F
+        self.conv1 = nn.Conv2d(1, 10, 7, bias=False)
+        # vol: 10 x (J - 7 + 1) x (F - 7 + 1)
+        self.conv2 = nn.Conv2d(10, 20, 7, bias=False)
+        self.conv2_drop = nn.Dropout2d()
+        self.pool = nn.MaxPool2d(2, 2)
+        self.fc1 = nn.Linear(20 * (J - 21 + 3) * (F - 21 + 3) / (4 * 4), 30)
+        self.fc2 = nn.Linear(30, J)     # J = 20, otherwise adjust 30
 
-    def forward(self, input):
+    def forward(self, inp):
         """
         The Input is propagated forward in the network
+        in -> conv1 -> pool -> relu -> conv2 -> dropout -> pool -> relu -> 
+        linear -> relu -> linear -> relu -> linear -> softmax -> out
         """
         # go through the layers
-        # ...
+        inp = torchfun.relu(self.pool(self.conv1(inp)))
+        inp = torchfun.relu(self.pool(self.conv2_drop(self.conv2(inp))))
+        inp = inp.view(-1, 20 * (J - 21 + 3) * (F - 21 + 3) / (4 * 4))
+        inp = torchfun.relu(self.fc1(inp))
+        inp = torchfun.dropout(inp, training=self.training)
+        inp = self.fc2(inp)
+        
         # output the softmax
-        return torch.nn.functional.log_softmax(input)
+        return torchfun.log_softmax(inp)
 
 def train(net, epoch, optimizer):
     """
@@ -195,7 +218,7 @@ def test(net, epoch):
 
 
 # if __name__ == "__main__":
-#     net = Net()
+#     net = Net(J)
 #     if args.cuda:
 #         # move the network to the GPU, if CUDA supported
 #         net.cuda()

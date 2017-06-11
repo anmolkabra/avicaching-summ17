@@ -6,22 +6,23 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as torchfun
 from torch.autograd import Variable
+import torch.optim as optim
 
 # training specs
 parser = argparse.ArgumentParser(description="NN for Avicaching model")
 parser.add_argument("--batch-size", type=int, default=64, metavar="B",
     help="inputs batch size for training (default=64)")
-parser.add_argument("--lr", type=float, default=0.01, metavar="LR",
+parser.add_argument("--lr", type=float, default=0.001, metavar="LR",
     help="inputs learning rate of the network (default=0.01)")
-parser.add_argument("-momentum", type=float, default=0.5, metavar="M",
+parser.add_argument("--momentum", type=float, default=0.5, metavar="M",
     help="inputs SGD momentum (default=0.5)")
 parser.add_argument("--no-cuda", action="store_true", default=False,
     help="disables CUDA training")
-parser.add_argument("--epoch", type=int, default=10, metavar="E",
+parser.add_argument("--epochs", type=int, default=10, metavar="E",
     help="inputs the number of epochs to train for")
 parser.add_argument("--locations", type=int, default=116, metavar="L",
     help="inputs the number of locations (default=116)")
-parser.add_argument("--time", type=int, default=10, metavar="T",
+parser.add_argument("--time", type=int, default=173, metavar="T",
     help="inputs total time of data collection; number of weeks (default=10)")
 parser.add_argument("--eta", type=float, default=10.0, metavar="F",
     help="inputs parameter eta in the model (default=10.0)")
@@ -36,15 +37,15 @@ kwargs = {"num_workers": 1, "pin_memory": True} if args.cuda else {}
 
 # parameters and data
 J, T, eta, l = args.locations, args.time, args.eta, args.lambda_L1
-torchten = torch.FloatTensor
+torchten = torch.DoubleTensor
 X, Y, R, F, DIST = [], [], [], [], []
 
 
 def read_XYR_file():
-    global X, Y, R, J
+    global X, Y, R, J, T
     with open("./density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", 
         "r") as xyrfile:
-        for idx, line in enumerate(xyrfile):
+        for idx, line in zip(xrange(T * 3), xyrfile):
             line_vec = np.array(map(float, line.split()[:J]))   # only J cols
             if idx == 0:
                 # X init
@@ -84,15 +85,15 @@ def read_dist_file():
     global DIST
     with open("./site_distances_km_drastic_price_histlong_0327_0813_combined.txt",
         "r") as distfile:
-        for idx, line in enumerate(distfile):
-            line_vec = np.array(map(float, line.split()))
+        for idx, line in zip(xrange(J), distfile):
+            line_vec = np.array(map(float, line.split()))[:J]
             if idx == 0:
                 # DIST init
                 DIST = line_vec
             else:
                 # append DIST info
                 DIST = np.vstack([DIST, line_vec])
-    
+
 read_XYR_file()
 read_Fu_file()
 read_dist_file()
@@ -108,14 +109,31 @@ read_dist_file()
 #   to location j at time t
 # u_{j,t}: adjusted weights
 
+# process data for the NN
+numFeatures = len(F[0]) + 1     # distance and reward also included
+NN_in = np.empty([J, J, numFeatures], dtype=float)
+
+# combine F and DIST
+def combine_DIST_F():
+    global F, DIST, NN_in
+    for v in xrange(len(DIST)):
+        for u in xrange(len(DIST[0])):
+            NN_in[v][u][0] = DIST[v][u]
+            NN_in[v][u][1:] = F[u]
+
+combine_DIST_F()
+
 # change the input data into pytorch nn variables
 X, Y, R = torchten(X), torchten(Y), torchten(R)
 F, DIST = torchten(F), torchten(DIST) # FloatTensors
-numFeatures = len(F[0])
-print(X)
-print(F)
-print(DIST)
+NN_in = torchten(NN_in)
+# print(X)
+# print(F)
+# print(R)
+# print(DIST)
+# print(NN_in)
 
+numFeatures += 1    # adding R layer to NN_in later
 # objective
 # Minimize the cost function 
 # C(w) = \sum_{j,t} (u_{j,t}(y - P(f,r;w)x))^2 + lam * |w| by adjusting w
@@ -142,21 +160,12 @@ print(DIST)
 class Net(nn.Module):
     def __init__(self, J, numFeatures):
         """
-        Initialiizes the Conv. Neural Network, takes in a 2D Tensor of size 
+        Initialiizes the Neural Network, takes in a 2D Tensor of size 
         (J * numFeatures+1) and returns a 1D vector of size J
         """
         super(Net, self).__init__()
         # 2 hidden layers 
-        #
-        F = numFeatures + 1
-        # orig vol: 1 x J x F
-        self.conv1 = nn.Conv2d(1, 10, 7, bias=False)
-        # vol: 10 x (J - 7 + 1) x (F - 7 + 1)
-        self.conv2 = nn.Conv2d(10, 20, 7, bias=False)
-        self.conv2_drop = nn.Dropout2d()
-        self.pool = nn.MaxPool2d(2, 2)
-        self.fc1 = nn.Linear(20 * (J - 21 + 3) * (F - 21 + 3) / (4 * 4), 30)
-        self.fc2 = nn.Linear(30, J)     # J = 20, otherwise adjust 30
+        self.fc1 = nn.Linear(numFeatures, 1, bias=False).double()
 
     def forward(self, inp):
         """
@@ -165,36 +174,136 @@ class Net(nn.Module):
         linear -> relu -> linear -> relu -> linear -> softmax -> out
         """
         # go through the layers
-        inp = torchfun.relu(self.pool(self.conv1(inp)))
-        inp = torchfun.relu(self.pool(self.conv2_drop(self.conv2(inp))))
-        inp = inp.view(-1, 20 * (J - 21 + 3) * (F - 21 + 3) / (4 * 4))
-        inp = torchfun.relu(self.fc1(inp))
-        inp = torchfun.dropout(inp, training=self.training)
-        inp = self.fc2(inp)
-        
+        inp = self.fc1(inp)
+        #print("after fc1, ", inp)
         # output the softmax
-        return torchfun.log_softmax(inp)
+        #print("after softmax, ", torch.nn.functional.softmax(inp.t()))
+        return torchfun.softmax(inp.t())
 
-def train(net, epoch, optimizer):
+def train1(net, epoch, criterion, optimizer):
     """
     Trains the network
     """
-    net.train() # comment out if dropout or batchnorm module not used
-    for batch_idx, (data, target) in enumerate(train_data):
-        # for each batch
-        
-        if args.cuda:
-            data, target = data.cuda(), target.cuda()
-        data, target = Variable(data), Variable(target)
-        
-        # go forward in the network, process to get outputs
-        output = net(data)
-        
-        # backpropagate
+    global X, Y, R, NN_in, J, numFeatures, T
+    loss = 0
+    P = Variable(torchten(J, J), requires_grad=False)
+    X, Y = Variable(X, requires_grad=False), Variable(Y, requires_grad=False)
+    #NN_in_exten = Variable(NN_in)
+    for e in xrange(epoch):
+        print(e)
+        for t in xrange(T):        # [0, 173)
+            R_extended = R[t].repeat(J, 1)
+            NN_in_exten = torch.cat([NN_in, R_extended], dim=2).double()   # final NN_in preprocessing
+            NN_in_exten = Variable(NN_in_exten)
+            #print("NN_in_extend", NN_in_exten)
+            for v in xrange(J):
+                P[v] = net(NN_in_exten[v])
+                #print("P[%d] = " % (v), P[v])
+
+            P = P.t().clone()
+            print(t, P)
+            Pxt = torch.mv(P.clone(), X[t])
+            loss += (Y[t] - Pxt).pow(2).sum()
+
         optimizer.zero_grad()
-        loss = torch.nn.MSELoss(output, target)     # calculate loss
-        loss.backward()                 # backpropagate loss
-        optimizer.step()                # update the weights
+        loss.backward(retain_variables=True)
+        optimizer.step()
+        print(loss.data[0])
+
+    # for batch_idx, (data, target) in enumerate(train_data):
+    #     # for each batch
+        
+    #     if args.cuda:
+    #         data, target = data.cuda(), target.cuda()
+    #     data, target = Variable(data), Variable(target)
+        
+    #     # go forward in the network, process to get outputs
+    #     # the output is a vector of u_i for a single v with softmax applied
+    #     output = net(data)
+    #     # backpropagate
+    #     optimizer.zero_grad()
+    #     loss = torch.nn.MSELoss(output, target)     # calculate loss
+    #     loss.backward()                 # backpropagate loss
+    #     optimizer.step()                # update the weights
+
+def train2(net, epoch, criterion, optimizer):
+    """
+    Trains the network
+    """
+    global X, Y, R, NN_in, J, numFeatures, T
+    X, Y = Variable(X, requires_grad=False), Variable(Y, requires_grad=False)
+    w_t = Variable(torch.randn(J, numFeatures, 1).type(torchten))
+    P = Variable(torchten(J, J), requires_grad=True)
+    net = nn.Softmax()
+    for e in xrange(epoch):
+        print(e)
+        loss = 0
+        
+        optimizer.zero_grad()
+
+        for t in xrange(T):
+            #print(R[t])
+            R_extended = R[t].repeat(J, 1)
+            NN_in_exten = torch.cat([NN_in, R_extended], dim=2)     # final NN_in_processing
+            NN_in_exten = Variable(NN_in_exten, requires_grad=True)
+            w_phi = torch.bmm(NN_in_exten, w_t).view(-1, J)         # view to convert to 2D tensor
+            
+            P = net(w_phi).t().clone()
+            #print("P, ", P)
+            Pxt = torch.mv(P.clone(), X[t])
+            #print("Y[t] - Pxt", Y[t] - Pxt)
+            loss += (Y[t] - Pxt).pow(2).sum()
+            #print(w_phi)
+            #print(torchfun.softmax(w_phi))
+        
+        print(loss.data[0])
+        loss.backward()
+        optimizer.step()
+        #print(loss.data[0])
+            
+
+
+
+    # loss = 0
+    # P = Variable(torchten(J, J), requires_grad=False)
+    # X, Y = Variable(X, requires_grad=False), Variable(Y, requires_grad=False)
+    # #NN_in_exten = Variable(NN_in)
+    # for e in xrange(epoch):
+    #     print(e)
+    #     for t in xrange(T):        # [0, 173)
+    #         R_extended = R[t].repeat(J, 1)
+    #         NN_in_exten = torch.cat([NN_in, R_extended], dim=2).double()   # final NN_in preprocessing
+    #         NN_in_exten = Variable(NN_in_exten)
+    #         #print("NN_in_exten", NN_in_exten)
+    #         for v in xrange(J):
+    #             P[v] = net(NN_in_exten[v])
+    #             #print("P[%d] = " % (v), P[v])
+
+    #         P = P.t().clone()
+    #         print(t, P)
+    #         Pxt = torch.mv(P.clone(), X[t])
+    #         loss += (Y[t] - Pxt).pow(2).sum()
+
+    #     optimizer.zero_grad()
+    #     loss.backward(retain_variables=True)
+    #     optimizer.step()
+    #     print(loss.data[0])
+
+    # for batch_idx, (data, target) in enumerate(train_data):
+    #     # for each batch
+        
+    #     if args.cuda:
+    #         data, target = data.cuda(), target.cuda()
+    #     data, target = Variable(data), Variable(target)
+        
+    #     # go forward in the network, process to get outputs
+    #     # the output is a vector of u_i for a single v with softmax applied
+    #     output = net(data)
+    #     # backpropagate
+    #     optimizer.zero_grad()
+    #     loss = torch.nn.MSELoss(output, target)     # calculate loss
+    #     loss.backward()                 # backpropagate loss
+    #     optimizer.step()                # update the weights
 
 def test(net, epoch):
     """
@@ -217,15 +326,17 @@ def test(net, epoch):
 
 
 
-# if __name__ == "__main__":
-#     net = Net(J)
-#     if args.cuda:
-#         # move the network to the GPU, if CUDA supported
-#         net.cuda()
+if __name__ == "__main__":
+    net = Net(J, numFeatures)
+    if args.cuda:
+        # move the network to the GPU, if CUDA supported
+        net.cuda()
 
-#     # using SGD as the optimizer function
-#     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+    # using SGD as the optimizer function
+    criterion = nn.MSELoss()
+    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
 
-#     for epoch in xrange(1, args.epochs + 1):
-#         train(net, epoch, optimizer)
+    # for epoch in xrange(1, args.epochs + 1):
+    # train1(net, args.epochs + 1, criterion, optimizer)
+    train2(net, args.epochs + 1, criterion, optimizer)
 #         # test(net, epoch)

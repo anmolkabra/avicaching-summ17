@@ -28,7 +28,7 @@ def read_XYR_file(file_name, locs, T):
                     R = np.vstack([R, line_vec])
     return (X, Y, R)
 
-def read_Fu_file(file_name):
+def read_F_file(file_name):
     F = []
     with open(file_name, "r") as fufile:
         next(fufile)        # skip header row of fufile

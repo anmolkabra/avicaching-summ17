@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import argparse, csv
+import argparse, time
 import numpy as np
 import avicaching_data as ad
 import matplotlib.pyplot as plt
@@ -40,7 +40,6 @@ args = parser.parse_args()
 
 # assigning cuda check to a single variable
 args.cuda = not args.no_cuda and torch.cuda.is_available()
-kwargs = {"num_workers": 1, "pin_memory": True} if args.cuda else {}
 
 # parameters and data
 J, T = args.locations, args.time
@@ -65,7 +64,8 @@ class MyNet(nn.Module):
         Forward in the network; multiply the weights and return the softmax
         """
         inp = torch.bmm(inp, self.w).view(-1, self.J)
-        inp += self.eta
+        for u in xrange(len(inp)):
+            inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
         return torchfun.softmax(inp + 1)
 
 def train(net, epochs, optimizer):
@@ -74,11 +74,18 @@ def train(net, epochs, optimizer):
     """
     global X, Y, R, NN_in, J, numFeatures, T, args, orig, rand
     loss_data = []
+    start_time = time.time()
 
     if args.cuda:
         X, Y = X.cuda(), Y.cuda()
-    X, Y = Variable(X, requires_grad=False), Variable(Y, requires_grad=False)
+        file_pre_gpu = "gpu, "
+    else:
+        file_pre_gpu = "cpu, "
 
+    X, Y = Variable(X, requires_grad=False), Variable(Y, requires_grad=False)
+    # scalar + tensor currently not supported in pytorch
+    loss_normalizer_Y_mean = (Y - torch.mean(Y).expand_as(Y)).pow(2).sum().data[0]
+    
     for e in xrange(epochs):
         loss = 0
         for t in xrange(T):
@@ -97,6 +104,7 @@ def train(net, epochs, optimizer):
             loss += (Y[t] - Pxt).pow(2).sum()
         
         loss += args.lambda_L1 * torch.norm(net.w.data)
+        loss /= loss_normalizer_Y_mean
             
         loss_data.append(loss.data[0])
         
@@ -105,8 +113,10 @@ def train(net, epochs, optimizer):
         loss.backward()
         optimizer.step()
 
+    end_time = time.time()
     # log and plot the results: epoch vs loss
-    name = "lr=%.4e, mom=%.4f, eta=%.4f, lam=%.4f" % (args.lr, args.momentum, args.eta, args.lambda_L1)
+    name = "lr=%.4e, mom=%.4f, eta=%.4f, lam=%.4f, time=%.5f sec" % (
+        args.lr, args.momentum, args.eta, args.lambda_L1, end_time - start_time)
     
     if args.rand_xyr:
         file_pre = "randXYR_epochs=%d, " % (epochs)
@@ -114,10 +124,10 @@ def train(net, epochs, optimizer):
         file_pre = "origXYR_epochs=%d, " % (epochs)
     
     epoch_data = np.arange(0, epochs)
-    save_plot("./plots/" + file_pre + name + ".png",
+    save_plot("./plots/" + file_pre_gpu + file_pre + name + ".png",
         epoch_data, loss_data,
         "epoch", "loss", name)
-    save_log("./logs/" + file_pre + name + ".txt",
+    save_log("./logs/" + file_pre_gpu + file_pre + name + ".txt",
         epoch_data, loss_data,
         name)
 

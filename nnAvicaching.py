@@ -1,6 +1,7 @@
 from __future__ import print_function
-import argparse, time, csv
+import argparse, csv
 import numpy as np
+import avicaching_data as ad
 # import torch packages
 import torch
 import torch.nn as nn
@@ -38,125 +39,9 @@ kwargs = {"num_workers": 1, "pin_memory": True} if args.cuda else {}
 # parameters and data
 J, T, eta, l = args.locations, args.time, args.eta, args.lambda_L1
 torchten = torch.DoubleTensor
-X, Y, R, F, DIST = [], [], [], [], []
+X, Y, R, DIST, F, NN_in, numFeatures = [], [], [], [], [], [], 0
 
-
-def read_XYR_file():
-    global X, Y, R, J, T
-    with open("./density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", 
-        "r") as xyrfile:
-        for idx, line in zip(xrange(T * 3), xyrfile):
-            line_vec = np.array(map(float, line.split()[:J]))   # only J cols
-            if idx == 0:
-                # X init
-                X = line_vec
-            elif idx == 1:
-                # Y init
-                Y = line_vec
-            elif idx == 2:
-                # R init
-                R = line_vec
-            else:
-                rem = idx % 3
-                if rem == 0:
-                    # append X information
-                    X = np.vstack([X, line_vec])
-                elif rem == 1:
-                    # append Y information
-                    Y = np.vstack([Y, line_vec])
-                else:
-                    # append R information
-                    R = np.vstack([R, line_vec])
-    
-def read_Fu_file():
-    global F
-    with open("./loc_feature_with_avicaching_combined.csv", "r") as fufile:
-        next(fufile)        # skip header row of fufile
-        for idx, line in enumerate(fufile):
-            line_vec = np.array(map(float, line.split(",")[:-3]))  # ignore last 3 cols
-            if idx == 0:
-                # F init
-                F = line_vec
-            else:
-                # append F info
-                F = np.vstack([F, line_vec])
-
-def read_dist_file():
-    global DIST
-    with open("./site_distances_km_drastic_price_histlong_0327_0813_combined.txt",
-        "r") as distfile:
-        for idx, line in zip(xrange(J), distfile):
-            line_vec = np.array(map(float, line.split()))[:J]
-            if idx == 0:
-                # DIST init
-                DIST = line_vec
-            else:
-                # append DIST info
-                DIST = np.vstack([DIST, line_vec])
-
-read_XYR_file()
-read_Fu_file()
-read_dist_file()
-
-# input data
-# y_{j,t}: y[j] is the probability of a birder (normalized) visiting 
-#   location j at time t after rewards have been applied
-# x_{j,t}: x[j] is the known number of visits (normalized) to location j 
-#   at time t by a birder.
-# r_t: reward vector of length J, where r[j] signifies the reward assigned
-#   to location j at time t
-# f_t: feature vector of length J, where f[j] signifies the reward assigned
-#   to location j at time t
-# u_{j,t}: adjusted weights
-
-# process data for the NN
-numFeatures = len(F[0]) + 1     # distance and reward also included
-NN_in = np.empty([J, J, numFeatures], dtype=float)
-
-# combine F and DIST
-def combine_DIST_F():
-    global F, DIST, NN_in
-    for v in xrange(len(DIST)):
-        for u in xrange(len(DIST[0])):
-            NN_in[v][u][0] = DIST[v][u]
-            NN_in[v][u][1:] = F[u]
-
-combine_DIST_F()
-
-# change the input data into pytorch nn variables
-X, Y, R = torchten(X), torchten(Y), torchten(R)
-F, DIST = torchten(F), torchten(DIST) # FloatTensors
-NN_in = torchten(NN_in)
-# print(X)
-# print(F)
-# print(R)
-# print(DIST)
-# print(NN_in)
-
-numFeatures += 1    # adding R layer to NN_in later
-# objective
-# Minimize the cost function 
-# C(w) = \sum_{j,t} (u_{j,t}(y - P(f,r;w)x))^2 + lam * |w| by adjusting w
-
-# Thus find P[J][J], where 
-# p_{u,v} is a softmax function with weighted input of the form
-# w {dot} phi(f_{u,v}, r_u) + eta {dot} I (I is the identity matrix)
-
-# -------------------------------
-# input to NN:
-#   for each v:
-#       cat((cat((f_u1, r_u1), dim=0), cat((f_u2, r_u2), dim=0), ... , cat((f_un, r_un), dim=0)), dim=1)
-#       total (numFeatures+1) x J mat, where mat[end][:] is the reward vector 
-#           and mat[i][j] is the ith feature (i != end) at jth location, compared to vth location
-# output from NN:
-#   for each v:
-#       [p_u1v, p_u2v, ..., p_uJv] = [softmax(w {dot} mat + eta {dot} I)]
-# loss function
-#   target labels -> y
-#   output labels -> Px
-# -------------------------------
-
-# NN class
+# Net class
 class Net(nn.Module):
     def __init__(self, J, numFeatures):
         """
@@ -180,114 +65,64 @@ class Net(nn.Module):
         #print("after softmax, ", torch.nn.functional.softmax(inp.t()))
         return torchfun.softmax(inp.t())
 
-def train1(net, epoch, criterion, optimizer):
+class MyNet(nn.Module):
+
+    def __init__(self, J, numFeatures):
+        """
+        Initializes MyNet
+        """
+        super(MyNet, self).__init__()
+        self.J = J
+        self.numFeatures = numFeatures
+        self.w = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten), requires_grad=True)
+        #self.myparameters = nn.ParameterList([self.w])
+
+    def forward(self, inp):
+        """
+        Multiply the weights and return the softmax
+        """
+        inp = torch.bmm(inp, self.w).view(-1, self.J)
+        return torchfun.softmax(inp)
+
+def train(net, epoch, criterion, optimizer):
     """
-    Trains the network
+    Trains the network using MyNet
     """
-    global X, Y, R, NN_in, J, numFeatures, T
-    loss = 0
-    P = Variable(torchten(J, J), requires_grad=False)
+    global X, Y, R, NN_in, J, numFeatures, T, args
+
+    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
     X, Y = Variable(X, requires_grad=False), Variable(Y, requires_grad=False)
-    #NN_in_exten = Variable(NN_in)
+    #P = Variable(torchten(J, J), requires_grad=True)
+    net = MyNet(J, numFeatures)
+    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
+    criterion = nn.MSELoss(size_average=False)
+
     for e in xrange(epoch):
-        print(e)
-        for t in xrange(T):        # [0, 173)
-            R_extended = R[t].repeat(J, 1)
-            NN_in_exten = torch.cat([NN_in, R_extended], dim=2).double()   # final NN_in preprocessing
-            NN_in_exten = Variable(NN_in_exten)
-            #print("NN_in_extend", NN_in_exten)
-            for v in xrange(J):
-                P[v] = net(NN_in_exten[v])
-                #print("P[%d] = " % (v), P[v])
-
-            P = P.t().clone()
-            print(t, P)
-            Pxt = torch.mv(P.clone(), X[t])
-            loss += (Y[t] - Pxt).pow(2).sum()
-
-        optimizer.zero_grad()
-        loss.backward(retain_variables=True)
-        optimizer.step()
-        print(loss.data[0])
-
-    # for batch_idx, (data, target) in enumerate(train_data):
-    #     # for each batch
-        
-    #     if args.cuda:
-    #         data, target = data.cuda(), target.cuda()
-    #     data, target = Variable(data), Variable(target)
-        
-    #     # go forward in the network, process to get outputs
-    #     # the output is a vector of u_i for a single v with softmax applied
-    #     output = net(data)
-    #     # backpropagate
-    #     optimizer.zero_grad()
-    #     loss = torch.nn.MSELoss(output, target)     # calculate loss
-    #     loss.backward()                 # backpropagate loss
-    #     optimizer.step()                # update the weights
-
-def train2(net, epoch, criterion, optimizer):
-    """
-    Trains the network
-    """
-    global X, Y, R, NN_in, J, numFeatures, T
-    X, Y = Variable(X, requires_grad=False), Variable(Y, requires_grad=False)
-    w_t = Variable(torch.randn(J, numFeatures, 1).type(torchten))
-    P = Variable(torchten(J, J), requires_grad=True)
-    net = nn.Softmax()
-    for e in xrange(epoch):
-        print(e)
         loss = 0
+        #print(w_t.grad.data[0])
         
-        optimizer.zero_grad()
-
         for t in xrange(T):
-            #print(R[t])
+            # build the input by appending R[t] and patch into the net
             R_extended = R[t].repeat(J, 1)
-            NN_in_exten = torch.cat([NN_in, R_extended], dim=2)     # final NN_in_processing
-            NN_in_exten = Variable(NN_in_exten, requires_grad=True)
-            w_phi = torch.bmm(NN_in_exten, w_t).view(-1, J)         # view to convert to 2D tensor
+            inp = torch.cat([NN_in, R_extended], dim=2)     # final NN_in_processing
+            inp = Variable(inp, requires_grad=True)
             
-            P = net(w_phi).t().clone()
-            #print("P, ", P)
-            Pxt = torch.mv(P.clone(), X[t])
+            P = net(inp).t()    # P is now weighted -> softmax
+            Pxt = torch.mv(P, X[t])
             #print("Y[t] - Pxt", Y[t] - Pxt)
             loss += (Y[t] - Pxt).pow(2).sum()
-            #print(w_phi)
-            #print(torchfun.softmax(w_phi))
+            #loss += criterion(Y[t], Pxt)
         
-        print(loss.data[0])
+        print("epoch = %d, loss = %.10f" % (e, loss.data[0]), )
+        optimizer.zero_grad()
         loss.backward()
+        #print("w.grad.data[0] = ", net.w.grad.data[0])
+        #w_t.data -= args.lr * w_t.grad.data
+        #print("before change: w.data[0] = ", net.w.data[0])
+        #w_t.grad.data.zero_()
         optimizer.step()
+        #print("after change: w.data[0][0] = %.10f" % (net.w.data[0][0][0]))
         #print(loss.data[0])
-            
-
-
-
-    # loss = 0
-    # P = Variable(torchten(J, J), requires_grad=False)
-    # X, Y = Variable(X, requires_grad=False), Variable(Y, requires_grad=False)
-    # #NN_in_exten = Variable(NN_in)
-    # for e in xrange(epoch):
-    #     print(e)
-    #     for t in xrange(T):        # [0, 173)
-    #         R_extended = R[t].repeat(J, 1)
-    #         NN_in_exten = torch.cat([NN_in, R_extended], dim=2).double()   # final NN_in preprocessing
-    #         NN_in_exten = Variable(NN_in_exten)
-    #         #print("NN_in_exten", NN_in_exten)
-    #         for v in xrange(J):
-    #             P[v] = net(NN_in_exten[v])
-    #             #print("P[%d] = " % (v), P[v])
-
-    #         P = P.t().clone()
-    #         print(t, P)
-    #         Pxt = torch.mv(P.clone(), X[t])
-    #         loss += (Y[t] - Pxt).pow(2).sum()
-
-    #     optimizer.zero_grad()
-    #     loss.backward(retain_variables=True)
-    #     optimizer.step()
-    #     print(loss.data[0])
 
     # for batch_idx, (data, target) in enumerate(train_data):
     #     # for each batch
@@ -324,9 +159,42 @@ def test(net, epoch):
     test_loss = test_loss
     test_loss /= len(test_loader) # loss function already averages over batch size
 
+def use_orig_data():
+    global X, Y, R, F, DIST, J, T, numFeatures
+    X, Y, R = ad.read_XYR_file("./density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
+    F = ad.read_Fu_file("./loc_feature_with_avicaching_combined.csv")
+    DIST = ad.read_dist_file("./site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
 
+def use_rand_data():
+    global X, Y, R, F, DIST, J, T, numFeatures
+    X, Y, R = ad.read_XYR_file("./randXYR.txt", J, T)
+    F = ad.read_Fu_file("./loc_feature_with_avicaching_combined.csv")
+    DIST = ad.read_dist_file("./site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
 
 if __name__ == "__main__":
+    # ---------------- process data
+    c = int(raw_input("Press 0 to use original data, 1 to use changed data: "))
+    if c == 0:
+        use_orig_data()
+    elif c == 1:
+        use_rand_data()
+
+    # process data for the NN
+    numFeatures = len(F[0]) + 1     # distance included
+    NN_in = ad.combine_DIST_F(F, DIST, J, numFeatures)
+    numFeatures += 1                # for reward later
+
+    # change the input data into pytorch nn variables
+    X, Y, R = torchten(X), torchten(Y), torchten(R)
+    F, DIST = torchten(F), torchten(DIST)
+    NN_in = torchten(NN_in)
+    # print(X)
+    # print(F)
+    # print(R)
+    # print(DIST)
+    # print(NN_in)
+
+    # ---------------- calculations
     net = Net(J, numFeatures)
     if args.cuda:
         # move the network to the GPU, if CUDA supported
@@ -336,7 +204,5 @@ if __name__ == "__main__":
     criterion = nn.MSELoss()
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
 
-    # for epoch in xrange(1, args.epochs + 1):
-    # train1(net, args.epochs + 1, criterion, optimizer)
-    train2(net, args.epochs + 1, criterion, optimizer)
-#         # test(net, epoch)
+    train(net, args.epochs + 1, criterion, optimizer)
+    # test(net, epoch)

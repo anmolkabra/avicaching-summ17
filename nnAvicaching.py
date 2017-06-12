@@ -102,7 +102,6 @@ def train(net, epochs, optimizer):
             # calculate loss
             Pxt = torch.mv(P, X[t])
             loss += (Y[t] - Pxt).pow(2).sum()
-        
         loss += args.lambda_L1 * torch.norm(net.w.data)
         loss /= loss_normalizer_Y_mean
             

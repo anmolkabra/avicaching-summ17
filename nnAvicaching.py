@@ -51,7 +51,7 @@ if args.cuda:
 
 # parameters and data
 J, T = args.locations, args.time
-torchten = torch.DoubleTensor
+torchten = torch.FloatTensor
 X, Y, R, DIST, F, NN_in, numFeatures = [], [], [], [], [], [], 0
 
 # MyNet class
@@ -70,10 +70,10 @@ class MyNet(nn.Module):
         """
         Forward in the network; multiply the weights and return the softmax
         """
-        inp = torch.bmm(inp, self.w).view(-1, self.J)
+        inp = torch.bmm(inp, self.w).view(self.J, self.J)
         # for u in xrange(len(inp)):
         #     inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
-        return torchfun.softmax(inp + 1)
+        return torchfun.softmax(inp)
 
 def train(net, epochs, optimizer):
     """
@@ -81,15 +81,16 @@ def train(net, epochs, optimizer):
     """
     global X, Y, R, NN_in, J, numFeatures, T, args, orig, rand
     loss_data = []
-    start_time = time.time()
 
     if args.cuda:
-        X, Y = X.cuda(), Y.cuda()
+        X, Y, NN_in, R = X.cuda(), Y.cuda(), NN_in.cuda(), R.cuda()
         file_pre_gpu = "gpu, "
     else:
         file_pre_gpu = "cpu, "
 
     X, Y = Variable(X, requires_grad=False), Variable(Y, requires_grad=False)
+    
+    start_time = time.time()
     # scalar + tensor currently not supported in pytorch
     loss_normalizer_Y_mean = (Y - torch.mean(Y).expand_as(Y)).pow(2).sum().data[0]
     
@@ -99,14 +100,13 @@ def train(net, epochs, optimizer):
             # build the input by appending R[t]
             R_extended = R[t].repeat(J, 1)
             inp = torch.cat([NN_in, R_extended], dim=2)     # final NN_in_processing
-            
+            if args.cuda:
+                inp = inp.cuda()
+
             # standardize inp
             diff = inp - torch.mean(inp, dim=2).expand_as(inp)
             std = torch.std(inp, dim=2).expand_as(inp)
             inp = torch.div(diff, std)
-
-            if args.cuda:
-                inp = inp.cuda()
             inp = Variable(inp)
             
             # feed in data

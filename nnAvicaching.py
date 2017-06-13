@@ -13,9 +13,9 @@ import torch.optim as optim
 
 # training specs
 parser = argparse.ArgumentParser(description="NN for Avicaching model")
-parser.add_argument("--batch-size", type=int, default=64, metavar="B",
-    help="inputs batch size for training (default=64)")
-parser.add_argument("--lr", type=float, default=0.001, metavar="LR",
+# parser.add_argument("--batch-size", type=int, default=64, metavar="B",
+#     help="inputs batch size for training (default=64)")
+parser.add_argument("--lr", type=float, default=0.01, metavar="LR",
     help="inputs learning rate of the network (default=0.01)")
 parser.add_argument("--momentum", type=float, default=0.5, metavar="M",
     help="inputs SGD momentum (default=0.5)")
@@ -26,15 +26,15 @@ parser.add_argument("--epochs", type=int, default=10, metavar="E",
 parser.add_argument("--locations", type=int, default=116, metavar="L",
     help="inputs the number of locations (default=116)")
 parser.add_argument("--time", type=int, default=173, metavar="T",
-    help="inputs total time of data collection; number of weeks (default=10)")
+    help="inputs total time of data collection; number of weeks (default=173)")
 parser.add_argument("--eta", type=float, default=10.0, metavar="F",
     help="inputs parameter eta in the model (default=10.0)")
 parser.add_argument("--lambda-L1", type=float, default=10.0, metavar="LAM",
     help="inputs the L1 regularizing coefficient")
 parser.add_argument("--rand-xyr", action="store_true", default=False,
     help="uses random xyr data")
-parser.add_argument("--log-interval", type=int, default=10, metavar="I",
-    help="prints training information at I epoch intervals (default=10)")
+parser.add_argument("--log-interval", type=int, default=1, metavar="I",
+    help="prints training information at I epoch intervals (default=1)")
 parser.add_argument("--save-plot", action="store_true", default=False,
     help="saves the plot instead of opening it")
 

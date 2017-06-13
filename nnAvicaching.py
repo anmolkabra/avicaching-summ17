@@ -35,6 +35,9 @@ parser.add_argument("--rand-xyr", action="store_true", default=False,
     help="uses random xyr data")
 parser.add_argument("--log-interval", type=int, default=10, metavar="I",
     help="prints training information at I epoch intervals (default=10)")
+parser.add_argument("--save-plot", action="store_true", default=False,
+    help="saves the plot instead of opening it")
+
 
 args = parser.parse_args()
 
@@ -64,8 +67,8 @@ class MyNet(nn.Module):
         Forward in the network; multiply the weights and return the softmax
         """
         inp = torch.bmm(inp, self.w).view(-1, self.J)
-        for u in xrange(len(inp)):
-            inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
+        # for u in xrange(len(inp)):
+        #     inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
         return torchfun.softmax(inp + 1)
 
 def train(net, epochs, optimizer):
@@ -92,6 +95,12 @@ def train(net, epochs, optimizer):
             # build the input by appending R[t]
             R_extended = R[t].repeat(J, 1)
             inp = torch.cat([NN_in, R_extended], dim=2)     # final NN_in_processing
+            
+            # standardize inp
+            diff = inp - torch.mean(inp, dim=2).expand_as(inp)
+            std = torch.std(inp, dim=2).expand_as(inp)
+            inp = torch.div(diff, std)
+
             if args.cuda:
                 inp = inp.cuda()
             inp = Variable(inp)
@@ -102,7 +111,8 @@ def train(net, epochs, optimizer):
             # calculate loss
             Pxt = torch.mv(P, X[t])
             loss += (Y[t] - Pxt).pow(2).sum()
-        loss += args.lambda_L1 * torch.norm(net.w.data)
+        
+        # loss += args.lambda_L1 * torch.norm(net.w.data)
         loss /= loss_normalizer_Y_mean
             
         loss_data.append(loss.data[0])
@@ -162,11 +172,15 @@ def use_rand_data():
     DIST = ad.read_dist_file("./site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
 
 def save_plot(file_name, x, y, xlabel, ylabel, title):
+    global args
     plt.plot(x, y)
     plt.ylabel(ylabel)
     plt.xlabel(xlabel)
     plt.title(title)
-    plt.savefig(file_name, bbox_inches="tight")
+    if args.save_plot:
+        plt.savefig(file_name, bbox_inches="tight", dpi=200)
+    else:
+        plt.show()
 
 def save_log(file_name, x, y, title):
     global args

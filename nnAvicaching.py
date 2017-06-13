@@ -37,18 +37,22 @@ parser.add_argument("--log-interval", type=int, default=1, metavar="I",
     help="prints training information at I epoch intervals (default=1)")
 parser.add_argument("--save-plot", action="store_true", default=False,
     help="saves the plot instead of opening it")
-
+parser.add_argument("--seed", type=int, default=1, metavar="S",
+    help="random seed (default=1)")
 
 args = parser.parse_args()
 
 # assigning cuda check to a single variable
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
+torch.manual_seed(args.seed)
+if args.cuda:
+    torch.cuda.manual_seed(args.seed)
+
 # parameters and data
 J, T = args.locations, args.time
 torchten = torch.DoubleTensor
 X, Y, R, DIST, F, NN_in, numFeatures = [], [], [], [], [], [], 0
-orig, rand = True, False
 
 # MyNet class
 class MyNet(nn.Module):

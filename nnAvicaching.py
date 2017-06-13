@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import argparse, time
+import argparse, time, math
 import numpy as np
 import avicaching_data as ad
 import matplotlib.pyplot as plt
@@ -13,8 +13,6 @@ import torch.optim as optim
 
 # training specs
 parser = argparse.ArgumentParser(description="NN for Avicaching model")
-# parser.add_argument("--batch-size", type=int, default=64, metavar="B",
-#     help="inputs batch size for training (default=64)")
 parser.add_argument("--lr", type=float, default=0.01, metavar="LR",
     help="inputs learning rate of the network (default=0.01)")
 parser.add_argument("--momentum", type=float, default=0.5, metavar="M",
@@ -37,6 +35,8 @@ parser.add_argument("--log-interval", type=int, default=1, metavar="I",
     help="prints training information at I epoch intervals (default=1)")
 parser.add_argument("--save-plot", action="store_true", default=False,
     help="saves the plot instead of opening it")
+parser.add_argument("--train-percent", type=float, default=0.8, metavar="T",
+    help="breaks the data into T percent training and rest testing (default=0.8)")
 parser.add_argument("--seed", type=int, default=1, metavar="S",
     help="random seed (default=1)")
 
@@ -52,7 +52,11 @@ if args.cuda:
 # parameters and data
 J, T = args.locations, args.time
 torchten = torch.FloatTensor
-X, Y, R, DIST, F, NN_in, numFeatures = [], [], [], [], [], [], 0
+F_DIST, numFeatures = [], 0
+trainX, trainY, trainR, testX, testY, testR = [], [], [], [], [], []
+
+num_train = int(math.floor(args.train_percent * T))
+num_test = J - num_train
 
 # MyNet class
 class MyNet(nn.Module):
@@ -70,114 +74,90 @@ class MyNet(nn.Module):
         """
         Forward in the network; multiply the weights and return the softmax
         """
-        inp = torch.bmm(inp, self.w).view(self.J, self.J)
+        
+        inp = torch.bmm(inp, self.w).view(-1, self.J)
         # for u in xrange(len(inp)):
         #     inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
         return torchfun.softmax(inp)
 
-def train(net, epochs, optimizer):
+def train(net, optimizer, loss_normalizer):
     """
     Trains the network using MyNet
     """
-    global X, Y, R, NN_in, J, numFeatures, T, args, orig, rand
-    loss_data = []
-
-    if args.cuda:
-        X, Y, NN_in, R = X.cuda(), Y.cuda(), NN_in.cuda(), R.cuda()
-        file_pre_gpu = "gpu, "
-    else:
-        file_pre_gpu = "cpu, "
-
-    X, Y = Variable(X, requires_grad=False), Variable(Y, requires_grad=False)
-    
+    loss = 0
     start_time = time.time()
-    # scalar + tensor currently not supported in pytorch
-    loss_normalizer_Y_mean = (Y - torch.mean(Y).expand_as(Y)).pow(2).sum().data[0]
-    
-    for e in xrange(epochs):
-        loss = 0
-        for t in xrange(T):
-            # build the input by appending R[t]
-            R_extended = R[t].repeat(J, 1)
-            inp = torch.cat([NN_in, R_extended], dim=2)     # final NN_in_processing
-            if args.cuda:
-                inp = inp.cuda()
 
-            # standardize inp
-            diff = inp - torch.mean(inp, dim=2).expand_as(inp)
-            std = torch.std(inp, dim=2).expand_as(inp)
-            inp = torch.div(diff, std)
-            inp = Variable(inp)
-            
-            # feed in data
-            P = net(inp).t()    # P is now weighted -> softmax
-            
-            # calculate loss
-            Pxt = torch.mv(P, X[t])
-            loss += (Y[t] - Pxt).pow(2).sum()
+    for t in xrange(num_train):
+        # build the input by appending trainR[t]
+        trainR_extended = trainR[t].repeat(J, 1)
+        inp = torch.cat([F_DIST, trainR_extended], dim=2)     # final F_DIST_processing
+        if args.cuda:
+            inp = inp.cuda()
+
+        # standardize inp
+        diff = inp - torch.mean(inp, dim=2).expand_as(inp)
+        std = torch.std(inp, dim=2).expand_as(inp)
+        inp = torch.div(diff, std)
+        inp = Variable(inp)
         
-        # loss += args.lambda_L1 * torch.norm(net.w.data)
-        loss /= loss_normalizer_Y_mean
-            
-        loss_data.append(loss.data[0])
+        # feed in data
+        P = net(inp).t()    # P is now weighted -> softmax
         
-        # backpropagate
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        # calculate loss
+        Pxt = torch.mv(P, trainX[t])
+        loss += (trainY[t] - Pxt).pow(2).sum()
+    # loss += args.lambda_L1 * torch.norm(net.w.data)
+    # print(loss, loss_normalizer)
+    loss /= loss_normalizer.data[0]
+    
+    # backpropagate
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
 
     end_time = time.time()
-    # log and plot the results: epoch vs loss
-    name = "lr=%.4e, mom=%.4f, eta=%.4f, lam=%.4f, time=%.5f sec" % (
-        args.lr, args.momentum, args.eta, args.lambda_L1, end_time - start_time)
-    
-    if args.rand_xyr:
-        file_pre = "randXYR_epochs=%d, " % (epochs)
-    else:
-        file_pre = "origXYR_epochs=%d, " % (epochs)
-    
-    epoch_data = np.arange(0, epochs)
-    save_plot("./plots/" + file_pre_gpu + file_pre + name + ".png",
-        epoch_data, loss_data,
-        "epoch", "loss", name)
-    save_log("./logs/" + file_pre_gpu + file_pre + name + ".txt",
-        epoch_data, loss_data,
-        name)
+    print(loss)
+    return (end_time - start_time, loss.data[0])
 
-def test(net, epoch):
+def test(net, loss_normalizer):
     """
-    Test the network, unsure if needed
+    Test the network using MyNet
     """
-    net.eval()  # comment out if dropout or batchnorm module not used
-    test_loss = 0
-    correct = 0
-    for data, target in test_loader:
+    loss = 0
+    start_time = time.time()
+
+    for t in xrange(num_test):
+        # build the input by appending testR[t]
+        testR_extended = testR[t].repeat(J, 1)
+        inp = torch.cat([F_DIST, testR_extended], dim=2)     # final F_DIST_processing
         if args.cuda:
-            data, target = data.cuda(), target.cuda()
-        data, target = Variable(data, volatile=True), Variable(target)
-        output = model(data)
-        test_loss += F.nll_loss(output, target).data[0]
-        pred = output.data.max(1)[1] # get the index of the max log-probability
-        correct += pred.eq(target.data).cpu().sum()
+            inp = inp.cuda()
 
-    test_loss = test_loss
-    test_loss /= len(test_loader) # loss function already averages over batch size
+        # standardize inp
+        diff = inp - torch.mean(inp, dim=2).expand_as(inp)
+        std = torch.std(inp, dim=2).expand_as(inp)
+        inp = torch.div(diff, std)
+        inp = Variable(inp)
+        
+        # feed in data
+        P = net(inp).t()    # P is now weighted -> softmax
+        
+        # calculate loss
+        Pxt = torch.mv(P, testX[t])
+        loss += (testY[t] - Pxt).pow(2).sum() 
+    # loss += args.lambda_L1 * torch.norm(net.w.data)
+    loss /= loss_normalizer.data[0]
 
-def use_orig_data():
-    global X, Y, R, F, DIST, J, T
-    X, Y, R = ad.read_XYR_file("./density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
-    F = ad.read_F_file("./loc_feature_with_avicaching_combined.csv")
-    DIST = ad.read_dist_file("./site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
-
-def use_rand_data():
-    global X, Y, R, F, DIST, J, T
-    X, Y, R = ad.read_XYR_file("./randXYR.txt", J, T)
-    F = ad.read_F_file("./loc_feature_with_avicaching_combined.csv")
-    DIST = ad.read_dist_file("./site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
+    end_time = time.time()
+    return (end_time - start_time, loss)
 
 def save_plot(file_name, x, y, xlabel, ylabel, title):
-    global args
-    plt.plot(x, y)
+    train_flatten_res = [i for j in y[0] for i in j]
+    test_flatten_res = [i for j in y[1] for i in j]
+    print(train_flatten_res)
+
+    plt.plot(x, train_flatten_res[1::2], "r-", 
+        x, test_flatten_res[1::2], "b-")
     plt.ylabel(ylabel)
     plt.xlabel(xlabel)
     plt.title(title)
@@ -187,44 +167,99 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
         plt.show()
 
 def save_log(file_name, x, y, title):
-    global args
     with open(file_name, "wt") as f:
         f.write(title + "\n")
         for i in range(0, len(x), args.log_interval):
-            f.write("epoch = %d, loss = %.10f\n" % (x[i], y[i]))
-        f.write("epoch = %d, loss = %.10f\n" % (x[-1], y[-1]))
+            f.write("epoch = %d" + "\t\t" + \
+                "trainloss = %.8f, traintime = %.4f" + "\t\t" + \
+                "testloss = %.8f, testtime = %.4f\n" % (
+                    x[i], y[0][i][1], y[0][i][0],
+                    y[1][i][1], y[1][i][0]))
 
+def read_set_data():
+    """
+    Reads and sets up the datasets
+    """
+    # read xyr, f and dist datasets from file
+    global trainX, trainY, trainR, testX, testY, testR, F_DIST, numFeatures
+    if args.rand_xyr:
+        X, Y, R = ad.read_XYR_file("./randXYR.txt", J, T)
+    else:
+        X, Y, R = ad.read_XYR_file("./density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
+    F = ad.read_F_file("./loc_feature_with_avicaching_combined.csv")
+    DIST = ad.read_dist_file("./site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
+    
+    # split the data
+    trainX, testX = ad.split_along_row(X, num_train)
+    trainY, testY = ad.split_along_row(Y, num_train)
+    trainR, testR = ad.split_along_row(R, num_train)
+
+    # process data for the NN
+    numFeatures = len(F[0]) + 1     # distance included
+    F_DIST = ad.combine_DIST_F(F, DIST, J, numFeatures)
+    numFeatures += 1                # for reward later
+
+    # change the input data into pytorch tensors
+    trainX, trainY, trainR = torchten(trainX), torchten(trainY), torchten(trainR)
+    testX, testY, testR = torchten(testX), torchten(testY), torchten(testR)
+    F_DIST = torchten(F_DIST)
+
+    trainX = Variable(trainX, requires_grad=False)
+    trainY = Variable(trainY, requires_grad=False)
+    testX = Variable(testX, requires_grad=False)
+    testY = Variable(testY, requires_grad=False)
 
 # ==========================================================
 # MAIN PROGRAM
 # ==========================================================
+if __name__ == "__main__":
+    # READY!!
+    read_set_data()
+    net = MyNet(J, numFeatures, args.eta)
+    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
 
-# ---------------- process data ----------------------------
-# ----------------------------------------------------------
-if args.rand_xyr:
-    use_rand_data()
-else:
-    use_orig_data()
+    # SET!!
+    if args.cuda:
+        # transfer net and tensors to the gpu
+        net.cuda()
+        trainX, trainY, trainR = trainX.cuda(), trainY.cuda(), trainR.cuda()
+        testX, testY, testR = testX.cuda(), testY.cuda(), testR.cuda()
+        F_DIST = F_DIST.cuda()
+        file_pre_gpu = "gpu, "
+    else:
+        file_pre_gpu = "cpu, "
 
-# process data for the NN
-numFeatures = len(F[0]) + 1     # distance included
-NN_in = ad.combine_DIST_F(F, DIST, J, numFeatures)
-numFeatures += 1                # for reward later
+    # scalar + tensor currently not supported in pytorch
+    train_loss_normalizer = (trainY - torch.mean(trainY).expand_as(trainY)).pow(2).sum()
+    test_loss_normalizer = (testY - torch.mean(testY).expand_as(testY)).pow(2).sum()
+    # print(train_loss_normalizer)
+    # GO!!
+    train_time_loss, test_time_loss, total_time = [], [], 0.0
+    for e in xrange(1, args.epochs + 1):
+        # train
+        train_res = train(net, optimizer, train_loss_normalizer)
+        train_time_loss.append(train_res)
+        print(train_res[1])
+        # test
+        test_res = test(net, test_loss_normalizer)
+        test_time_loss.append(test_res)
+        print(test_res[1])
+        total_time += (train_res[0] + test_res[0])
 
-# change the input data into pytorch nn variables
-X, Y, R = torchten(X), torchten(Y), torchten(R)
-F, DIST = torchten(F), torchten(DIST)
-NN_in = torchten(NN_in)
+    # FINISH!!
+    # log and plot the results: epoch vs loss
+    if args.rand_xyr:
+        file_pre = "randXYR_epochs=%d, " % (args.epochs)
+    else:
+        file_pre = "origXYR_epochs=%d, " % (args.epochs)
 
-# ---------------- train and test -------------------------
-# ---------------------------------------------------------
-net = MyNet(J, numFeatures, args.eta)
-if args.cuda:
-    net.cuda()
+    log_name = "lr=%.3e, mom=%.3f, eta=%.3f, lam=%.3f, time=%.4f sec" % (
+        args.lr, args.momentum, args.eta, args.lambda_L1, total_time)
+    
+    epoch_data = np.arange(1, args.epochs + 1)
 
-# optimizer
-optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
-# optimizer = optim.Adam(net.parameters(), lr=args.lr)
-
-train(net, args.epochs, optimizer)
-# test(net, epoch)
+    save_plot("./plots/" + file_pre_gpu + file_pre + log_name + ".png",
+        epoch_data, [train_time_loss, test_time_loss],
+        "epoch", "loss", log_name)
+    save_log("./logs/" + file_pre_gpu + file_pre + log_name + ".txt",
+        epoch_data, [train_time_loss, test_time_loss], log_name)

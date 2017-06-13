@@ -81,3 +81,11 @@ def make_rand_XYR(file_name, J=116, T=173, X_max=10.0, Y_max=10.0, R_max=10.0):
             XYR = np.vstack([XYR, R[t]])
     
     np.savetxt(file_name, XYR, fmt="%.1f", delimiter=" ")
+
+def split_along_row(M, num):
+    """
+    Shuffles and splits the matrix M into 2 along dimension 0 at index num, returning
+    two matrices
+    """
+    np.random.shuffle(M)
+    return np.split(M, [num], axis=0)

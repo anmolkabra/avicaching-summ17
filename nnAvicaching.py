@@ -15,8 +15,8 @@ import torch.optim as optim
 parser = argparse.ArgumentParser(description="NN for Avicaching model")
 parser.add_argument("--lr", type=float, default=0.01, metavar="LR",
     help="inputs learning rate of the network (default=0.01)")
-parser.add_argument("--momentum", type=float, default=0.5, metavar="M",
-    help="inputs SGD momentum (default=0.5)")
+parser.add_argument("--momentum", type=float, default=1.0, metavar="M",
+    help="inputs SGD momentum (default=1.0)")
 parser.add_argument("--no-cuda", action="store_true", default=False,
     help="disables CUDA training")
 parser.add_argument("--epochs", type=int, default=10, metavar="E",
@@ -152,14 +152,15 @@ def test(net, loss_normalizer):
     return (end_time - start_time, loss.data[0])
 
 def save_plot(file_name, x, y, xlabel, ylabel, title):
-    train_flatten_res = [i for j in y[0] for i in j]
-    test_flatten_res = [i for j in y[1] for i in j]
-    print(train_flatten_res)
-    print(test_flatten_res)
-
-    train_label, = plt.plot(x, train_flatten_res[1::2], "r-", label="Train Loss") 
-    test_label, = plt.plot(x, test_flatten_res[1::2], "b-", label="Test Loss")
+    train_losses = [i for j in y[0] for i in j][1::2]
+    test_losses = [i for j in y[1] for i in j][1::2]
+    
+    train_label, = plt.plot(x, train_losses, "r-", label="Train Loss") 
+    test_label, = plt.plot(x, test_losses, "b-", label="Test Loss")
     plt.ylabel(ylabel)
+    plt.grid(True, which="major", axis="both", color="k", ls="dotted", lw="1.0")
+    plt.grid(True, which="minor", axis="y", color="k", ls="dotted", lw="0.5")
+    plt.minorticks_on()
     plt.xlabel(xlabel)
     plt.legend(handles=[train_label, test_label])
     plt.title(title)
@@ -171,9 +172,9 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
 def save_log(file_name, x, y, title):
     with open(file_name, "wt") as f:
         f.write(title + "\n")
-        print(len(x), len(y[0]), len(y[1]))
+        
         for i in range(0, len(x), args.log_interval):
-            print(x[i], y[0][i][1], y[0][i][0], y[1][i][1], y[1][i][0])
+            
             f.write("epoch = %d\t\ttrainloss = %.8f, traintime = %.4f\t\ttestloss = %.8f, testtime = %.4f\n" % (
                     x[i], y[0][i][1], y[0][i][0],
                     y[1][i][1], y[1][i][0]))
@@ -241,12 +242,13 @@ if __name__ == "__main__":
         # train
         train_res = train(net, optimizer, train_loss_normalizer)
         train_time_loss.append(train_res)
-        print(train_res[1])
+        
         # test
         test_res = test(net, test_loss_normalizer)
         test_time_loss.append(test_res)
-        print(test_res[1])
+        
         total_time += (train_res[0] + test_res[0])
+        
 
     # FINISH!!
     # log and plot the results: epoch vs loss

@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import argparse, time, math
-import numpy as np
-import avicaching_data as ad
+import argparse, time, math, os, sys, numpy as np, matplotlib
+try:
+    os.environ["DISPLAY"]
+except KeyError as e:
+    # working without X/GUI environment
+    matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import avicaching_data as ad
 # import torch packages
 import torch
 import torch.nn as nn
@@ -37,17 +41,14 @@ parser.add_argument("--save-plot", action="store_true", default=False,
     help="saves the plot instead of opening it")
 parser.add_argument("--train-percent", type=float, default=0.8, metavar="T",
     help="breaks the data into T percent training and rest testing (default=0.8)")
-parser.add_argument("--seed", type=int, default=1, metavar="S",
-    help="random seed (default=1)")
 
 args = parser.parse_args()
 
 # assigning cuda check to a single variable
 args.cuda = not args.no_cuda and torch.cuda.is_available()
-
-torch.manual_seed(args.seed)
-if args.cuda:
-    torch.cuda.manual_seed(args.seed)
+# torch.manual_seed(args.seed)
+# if args.cuda:
+#     torch.cuda.manual_seed(args.seed)
 
 # parameters and data
 J, T = args.locations, args.time
@@ -80,12 +81,21 @@ class MyNet(nn.Module):
         #     inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
         return torchfun.softmax(inp)
 
+def standard(x):
+    """
+    Standardizes a 3D Tensor x with mean 0 and std 1
+    """
+    diff = x - torch.mean(x, dim=2).expand_as(x)
+    std = torch.std(x, dim=2).expand_as(x)
+    return torch.div(diff, std)
+
 def train(net, optimizer, loss_normalizer):
     """
     Trains the network using MyNet
     """
     loss = 0
     start_time = time.time()
+    print(net.w.data.view(-1, numFeatures))
 
     for t in xrange(num_train):
         # build the input by appending trainR[t]
@@ -95,10 +105,7 @@ def train(net, optimizer, loss_normalizer):
             inp = inp.cuda()
 
         # standardize inp
-        diff = inp - torch.mean(inp, dim=2).expand_as(inp)
-        std = torch.std(inp, dim=2).expand_as(inp)
-        inp = torch.div(diff, std)
-        inp = Variable(inp)
+        inp = Variable(standard(inp))
         
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
@@ -134,10 +141,7 @@ def test(net, loss_normalizer):
             inp = inp.cuda()
 
         # standardize inp
-        diff = inp - torch.mean(inp, dim=2).expand_as(inp)
-        std = torch.std(inp, dim=2).expand_as(inp)
-        inp = torch.div(diff, std)
-        inp = Variable(inp)
+        inp = Variable(standard(inp))
         
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
@@ -183,34 +187,112 @@ def read_set_data():
     """
     Reads and sets up the datasets
     """
-    # read xyr, f and dist datasets from file
     global trainX, trainY, trainR, testX, testY, testR, F_DIST, numFeatures
-    if args.rand_xyr:
-        X, Y, R = ad.read_XYR_file("./randXYR.txt", J, T)
-    else:
-        X, Y, R = ad.read_XYR_file("./density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
+    # read f and dist datasets from file, operate on them
     F = ad.read_F_file("./loc_feature_with_avicaching_combined.csv")
     DIST = ad.read_dist_file("./site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
-    
-    # split the data
-    trainX, testX = ad.split_along_row(X, num_train)
-    trainY, testY = ad.split_along_row(Y, num_train)
-    trainR, testR = ad.split_along_row(R, num_train)
 
     # process data for the NN
     numFeatures = len(F[0]) + 1     # distance included
     F_DIST = ad.combine_DIST_F(F, DIST, J, numFeatures)
     numFeatures += 1                # for reward later
-
-    # change the input data into pytorch tensors
-    trainX, trainY, trainR = torchten(trainX), torchten(trainY), torchten(trainR)
-    testX, testY, testR = torchten(testX), torchten(testY), torchten(testR)
     F_DIST = torchten(F_DIST)
 
-    trainX = Variable(trainX, requires_grad=False)
-    trainY = Variable(trainY, requires_grad=False)
-    testX = Variable(testX, requires_grad=False)
-    testY = Variable(testY, requires_grad=False)
+    # operate on XYR data
+    if args.rand_xyr:
+        if not os.path.isfile("./randXYR.txt"):
+            # file doesn't exists, make random data, write to file
+            X, Y, R = make_rand_data()
+            ad.save_rand_XYR("./randXYR.txt", X, Y, R, J, T)
+        #
+        print("Verifying randXYR...")
+        X, Y, R = ad.read_XYR_file("./randXYR.txt", J, T)
+        w = ad.read_weights_file("./randXYR_weights.txt", J)
+        X, Y, R, w = Variable(torchten(X)), Variable(torchten(Y)), torchten(R), torchten(w)
+        w = Variable(torch.unsqueeze(w, dim=2))   # make w a 3d tensor
+        
+        test_given_data(X, Y, R, w, J, T)
+        #
+        X, Y, R = ad.read_XYR_file("./randXYR.txt", J, T)
+    else:
+        X, Y, R = ad.read_XYR_file("./density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
+        
+    # split the XYR data
+    shuffle_order = np.random.permutation(T)
+    trainX, testX = ad.split_along_row(X[shuffle_order], num_train)
+    trainY, testY = ad.split_along_row(Y[shuffle_order], num_train)
+    trainR, testR = ad.split_along_row(R[shuffle_order], num_train)
+
+    # change the input data into pytorch tensors and variables
+    trainR, testR = torchten(trainR), torchten(testR)
+    trainX = Variable(torchten(trainX), requires_grad=False)
+    trainY = Variable(torchten(trainY), requires_grad=False)
+    testX = Variable(torchten(testX), requires_grad=False)
+    testY = Variable(torchten(testY), requires_grad=False)
+
+def make_rand_data(X_max=10.0, R_max=10.0):
+    """
+    Creates random X and R and calculates Y based on random weights
+    """
+    # create random X and R and w
+    X = np.floor(np.random.rand(T, J) * X_max)
+    R = torchten(np.floor(np.random.rand(T, J) * R_max))
+    w = Variable(torch.randn(J, numFeatures, 1))
+    Y = np.empty([T, J])
+    X, Y = Variable(torchten(X), requires_grad=False), Variable(torchten(Y), requires_grad=False)
+    if args.cuda:
+        X, Y, R = X.cuda(), Y.cuda(), R.cuda()
+    
+    # build Y
+    for t in xrange(T):
+        # build the input by appending testR[t]
+        R_extended = R[t].repeat(J, 1)
+        inp = torch.cat([F_DIST, R_extended], dim=2)     # final F_DIST_processing
+        if args.cuda:
+            inp = inp.cuda()
+
+        inp = Variable(standard(inp))   # standardize inp
+        
+        # feed in data
+        inp = torch.bmm(inp, w).view(-1, J)
+        # for u in xrange(len(inp)):
+        #     inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
+        P = torchfun.softmax(inp).t()   # P is now weighted -> softmax
+        
+        # calculate loss
+        Y[t] = torch.mv(P, X[t])
+
+    # for verification of random data ------------
+    w_matrix = w.data.view(-1, numFeatures).numpy()
+    np.savetxt("./randXYR_weights.txt", w_matrix, fmt="%.15f", delimiter=" ")
+    # --------------------------------------------
+
+    return (X.data.numpy(), Y.data.numpy(), R.numpy())
+
+def test_given_data(X, Y, R, w, J, T):
+    print(w.data.view(-1, numFeatures))
+    loss_normalizer = (Y - torch.mean(Y).expand_as(Y)).pow(2).sum().data[0]
+    loss = 0
+
+    for t in xrange(T):
+        # build the input by appending testR[t]
+        R_extended = R[t].repeat(J, 1)
+        inp = torch.cat([F_DIST, R_extended], dim=2)     # final F_DIST_processing
+
+        inp = Variable(standard(inp))   # standardize inp
+        
+        # feed in data
+        inp = torch.bmm(inp, w).view(-1, J)
+        # for u in xrange(len(inp)):
+        #     inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
+        P = torchfun.softmax(inp).t()   # P is now weighted -> softmax
+        
+        # calculate loss
+        Pxt = torch.mv(P, X[t])
+        loss += (Y[t] - Pxt).pow(2).sum() 
+    # loss += args.lambda_L1 * torch.norm(net.w.data)
+    loss /= loss_normalizer
+    print("Loss = %f" % loss.data[0])
 
 # ==========================================================
 # MAIN PROGRAM
@@ -235,9 +317,17 @@ if __name__ == "__main__":
     # scalar + tensor currently not supported in pytorch
     train_loss_normalizer = (trainY - torch.mean(trainY).expand_as(trainY)).pow(2).sum()
     test_loss_normalizer = (testY - torch.mean(testY).expand_as(testY)).pow(2).sum()
-    # print(train_loss_normalizer)
+    
     # GO!!
     train_time_loss, test_time_loss, total_time = [], [], 0.0
+    #
+    print("Testing loss before training...")
+    test_given_data(
+        torch.cat([trainX, testX]),
+        torch.cat([trainY, testY]),
+        torch.cat([trainR, testR]),
+        net.w, J, T)
+    #
     for e in xrange(1, args.epochs + 1):
         # train
         train_res = train(net, optimizer, train_loss_normalizer)
@@ -249,7 +339,6 @@ if __name__ == "__main__":
         
         total_time += (train_res[0] + test_res[0])
         
-
     # FINISH!!
     # log and plot the results: epoch vs loss
     if args.rand_xyr:

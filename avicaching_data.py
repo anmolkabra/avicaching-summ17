@@ -63,13 +63,10 @@ def combine_DIST_F(F, DIST, locs, numFeatures):
             NN_in[v][u][1:] = F[u]    # last one reserved for rewards
     return NN_in
 
-def make_rand_XYR(file_name, J=116, T=173, X_max=10.0, Y_max=10.0, R_max=10.0):
-    X = np.floor(np.random.rand(T, J) * X_max)
-    Y = np.floor(np.random.rand(T, J) * Y_max)
-    R = np.floor(np.random.rand(T, J) * R_max)
-
+def save_rand_XYR(file_name, X, Y, R, J=116, T=173):
     # intersperse XYR
     XYR = np.empty([T * 3, J])
+    
     for t in xrange(T):
         if t == 0:
             XYR = X[t]
@@ -80,12 +77,24 @@ def make_rand_XYR(file_name, J=116, T=173, X_max=10.0, Y_max=10.0, R_max=10.0):
             XYR = np.vstack([XYR, Y[t]])
             XYR = np.vstack([XYR, R[t]])
     
-    np.savetxt(file_name, XYR, fmt="%.1f", delimiter=" ")
+    np.savetxt(file_name, XYR, fmt="%.15f", delimiter=" ")
 
 def split_along_row(M, num):
     """
     Shuffles and splits the matrix M into 2 along dimension 0 at index num, returning
     two matrices
     """
-    np.random.shuffle(M)
     return np.split(M, [num], axis=0)
+
+def read_weights_file(file_name, locs):
+    w = []
+    with open(file_name, "r") as wfile:
+        for idx, line in zip(xrange(locs), wfile):
+            line_vec = np.array(map(float, line.split()))
+            if idx == 0:
+                # w init
+                w = line_vec
+            else:
+                # append w info
+                w = np.vstack([w, line_vec])
+    return w

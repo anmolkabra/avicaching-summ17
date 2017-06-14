@@ -56,7 +56,7 @@ F_DIST, numFeatures = [], 0
 trainX, trainY, trainR, testX, testY, testR = [], [], [], [], [], []
 
 num_train = int(math.floor(args.train_percent * T))
-num_test = J - num_train
+num_test = T - num_train
 
 # MyNet class
 class MyNet(nn.Module):
@@ -116,7 +116,7 @@ def train(net, optimizer, loss_normalizer):
     optimizer.step()
 
     end_time = time.time()
-    print(loss)
+    
     return (end_time - start_time, loss.data[0])
 
 def test(net, loss_normalizer):
@@ -125,7 +125,7 @@ def test(net, loss_normalizer):
     """
     loss = 0
     start_time = time.time()
-
+    
     for t in xrange(num_test):
         # build the input by appending testR[t]
         testR_extended = testR[t].repeat(J, 1)
@@ -149,17 +149,19 @@ def test(net, loss_normalizer):
     loss /= loss_normalizer.data[0]
 
     end_time = time.time()
-    return (end_time - start_time, loss)
+    return (end_time - start_time, loss.data[0])
 
 def save_plot(file_name, x, y, xlabel, ylabel, title):
     train_flatten_res = [i for j in y[0] for i in j]
     test_flatten_res = [i for j in y[1] for i in j]
     print(train_flatten_res)
+    print(test_flatten_res)
 
-    plt.plot(x, train_flatten_res[1::2], "r-", 
-        x, test_flatten_res[1::2], "b-")
+    train_label, = plt.plot(x, train_flatten_res[1::2], "r-", label="Train Loss") 
+    test_label, = plt.plot(x, test_flatten_res[1::2], "b-", label="Test Loss")
     plt.ylabel(ylabel)
     plt.xlabel(xlabel)
+    plt.legend(handles=[train_label, test_label])
     plt.title(title)
     if args.save_plot:
         plt.savefig(file_name, bbox_inches="tight", dpi=200)
@@ -169,10 +171,10 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
 def save_log(file_name, x, y, title):
     with open(file_name, "wt") as f:
         f.write(title + "\n")
+        print(len(x), len(y[0]), len(y[1]))
         for i in range(0, len(x), args.log_interval):
-            f.write("epoch = %d" + "\t\t" + \
-                "trainloss = %.8f, traintime = %.4f" + "\t\t" + \
-                "testloss = %.8f, testtime = %.4f\n" % (
+            print(x[i], y[0][i][1], y[0][i][0], y[1][i][1], y[1][i][0])
+            f.write("epoch = %d\t\ttrainloss = %.8f, traintime = %.4f\t\ttestloss = %.8f, testtime = %.4f\n" % (
                     x[i], y[0][i][1], y[0][i][0],
                     y[1][i][1], y[1][i][0]))
 

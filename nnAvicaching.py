@@ -149,9 +149,11 @@ def test(net, loss_normalizer):
     return (end_time - start_time, loss.data[0])
 
 def save_plot(file_name, x, y, xlabel, ylabel, title):
+    # get the losses from data
     train_losses = [i for j in y[0] for i in j][1::2]
     test_losses = [i for j in y[1] for i in j][1::2]
     
+    # plot details
     train_label, = plt.plot(x, train_losses, "r-", label="Train Loss") 
     test_label, = plt.plot(x, test_losses, "b-", label="Test Loss")
     plt.ylabel(ylabel)
@@ -185,9 +187,8 @@ def read_set_data():
 
     # process data for the NN
     numFeatures = len(F[0]) + 1     # distance included
-    F_DIST = ad.combine_DIST_F(F, DIST, J, numFeatures)
+    F_DIST = torchten(ad.combine_DIST_F(F, DIST, J, numFeatures))
     numFeatures += 1                # for reward later
-    F_DIST = torchten(F_DIST)
 
     # operate on XYR data
     if args.rand_xyr:
@@ -210,11 +211,13 @@ def read_set_data():
         
     # split the XYR data
     if args.train_percent != 1.0:
+        # training and testing, shuffle and split the data
         shuffle_order = np.random.permutation(T)
         trainX, testX = ad.split_along_row(X[shuffle_order], num_train)
         trainY, testY = ad.split_along_row(Y[shuffle_order], num_train)
         trainR, testR = ad.split_along_row(R[shuffle_order], num_train)
     else:
+        # no testing, split the data only to be merged later (bad code)
         trainX, testX = ad.split_along_row(X, num_train)
         trainY, testY = ad.split_along_row(Y, num_train)
         trainR, testR = ad.split_along_row(R, num_train)
@@ -229,7 +232,7 @@ def read_set_data():
     print(trainY)
     print(trainR)
 
-def make_rand_data(X_max=10.0, R_max=10.0):
+def make_rand_data(X_max=100.0, R_max=100.0):
     """
     Creates random X and R and calculates Y based on random weights
     """
@@ -245,11 +248,9 @@ def make_rand_data(X_max=10.0, R_max=10.0):
     # build Y
     for t in xrange(T):
         # build the input by appending testR[t]
-        R_extended = R[t].repeat(J, 1)
-        inp = torch.cat([F_DIST, R_extended], dim=2)     # final F_DIST_processing
+        inp = build_input(R[t])
         if args.cuda:
             inp = inp.cuda()
-
         inp = Variable(standard(inp))   # standardize inp
         
         # feed in data
@@ -258,13 +259,13 @@ def make_rand_data(X_max=10.0, R_max=10.0):
         #     inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
         P = torchfun.softmax(inp).t()   # P is now weighted -> softmax
         
-        # calculate loss
+        # calculate Y
         Y[t] = torch.mv(P, X[t])
 
-    # for verification of random data ------------
+    # for verification of random data, save weights ---------------------------
     w_matrix = w.data.view(-1, numFeatures).numpy()
     np.savetxt("./randXYR_weights.txt", w_matrix, fmt="%.15f", delimiter=" ")
-    # --------------------------------------------
+    # -------------------------------------------------------------------------
 
     return (X.data.numpy(), Y.data.numpy(), R.numpy())
 
@@ -275,9 +276,9 @@ def test_given_data(X, Y, R, w, J, T):
 
     for t in xrange(T):
         # build the input by appending testR[t]
-        R_extended = R[t].repeat(J, 1)
-        inp = torch.cat([F_DIST, R_extended], dim=2)     # final F_DIST_processing
-
+        inp = build_input(R[t])
+        if args.cuda():
+            inp = inp.cuda()
         inp = Variable(standard(inp))   # standardize inp
         
         # feed in data
@@ -316,6 +317,7 @@ if __name__ == "__main__":
     # scalar + tensor currently not supported in pytorch
     train_loss_normalizer = (trainY - torch.mean(trainY).expand_as(trainY)).pow(2).sum()
     if args.train_percent == 1.0:
+        # verifying that new random weights converge to stored ones
         for e in xrange(1, args.epochs + 1):
             train_res = train(net, optimizer, train_loss_normalizer)
             if e % 20 == 0:

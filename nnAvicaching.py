@@ -301,7 +301,8 @@ if __name__ == "__main__":
     # READY!!
     read_set_data()
     net = MyNet(J, numFeatures, args.eta)
-    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
+    # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
+    optimizer = optim.Adam(net.parameters(), lr=args.lr)
 
     # SET!!
     if args.cuda:
@@ -316,14 +317,26 @@ if __name__ == "__main__":
 
     # scalar + tensor currently not supported in pytorch
     train_loss_normalizer = (trainY - torch.mean(trainY).expand_as(trainY)).pow(2).sum()
+    #
     if args.train_percent == 1.0:
         # verifying that new random weights converge to stored ones
+        data = []
+        weights_before = net.w.data.view(-1, numFeatures).cpu().numpy()
         for e in xrange(1, args.epochs + 1):
             train_res = train(net, optimizer, train_loss_normalizer)
-            if e % 20 == 0:
+            if e % 200 == 0:
                 print("e= %d,  loss=%.8f" % (e, train_res[1]))
-        print(net.w.data.view(-1, numFeatures))
+            data.append([e, train_res[1]])
+        data = np.array(data)
+        weights = net.w.data.view(-1, numFeatures).cpu().numpy()
+        curr_time = time.localtime()
+        fname = "./recovering_weights/w_" + str(curr_time.tm_year) + str(curr_time.tm_mon) + str(curr_time.tm_mday) + "_" + str(time.time()) + ".txt"
+        with open(fname, "w") as f:
+            np.savetxt(f, weights_before, fmt="%.15f")
+            np.savetxt(f, data, fmt="%.8f")
+            np.savetxt(f, weights, fmt="%.15f")
         sys.exit(0)
+    #
     test_loss_normalizer = (testY - torch.mean(testY).expand_as(testY)).pow(2).sum()
     
     # GO!!

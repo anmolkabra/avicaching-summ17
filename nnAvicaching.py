@@ -182,8 +182,8 @@ def read_set_data():
     """
     global trainX, trainY, trainR, testX, testY, testR, F_DIST, numFeatures
     # read f and dist datasets from file, operate on them
-    F = ad.read_F_file("./loc_feature_with_avicaching_combined.csv")
-    DIST = ad.read_dist_file("./site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
+    F = ad.read_F_file("./data/loc_feature_with_avicaching_combined.csv")
+    DIST = ad.read_dist_file("./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
 
     # process data for the NN
     numFeatures = len(F[0]) + 1     # distance included
@@ -192,10 +192,10 @@ def read_set_data():
 
     # operate on XYR data
     if args.rand_xyr:
-        if not os.path.isfile("./randXYR.txt"):
+        if not os.path.isfile("./data/randXYR.txt"):
             # file doesn't exists, make random data, write to file
             X, Y, R = make_rand_data()
-            ad.save_rand_XYR("./randXYR.txt", X, Y, R, J, T)
+            ad.save_rand_XYR("./data/randXYR.txt", X, Y, R, J, T)
         #
         # print("Verifying randXYR...")
         # X, Y, R = ad.read_XYR_file("./randXYR.txt", J, T)
@@ -205,9 +205,9 @@ def read_set_data():
         
         # test_given_data(X, Y, R, w, J, T)
         #
-        X, Y, R = ad.read_XYR_file("./randXYR.txt", J, T)
+        X, Y, R = ad.read_XYR_file("./data/randXYR.txt", J, T)
     else:
-        X, Y, R = ad.read_XYR_file("./density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
+        X, Y, R = ad.read_XYR_file("./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
         
     # split the XYR data
     if args.train_percent != 1.0:
@@ -264,7 +264,7 @@ def make_rand_data(X_max=100.0, R_max=100.0):
 
     # for verification of random data, save weights ---------------------------
     w_matrix = w.data.view(-1, numFeatures).numpy()
-    np.savetxt("./randXYR_weights.txt", w_matrix, fmt="%.15f", delimiter=" ")
+    np.savetxt("./data/randXYR_weights.txt", w_matrix, fmt="%.15f", delimiter=" ")
     # -------------------------------------------------------------------------
 
     return (X.data.numpy(), Y.data.numpy(), R.numpy())
@@ -277,7 +277,7 @@ def test_given_data(X, Y, R, w, J, T):
     for t in xrange(T):
         # build the input by appending testR[t]
         inp = build_input(R[t])
-        if args.cuda():
+        if args.cuda:
             inp = inp.cuda()
         inp = Variable(standard(inp))   # standardize inp
         
@@ -330,7 +330,7 @@ if __name__ == "__main__":
         data = np.array(data)
         weights = net.w.data.view(-1, numFeatures).cpu().numpy()
         curr_time = time.localtime()
-        fname = "./recovering_weights/w_" + str(curr_time.tm_year) + str(curr_time.tm_mon) + str(curr_time.tm_mday) + "_" + str(time.time()) + ".txt"
+        fname = "./stats/recovering_weights/w_" + str(curr_time.tm_year) + str(curr_time.tm_mon) + str(curr_time.tm_mday) + "_" + str(time.time()) + ".txt"
         with open(fname, "w") as f:
             np.savetxt(f, weights_before, fmt="%.15f")
             np.savetxt(f, data, fmt="%.8f")
@@ -373,8 +373,8 @@ if __name__ == "__main__":
     
     epoch_data = np.arange(1, args.epochs + 1)
 
-    save_plot("./plots/" + file_pre_gpu + file_pre + log_name + ".png",
+    save_plot("./stats/plots/" + file_pre_gpu + file_pre + log_name + ".png",
         epoch_data, [train_time_loss, test_time_loss],
         "epoch", "loss", log_name)
-    save_log("./logs/" + file_pre_gpu + file_pre + log_name + ".txt",
+    save_log("./stats/logs/" + file_pre_gpu + file_pre + log_name + ".txt",
         epoch_data, [train_time_loss, test_time_loss], log_name)

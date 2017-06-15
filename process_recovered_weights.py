@@ -15,11 +15,11 @@ def read_first_k_lines(fname, k):
                 w = np.vstack([w, line_vec])
     return w
 
-orig_weights = np.loadtxt("randXYR_weights.txt")
-weights_files = os.listdir("./recovering_weights/")  # contains a list of file names
+orig_weights = np.loadtxt("./data/randXYR_weights.txt")
+weights_files = os.listdir("./stats/recovering_weights/")  # contains a list of file names
 for file in weights_files:
-    weights_before = read_first_k_lines("./recovering_weights/" + file, 116)
-    weights_after = np.loadtxt("./recovering_weights/" + file, skiprows=10116)
+    weights_before = read_first_k_lines("./stats/recovering_weights/" + file, 116)
+    weights_after = np.loadtxt("./stats/recovering_weights/" + file, skiprows=10116)
     # print(weights_before.shape, weights_before)
     # print(weights_after.shape, weights_after)
     

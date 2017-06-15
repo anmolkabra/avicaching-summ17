@@ -87,7 +87,11 @@ def standard(x):
     return torch.div(diff, std)
 
 def build_input(rt):
-    return torch.cat([F_DIST, rt.repeat(J, 1)], dim=2)
+    newrt = torch.zeros(J, 15).type(torchten)    # rt[u] must be expanded into a vector of 15 elements
+    for u in xrange(J):
+        for i in xrange(int(rt[u])):
+            newrt[i] = 1.0
+    return torch.cat([F_DIST, newrt.repeat(J, 1)], dim=2)
 
 def train(net, optimizer, loss_normalizer):
     """

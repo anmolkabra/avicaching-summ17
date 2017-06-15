@@ -46,9 +46,6 @@ args = parser.parse_args()
 
 # assigning cuda check to a single variable
 args.cuda = not args.no_cuda and torch.cuda.is_available()
-# torch.manual_seed(args.seed)
-# if args.cuda:
-#     torch.cuda.manual_seed(args.seed)
 
 # parameters and data
 J, T = args.locations, args.time
@@ -89,6 +86,9 @@ def standard(x):
     std = torch.std(x, dim=2).expand_as(x)
     return torch.div(diff, std)
 
+def build_input(rt):
+    return torch.cat([F_DIST, rt.repeat(J, 1)], dim=2)
+
 def train(net, optimizer, loss_normalizer):
     """
     Trains the network using MyNet
@@ -99,13 +99,10 @@ def train(net, optimizer, loss_normalizer):
 
     for t in xrange(num_train):
         # build the input by appending trainR[t]
-        trainR_extended = trainR[t].repeat(J, 1)
-        inp = torch.cat([F_DIST, trainR_extended], dim=2)     # final F_DIST_processing
+        inp = build_input(trainR[t])
         if args.cuda:
             inp = inp.cuda()
-
-        # standardize inp
-        inp = Variable(standard(inp))
+        inp = Variable(standard(inp))   # standardize inp
         
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
@@ -135,13 +132,10 @@ def test(net, loss_normalizer):
     
     for t in xrange(num_test):
         # build the input by appending testR[t]
-        testR_extended = testR[t].repeat(J, 1)
-        inp = torch.cat([F_DIST, testR_extended], dim=2)     # final F_DIST_processing
+        inp = build_input(testR[t])
         if args.cuda:
             inp = inp.cuda()
-
-        # standardize inp
-        inp = Variable(standard(inp))
+        inp = Variable(standard(inp))   # standardize inp
         
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
@@ -176,9 +170,7 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
 def save_log(file_name, x, y, title):
     with open(file_name, "wt") as f:
         f.write(title + "\n")
-        
         for i in range(0, len(x), args.log_interval):
-            
             f.write("epoch = %d\t\ttrainloss = %.8f, traintime = %.4f\t\ttestloss = %.8f, testtime = %.4f\n" % (
                     x[i], y[0][i][1], y[0][i][0],
                     y[1][i][1], y[1][i][0]))

@@ -95,8 +95,7 @@ def train(net, optimizer, loss_normalizer):
     """
     loss = 0
     start_time = time.time()
-    print(net.w.data.view(-1, numFeatures))
-
+    
     for t in xrange(num_train):
         # build the input by appending trainR[t]
         inp = build_input(trainR[t])
@@ -197,23 +196,28 @@ def read_set_data():
             X, Y, R = make_rand_data()
             ad.save_rand_XYR("./randXYR.txt", X, Y, R, J, T)
         #
-        print("Verifying randXYR...")
-        X, Y, R = ad.read_XYR_file("./randXYR.txt", J, T)
-        w = ad.read_weights_file("./randXYR_weights.txt", J)
-        X, Y, R, w = Variable(torchten(X)), Variable(torchten(Y)), torchten(R), torchten(w)
-        w = Variable(torch.unsqueeze(w, dim=2))   # make w a 3d tensor
+        # print("Verifying randXYR...")
+        # X, Y, R = ad.read_XYR_file("./randXYR.txt", J, T)
+        # w = ad.read_weights_file("./randXYR_weights.txt", J)
+        # X, Y, R, w = Variable(torchten(X)), Variable(torchten(Y)), torchten(R), torchten(w)
+        # w = Variable(torch.unsqueeze(w, dim=2))   # make w a 3d tensor
         
-        test_given_data(X, Y, R, w, J, T)
+        # test_given_data(X, Y, R, w, J, T)
         #
         X, Y, R = ad.read_XYR_file("./randXYR.txt", J, T)
     else:
         X, Y, R = ad.read_XYR_file("./density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
         
     # split the XYR data
-    shuffle_order = np.random.permutation(T)
-    trainX, testX = ad.split_along_row(X[shuffle_order], num_train)
-    trainY, testY = ad.split_along_row(Y[shuffle_order], num_train)
-    trainR, testR = ad.split_along_row(R[shuffle_order], num_train)
+    if args.train_percent != 1.0:
+        shuffle_order = np.random.permutation(T)
+        trainX, testX = ad.split_along_row(X[shuffle_order], num_train)
+        trainY, testY = ad.split_along_row(Y[shuffle_order], num_train)
+        trainR, testR = ad.split_along_row(R[shuffle_order], num_train)
+    else:
+        trainX, testX = ad.split_along_row(X, num_train)
+        trainY, testY = ad.split_along_row(Y, num_train)
+        trainR, testR = ad.split_along_row(R, num_train)
 
     # change the input data into pytorch tensors and variables
     trainR, testR = torchten(trainR), torchten(testR)
@@ -221,6 +225,9 @@ def read_set_data():
     trainY = Variable(torchten(trainY), requires_grad=False)
     testX = Variable(torchten(testX), requires_grad=False)
     testY = Variable(torchten(testY), requires_grad=False)
+    print(trainX)
+    print(trainY)
+    print(trainR)
 
 def make_rand_data(X_max=10.0, R_max=10.0):
     """
@@ -308,6 +315,13 @@ if __name__ == "__main__":
 
     # scalar + tensor currently not supported in pytorch
     train_loss_normalizer = (trainY - torch.mean(trainY).expand_as(trainY)).pow(2).sum()
+    if args.train_percent == 1.0:
+        for e in xrange(1, args.epochs + 1):
+            train_res = train(net, optimizer, train_loss_normalizer)
+            if e % 20 == 0:
+                print("e= %d,  loss=%.8f" % (e, train_res[1]))
+        print(net.w.data.view(-1, numFeatures))
+        sys.exit(0)
     test_loss_normalizer = (testY - torch.mean(testY).expand_as(testY)).pow(2).sum()
     
     # GO!!
@@ -332,6 +346,7 @@ if __name__ == "__main__":
         total_time += (train_res[0] + test_res[0])
         
     # FINISH!!
+    print(net.w.data.view(-1, numFeatures))
     # log and plot the results: epoch vs loss
     if args.rand_xyr:
         file_pre = "randXYR_epochs=%d, " % (args.epochs)

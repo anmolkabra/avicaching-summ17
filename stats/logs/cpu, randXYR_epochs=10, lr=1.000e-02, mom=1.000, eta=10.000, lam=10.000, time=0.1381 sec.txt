@@ -1,0 +1,11 @@
+lr=1.000e-02, mom=1.000, eta=10.000, lam=10.000, time=0.1381 sec
+epoch = 1		trainloss = 1.61295736, traintime = 0.0184		testloss = 1.20335960, testtime = 0.0014
+epoch = 2		trainloss = 1.49007404, traintime = 0.0119		testloss = 1.08603537, testtime = 0.0013
+epoch = 3		trainloss = 1.37147725, traintime = 0.0116		testloss = 0.97452694, testtime = 0.0013
+epoch = 4		trainloss = 1.25766170, traintime = 0.0116		testloss = 0.86923802, testtime = 0.0013
+epoch = 5		trainloss = 1.14909971, traintime = 0.0117		testloss = 0.77049959, testtime = 0.0013
+epoch = 6		trainloss = 1.04620290, traintime = 0.0118		testloss = 0.67862421, testtime = 0.0013
+epoch = 7		trainloss = 0.94931656, traintime = 0.0132		testloss = 0.59390748, testtime = 0.0014
+epoch = 8		trainloss = 0.85872298, traintime = 0.0116		testloss = 0.51659971, testtime = 0.0013
+epoch = 9		trainloss = 0.77464700, traintime = 0.0114		testloss = 0.44687858, testtime = 0.0013
+epoch = 10		trainloss = 0.69726551, traintime = 0.0117		testloss = 0.38485309, testtime = 0.0013

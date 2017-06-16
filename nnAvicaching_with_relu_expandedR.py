@@ -72,13 +72,13 @@ class MyNet(nn.Module):
     def forward(self, inp):
         """
         Forward in the network; multiply the weights and return the softmax
-        """
+        """    
         # weight -> relu -> weight -> softmax
         inp = torch.bmm(inp, self.w1)
         inp = torchfun.relu(inp)
         inp = torch.bmm(inp, self.w2).view(-1, self.J)
-        # for u in xrange(len(inp)):
-        #     inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
+        for u in xrange(len(inp)):
+            inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
         return torchfun.softmax(inp)
 
 def standard(x):
@@ -90,7 +90,21 @@ def standard(x):
     return torch.div(diff, std)
 
 def build_input(rt):
-    return torch.cat([F_DIST, rt.repeat(J, 1)], dim=2)
+    # join fdist and expanded r
+    return torch.cat([F_DIST, rt.repeat(J, 1, 1)], dim=2)
+
+def expand_R(rt, R_max=15):
+    # rt[u] must be expanded into a vector of 15 elements
+    # which should contain rt[u] ones in the beginning
+    # followed by zeros.
+    newrt = torchten(J, 15)
+    if args.cuda:
+        newrt = newrt.cuda()
+    for u in xrange(J):
+        r = int(rt[u])
+        newrt[u] = torch.cat([torch.ones(r), 
+            torch.zeros(R_max - r)], dim=0)
+    return newrt
 
 def train(net, optimizer, loss_normalizer):
     """
@@ -100,15 +114,15 @@ def train(net, optimizer, loss_normalizer):
     start_time = time.time()
     
     for t in xrange(num_train):
-        # build the input by appending trainR[t]
+        # build the input by appending trainR[t] to F_DIST
         inp = build_input(trainR[t])
         if args.cuda:
             inp = inp.cuda()
         inp = Variable(standard(inp))   # standardize inp
-        
+    
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
-        
+    
         # calculate loss
         Pxt = torch.mv(P, trainX[t])
         loss += (trainY[t] - Pxt).pow(2).sum()
@@ -191,7 +205,7 @@ def read_set_data():
     # process data for the NN
     numFeatures = len(F[0]) + 1     # distance included
     F_DIST = torchten(ad.combine_DIST_F(F, DIST, J, numFeatures))
-    numFeatures += 1                # for reward later
+    numFeatures += 15               # for rewards later
 
     # operate on XYR data
     if args.rand_xyr:
@@ -199,6 +213,15 @@ def read_set_data():
             # file doesn't exists, make random data, write to file
             X, Y, R = make_rand_data()
             ad.save_rand_XYR("./data/randXYR.txt", X, Y, R, J, T)
+        #
+        # print("Verifying randXYR...")
+        # X, Y, R = ad.read_XYR_file("./randXYR.txt", J, T)
+        # w = ad.read_weights_file("./randXYR_weights.txt", J)
+        # X, Y, R, w = Variable(torchten(X)), Variable(torchten(Y)), torchten(R), torchten(w)
+        # w = Variable(torch.unsqueeze(w, dim=2))   # make w a 3d tensor
+        
+        # test_given_data(X, Y, R, w, J, T)
+        #
         X, Y, R = ad.read_XYR_file("./data/randXYR.txt", J, T)
     else:
         X, Y, R = ad.read_XYR_file("./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
@@ -221,6 +244,16 @@ def read_set_data():
     trainY = Variable(torchten(trainY), requires_grad=False)
     testX = Variable(torchten(testX), requires_grad=False)
     testY = Variable(torchten(testY), requires_grad=False)
+
+    # expand R (trainR and testR)
+    trainR_ext = torchten(num_train, J, 15)
+    testR_ext = torchten(num_test, J, 15)
+    for t in xrange(num_train):
+        trainR_ext[t] = expand_R(trainR[t])
+    for t in xrange(num_test):
+        testR_ext[t] = expand_R(testR[t])
+    trainR, testR = trainR_ext, testR_ext
+
     print(trainX)
     print(trainY)
     print(trainR)
@@ -296,6 +329,9 @@ if __name__ == "__main__":
     net = MyNet(J, numFeatures, args.eta)
     # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
+    # optimizer = optim.Adadelta(net.parameters(), lr=args.lr)
+    # optimizer = optim.Adagrad(net.parameters(), lr=args.lr)
+    # optimizer = optim.Adamax(net.parameters(), lr=args.lr)
 
     # SET!!
     if args.cuda:

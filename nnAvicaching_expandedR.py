@@ -91,6 +91,8 @@ def build_input(rt, R_max=15):
     # which should contain rt[u] ones in the beginning
     # followed by zeros.
     newrt = torchten(J, 15)
+    if args.cuda:
+        newrt = newrt.cuda()
     for u in xrange(J):
         r = int(rt[u])
         newrt[u] = torch.cat([torch.ones(r), 
@@ -333,7 +335,7 @@ if __name__ == "__main__":
         weights_before = net.w.data.view(-1, numFeatures).cpu().numpy()
         for e in xrange(1, args.epochs + 1):
             train_res = train(net, optimizer, train_loss_normalizer)
-            if e % 200 == 0:
+            if e % 20 == 0:
                 print("e= %d,  loss=%.8f" % (e, train_res[1]))
             data.append([e, train_res[1]])
         data = np.array(data)

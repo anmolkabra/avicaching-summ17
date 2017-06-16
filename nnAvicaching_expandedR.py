@@ -86,12 +86,18 @@ def standard(x):
     std = torch.std(x, dim=2).expand_as(x)
     return torch.div(diff, std)
 
-def build_input(rt):
-    newrt = torch.zeros(J, 15).type(torchten)    # rt[u] must be expanded into a vector of 15 elements
+def build_input(rt, R_max=15):
+    # rt[u] must be expanded into a vector of 15 elements
+    # which should contain rt[u] ones in the beginning
+    # followed by zeros.
+    newrt = torchten(J, 15)
     for u in xrange(J):
-        for i in xrange(int(rt[u])):
-            newrt[i] = 1.0
-    return torch.cat([F_DIST, newrt.repeat(J, 1)], dim=2)
+        r = int(rt[u])
+        newrt[u] = torch.cat([torch.ones(r), 
+            torch.zeros(R_max - r)], dim=0)
+
+    # join fdist and expanded r
+    return torch.cat([F_DIST, newrt.repeat(J, 1, 1)], dim=2)
 
 def train(net, optimizer, loss_normalizer):
     """
@@ -192,7 +198,7 @@ def read_set_data():
     # process data for the NN
     numFeatures = len(F[0]) + 1     # distance included
     F_DIST = torchten(ad.combine_DIST_F(F, DIST, J, numFeatures))
-    numFeatures += 1                # for reward later
+    numFeatures += 15               # for rewards later
 
     # operate on XYR data
     if args.rand_xyr:

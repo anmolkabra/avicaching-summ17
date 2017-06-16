@@ -116,10 +116,10 @@ def train(net, optimizer, loss_normalizer):
         if args.cuda:
             inp = inp.cuda()
         inp = Variable(standard(inp))   # standardize inp
-        
+    
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
-        
+    
         # calculate loss
         Pxt = torch.mv(P, trainX[t])
         loss += (trainY[t] - Pxt).pow(2).sum()
@@ -325,8 +325,11 @@ if __name__ == "__main__":
     read_set_data()
     net = MyNet(J, numFeatures, args.eta)
     # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
-    optimizer = optim.Adam(net.parameters(), lr=args.lr)
-
+    # optimizer = optim.Adam(net.parameters(), lr=args.lr)
+    # optimizer = optim.Adadelta(net.parameters(), lr=args.lr)
+    # optimizer = optim.Adagrad(net.parameters(), lr=args.lr)
+    # optimizer = optim.Adamax(net.parameters(), lr=args.lr)
+    optimizer = optim.Rprop(net.parameters(), lr=args.lr)
     # SET!!
     if args.cuda:
         # transfer net and tensors to the gpu

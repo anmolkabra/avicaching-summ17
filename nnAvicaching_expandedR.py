@@ -86,7 +86,11 @@ def standard(x):
     std = torch.std(x, dim=2).expand_as(x)
     return torch.div(diff, std)
 
-def build_input(rt, R_max=15):
+def build_input(rt):
+    # join fdist and expanded r
+    return torch.cat([F_DIST, rt.repeat(J, 1, 1)], dim=2)
+
+def expand_R(rt, R_max=15):
     # rt[u] must be expanded into a vector of 15 elements
     # which should contain rt[u] ones in the beginning
     # followed by zeros.
@@ -97,9 +101,7 @@ def build_input(rt, R_max=15):
         r = int(rt[u])
         newrt[u] = torch.cat([torch.ones(r), 
             torch.zeros(R_max - r)], dim=0)
-
-    # join fdist and expanded r
-    return torch.cat([F_DIST, newrt.repeat(J, 1, 1)], dim=2)
+    return newrt
 
 def train(net, optimizer, loss_normalizer):
     """
@@ -109,7 +111,7 @@ def train(net, optimizer, loss_normalizer):
     start_time = time.time()
     
     for t in xrange(num_train):
-        # build the input by appending trainR[t]
+        # build the input by appending trainR[t] to F_DIST
         inp = build_input(trainR[t])
         if args.cuda:
             inp = inp.cuda()
@@ -239,6 +241,16 @@ def read_set_data():
     trainY = Variable(torchten(trainY), requires_grad=False)
     testX = Variable(torchten(testX), requires_grad=False)
     testY = Variable(torchten(testY), requires_grad=False)
+
+    # expand R (trainR and testR)
+    trainR_ext = torchten(num_train, J, 15)
+    testR_ext = torchten(num_test, J, 15)
+    for t in xrange(num_train):
+        trainR_ext[t] = expand_R(trainR[t])
+    for t in xrange(num_test):
+        testR_ext[t] = expand_R(testR[t])
+    trainR, testR = trainR_ext, testR_ext
+
     print(trainX)
     print(trainY)
     print(trainR)

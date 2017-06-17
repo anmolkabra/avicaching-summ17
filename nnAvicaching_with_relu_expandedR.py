@@ -81,12 +81,14 @@ class MyNet(nn.Module):
             inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
         return torchfun.softmax(inp)
 
-def standard(x):
+def standard(x, along_dim):
     """
-    Standardizes a 3D Tensor x with mean 0 and std 1
+    Standardizes a Tensor x with mean 0 and std 1 along dimension
+    along_dim. Along_dim must be less than the shape (2D/3D) of the tensor
     """
-    diff = x - torch.mean(x, dim=2).expand_as(x)
-    std = torch.std(x, dim=2).expand_as(x)
+    x = torchten(x)
+    diff = x - torch.mean(x, dim=along_dim).expand_as(x)
+    std = torch.std(x, dim=along_dim).expand_as(x)
     return torch.div(diff, std)
 
 def build_input(rt):
@@ -118,7 +120,7 @@ def train(net, optimizer, loss_normalizer):
         inp = build_input(trainR[t])
         if args.cuda:
             inp = inp.cuda()
-        inp = Variable(standard(inp))   # standardize inp
+        inp = Variable(standard(inp, 2))   # standardize inp
     
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
@@ -151,7 +153,7 @@ def test(net, loss_normalizer):
         inp = build_input(testR[t])
         if args.cuda:
             inp = inp.cuda()
-        inp = Variable(standard(inp))   # standardize inp
+        inp = Variable(standard(inp, 2))   # standardize inp
         
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
@@ -207,6 +209,7 @@ def read_set_data():
     F_DIST = torchten(ad.combine_DIST_F(F, DIST, J, numFeatures))
     numFeatures += 15               # for rewards later
 
+    X, Y, R = [], [], []
     # operate on XYR data
     if args.rand_xyr:
         if not os.path.isfile("./data/randXYR.txt"):
@@ -225,6 +228,10 @@ def read_set_data():
         X, Y, R = ad.read_XYR_file("./data/randXYR.txt", J, T)
     else:
         X, Y, R = ad.read_XYR_file("./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
+    
+    # standardize X, Y
+    X, Y = standard(X, 1).numpy(), standard(Y, 1).numpy()
+
     # split the XYR data
     if args.train_percent != 1.0:
         # training and testing, shuffle and split the data
@@ -277,7 +284,7 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         inp = build_input(R[t])
         if args.cuda:
             inp = inp.cuda()
-        inp = Variable(standard(inp))   # standardize inp
+        inp = Variable(standard(inp, 2))   # standardize inp
         
         # feed in data
         inp = torch.bmm(inp, w).view(-1, J)
@@ -305,7 +312,7 @@ def test_given_data(X, Y, R, w, J, T):
         inp = build_input(R[t])
         if args.cuda:
             inp = inp.cuda()
-        inp = Variable(standard(inp))   # standardize inp
+        inp = Variable(standard(inp, 2))   # standardize inp
         
         # feed in data
         inp = torch.bmm(inp, w).view(-1, J)

@@ -83,10 +83,18 @@ def standard(x, along_dim):
     Standardizes a Tensor x with mean 0 and std 1 along dimension
     along_dim. Along_dim must be less than the shape (2D/3D) of the tensor
     """
-    x = torchten(x)
     diff = x - torch.mean(x, dim=along_dim).expand_as(x)
     std = torch.std(x, dim=along_dim).expand_as(x)
     return torch.div(diff, std)
+
+def standard_np(x, along_dim):
+    """
+    Standardizes a numpy array x with mean 0 and std 1 along dimension
+    along_dim. Along_dim must be less than the shape (2D/3D) of the tensor
+    """
+    m = np.tile(np.mean(x, axis=along_dim), (J, 1)).T
+    s = np.tile(np.std(x, axis=along_dim), (J, 1)).T
+    return (x - m) / s
 
 def build_input(rt):
     return torch.cat([F_DIST, rt.repeat(J, 1)], dim=2)
@@ -212,7 +220,7 @@ def read_set_data():
         X, Y, R = ad.read_XYR_file("./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
     
     # standardize X, Y
-    X, Y = standard(X, 1).numpy(), standard(Y, 1).numpy()
+    X, Y = standard_np(X, 1), standard_np(Y, 1)
 
     # split the XYR data
     if args.train_percent != 1.0:

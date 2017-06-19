@@ -47,6 +47,9 @@ args = parser.parse_args()
 # assigning cuda check to a single variable
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
+# constants
+offset_division = 0.000001  # to avoid division by zero
+
 # parameters and data
 J, T = args.locations, args.time
 torchten = torch.FloatTensor
@@ -81,23 +84,14 @@ class MyNet(nn.Module):
             inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
         return torchfun.softmax(inp)
 
-def standard(x, along_dim):
+def norm_using_max(x, along_dim=None):
     """
-    Standardizes a Tensor x with mean 0 and std 1 along dimension
-    along_dim. Along_dim must be less than the shape (2D/3D) of the tensor
+    Normalizes x by dividing each element by the maximum. Finding the
+    maximum is specified by along_dim. If along_dim is an int, the max is 
+    calculated along that dimension, if it's None, whole x's max is calculated
+    Since division with 0 might be encountered, offset helps tackle that
     """
-    diff = x - torch.mean(x, dim=along_dim).expand_as(x)
-    std = torch.std(x, dim=along_dim).expand_as(x)
-    return torch.div(diff, std)
-
-def standard_np(x, along_dim):
-    """
-    Standardizes a numpy array x with mean 0 and std 1 along dimension
-    along_dim. Along_dim must be less than the shape (2D/3D) of the tensor
-    """
-    m = np.tile(np.mean(x, axis=along_dim), (J, 1)).T
-    s = np.tile(np.std(x, axis=along_dim), (J, 1)).T
-    return (x - m) / s
+    return x / (np.amax(x, axis=along_dim) + offset_division)
 
 def build_input(rt):
     # join fdist and expanded r
@@ -128,7 +122,7 @@ def train(net, optimizer, loss_normalizer):
         inp = build_input(trainR[t])
         if args.cuda:
             inp = inp.cuda()
-        inp = Variable(standard(inp, 2))   # standardize inp
+        inp = Variable(inp)
     
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
@@ -161,7 +155,7 @@ def test(net, loss_normalizer):
         inp = build_input(testR[t])
         if args.cuda:
             inp = inp.cuda()
-        inp = Variable(standard(inp, 2))   # standardize inp
+        inp = Variable(inp)
         
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
@@ -211,7 +205,8 @@ def read_set_data():
     # read f and dist datasets from file, operate on them
     F = ad.read_F_file("./data/loc_feature_with_avicaching_combined.csv")
     DIST = ad.read_dist_file("./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
-
+    F, DIST = norm_using_max(F, along_dim=0), norm_using_max(DIST)  # normalize
+    
     # process data for the NN
     numFeatures = len(F[0]) + 1     # distance included
     F_DIST = torchten(ad.combine_DIST_F(F, DIST, J, numFeatures))
@@ -237,8 +232,9 @@ def read_set_data():
     else:
         X, Y, R = ad.read_XYR_file("./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
     
-    # standardize X, Y
-    X, Y = standard_np(X, 1), standard_np(Y, 1)
+    # normalize X, Y
+    X /= (sum(X) + offset_division)
+    Y /= (sum(Y) + offset_division)
 
     # split the XYR data
     if args.train_percent != 1.0:
@@ -292,7 +288,7 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         inp = build_input(R[t])
         if args.cuda:
             inp = inp.cuda()
-        inp = Variable(standard(inp, 2))   # standardize inp
+        inp = Variable(inp)
         
         # feed in data
         inp = torch.bmm(inp, w).view(-1, J)
@@ -320,7 +316,7 @@ def test_given_data(X, Y, R, w, J, T):
         inp = build_input(R[t])
         if args.cuda:
             inp = inp.cuda()
-        inp = Variable(standard(inp, 2))   # standardize inp
+        inp = Variable(inp)
         
         # feed in data
         inp = torch.bmm(inp, w).view(-1, J)

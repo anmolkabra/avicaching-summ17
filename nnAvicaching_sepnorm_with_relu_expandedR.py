@@ -69,29 +69,36 @@ class MyNet(nn.Module):
         super(MyNet, self).__init__()
         self.J = J
         self.eta = eta
-        self.w1 = nn.Parameter(torch.randn(J, numFeatures, numFeatures).type(torchten))
-        self.w2 = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
+        self.w1 = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
+        # self.w2 = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
 
     def forward(self, inp):
         """
         Forward in the network; multiply the weights and return the softmax
         """    
-        # weight -> relu -> weight -> softmax
-        inp = torch.bmm(inp, self.w1)
-        inp = torchfun.relu(inp)
-        inp = torch.bmm(inp, self.w2).view(-1, self.J)
-        for u in xrange(len(inp)):
-            inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
+        # weight -> relu -> softmax
+        inp = torchfun.relu(torch.bmm(inp, self.w1))
+        # inp = torch.bmm(inp, self.w2).view(-1, self.J)
+        inp = inp.view(-1, self.J)
+
+        # add eta to inp[u][u]
+        # eta_matrix = Variable(self.eta * torch.eye(J).type(torchten))
+        # if args.cuda:
+        # 	 eta_matrix = eta_matrix.cuda()
+        # inp += eta_matrix
         return torchfun.softmax(inp)
 
-def norm_using_max(x, along_dim=None):
+def normalize(x, along_dim=None, using_max=True):
     """
-    Normalizes x by dividing each element by the maximum. Finding the
-    maximum is specified by along_dim. If along_dim is an int, the max is 
-    calculated along that dimension, if it's None, whole x's max is calculated
-    Since division with 0 might be encountered, offset helps tackle that
+    Normalizes x by dividing each element by the maximum if using_max is True and by the sum
+    if using_max is False. Finding the maximum/sum is specified by along_dim. If along_dim is an int, the max is 
+    calculated along that dimension, if it's None, whole x's max/sum is calculated
+    Since division with 0 might be encountered, offset helps tackle that.
     """
-    return x / (np.amax(x, axis=along_dim) + offset_division)
+    if using_max:
+    	return x / (np.amax(x, axis=along_dim) + offset_division)
+    else:
+    	return x / (np.sum(x, axis=along_dim, keepdims=True) + offset_division)
 
 def build_input(rt):
     # join fdist and expanded r
@@ -106,8 +113,7 @@ def expand_R(rt, R_max=15):
         newrt = newrt.cuda()
     for u in xrange(J):
         r = int(rt[u])
-        newrt[u] = torch.cat([torch.ones(r), 
-            torch.zeros(R_max - r)], dim=0)
+        newrt[u] = torch.cat([torch.ones(r), torch.zeros(R_max - r)], dim=0)
     return newrt
 
 def train(net, optimizer, loss_normalizer):
@@ -205,7 +211,7 @@ def read_set_data():
     # read f and dist datasets from file, operate on them
     F = ad.read_F_file("./data/loc_feature_with_avicaching_combined.csv")
     DIST = ad.read_dist_file("./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
-    F, DIST = norm_using_max(F, along_dim=0), norm_using_max(DIST)  # normalize
+    F, DIST = normalize(F, along_dim=0, using_max=True), normalize(DIST, using_max=True)  # normalize using max
     
     # process data for the NN
     numFeatures = len(F[0]) + 1     # distance included
@@ -232,9 +238,8 @@ def read_set_data():
     else:
         X, Y, R = ad.read_XYR_file("./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
     
-    # normalize X, Y
-    X /= (sum(X) + offset_division)
-    Y /= (sum(Y) + offset_division)
+    # normalize X, Y using sum along rows
+    X, Y = normalize(X, along_dim=1, using_max=False), normalize(Y, along_dim=1, using_max=False)
 
     # split the XYR data
     if args.train_percent != 1.0:
@@ -260,9 +265,9 @@ def read_set_data():
     trainR_ext = torchten(num_train, J, 15)
     testR_ext = torchten(num_test, J, 15)
     for t in xrange(num_train):
-        trainR_ext[t] = expand_R(trainR[t])
+        trainR_ext[t] = expand_R(trainR[t], R_max=15)
     for t in xrange(num_test):
-        testR_ext[t] = expand_R(testR[t])
+        testR_ext[t] = expand_R(testR[t], R_max=15)
     trainR, testR = trainR_ext, testR_ext
 
     print(trainX)

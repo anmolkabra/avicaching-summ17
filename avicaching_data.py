@@ -98,3 +98,17 @@ def read_weights_file(file_name, locs):
                 # append w info
                 w = np.vstack([w, line_vec])
     return w
+
+def read_lat_long_from_Ffile(file_name, lat_col=33, long_col=34):
+    lat_long = []
+    with open(file_name, "r") as fufile:
+        next(fufile)        # skip header row of fufile
+        for idx, line in enumerate(fufile):
+            line_vec = np.array(map(float, line.split(",")[lat_col:long_col + 1]))
+            if idx == 0:
+                # lat_long init
+                lat_long = line_vec
+            else:
+                # append lat_long info
+                lat_long = np.vstack([lat_long, line_vec])
+    return lat_long

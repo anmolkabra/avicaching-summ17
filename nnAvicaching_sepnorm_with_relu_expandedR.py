@@ -51,6 +51,7 @@ torchten = torch.FloatTensor
 J, T = args.locations, args.time
 F_DIST, numFeatures = [], 0
 trainX, trainY, trainR, testX, testY, testR = [], [], [], [], [], []
+u_train, u_test = np.array([]), np.array([])
 
 num_train = int(math.floor(args.train_percent * T))
 num_test = T - num_train
@@ -112,11 +113,12 @@ def expand_R(rt, R_max=15):
         newrt[u] = torch.cat([torch.ones(r), torch.zeros(R_max - r)], dim=0)
     return newrt
 
-def train(net, optimizer, loss_normalizer):
+def train(net, optimizer, loss_normalizer, u):
     """
     Trains the NN using MyNet
     """
     loss = 0
+    P_data = torch.zeros(num_train, J)
     start_time = time.time()
     
     for t in xrange(num_train):
@@ -131,7 +133,8 @@ def train(net, optimizer, loss_normalizer):
     
         # calculate loss
         Pxt = torch.mv(P, trainX[t])
-        loss += (trainY[t] - Pxt).pow(2).sum()
+        P_data[t] = Pxt.data
+        loss += (u[t] * (trainY[t] - Pxt)).pow(2).sum()
     # loss += args.lambda_L1 * torch.norm(net.w.data)
     loss /= loss_normalizer.data[0]
     
@@ -142,9 +145,10 @@ def train(net, optimizer, loss_normalizer):
 
     end_time = time.time()
     
-    return (end_time - start_time, loss.data[0])
+    return (end_time - start_time, loss.data[0], 
+        torch.mean(P_data, dim=0).squeeze().cpu().numpy())
 
-def test(net, loss_normalizer):
+def test(net, loss_normalizer, u):
     """
     Test the network using MyNet
     """
@@ -163,7 +167,7 @@ def test(net, loss_normalizer):
         
         # calculate loss
         Pxt = torch.mv(P, testX[t])
-        loss += (testY[t] - Pxt).pow(2).sum() 
+        loss += ((testY[t] - Pxt).pow(2).sum() * u[t])
     # loss += args.lambda_L1 * torch.norm(net.w.data)
     loss /= loss_normalizer.data[0]
 
@@ -198,11 +202,33 @@ def save_log(file_name, x, y, title):
                     x[i], y[0][i][1], y[0][i][0],
                     y[1][i][1], y[1][i][0]))
 
+def plot_predicted_map(file_name, lat_long, point_info):
+    lati = np.sort(lat_long[:, 0])
+    longi = np.sort(lat_long[:, 1])
+    z = np.empty([J, J])
+    lo, la = np.meshgrid(longi, lati)
+    print(lo)
+    print(la)
+    z = np.zeros([J, J])
+    for k in xrange(len(lati)):
+        # find lati[k] in the mesh, longi[k] in the mesh
+        lo_k_mesh = np.where(lo[0] == longi[k])[0][0]
+        la_k_mesh = np.where(la[:, 0] == lati[k])[0][0]
+        z[lo_k_mesh][la_k_mesh] = point_info[k]
+    print(z)
+    z_max = z.max()
+    print(z_max)
+    plt.pcolor(lo, la, z, cmap=plt.cm.get_cmap('Blues'), vmin=0.0, vmax=z_max)
+    plt.axis([lo.min(), lo.max(), la.min(), la.max()])
+    plt.colorbar()
+    plt.savefig(file_name, bbox_inches="tight", dpi=200)
+    plt.show()
 def read_set_data():
     """
     Reads and sets up the datasets
     """
     global trainX, trainY, trainR, testX, testY, testR, F_DIST, numFeatures
+    global u_train, u_test
     # read f and dist datasets from file, operate on them
     F = ad.read_F_file("./data/loc_feature_with_avicaching_combined.csv")
     DIST = ad.read_dist_file("./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
@@ -233,6 +259,9 @@ def read_set_data():
     else:
         X, Y, R = ad.read_XYR_file("./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
     
+    u = np.sum(Y, axis=1) 
+    print(u, u.size)
+
     # normalize X, Y using sum along rows
     X, Y = normalize(X, along_dim=1, using_max=False), normalize(Y, along_dim=1, using_max=False)
 
@@ -243,14 +272,17 @@ def read_set_data():
         trainX, testX = ad.split_along_row(X[shuffle_order], num_train)
         trainY, testY = ad.split_along_row(Y[shuffle_order], num_train)
         trainR, testR = ad.split_along_row(R[shuffle_order], num_train)
+        u_train, u_test = ad.split_along_row(u[shuffle_order], num_train)   
     else:
         # no testing, split the data only to be merged later (bad code)
         trainX, testX = ad.split_along_row(X, num_train)
         trainY, testY = ad.split_along_row(Y, num_train)
         trainR, testR = ad.split_along_row(R, num_train)
+        u_train, u_test = ad.split_along_row(u, num_train)
 
     # change the input data into pytorch tensors and variables
     trainR, testR = torchten(trainR), torchten(testR)
+    u_train, u_test = torchten(u_train), torchten(u_test)
     trainX = Variable(torchten(trainX), requires_grad=False)
     trainY = Variable(torchten(trainY), requires_grad=False)
     testX = Variable(torchten(testX), requires_grad=False)
@@ -265,9 +297,9 @@ def read_set_data():
         testR_ext[t] = expand_R(testR[t], R_max=15)
     trainR, testR = trainR_ext, testR_ext
 
-    print(trainX)
-    print(trainY)
-    print(trainR)
+    # print(trainX)
+    # print(trainY)
+    # print(trainR)
 
 def make_rand_data(X_max=100.0, R_max=100.0):
     """
@@ -306,7 +338,7 @@ def make_rand_data(X_max=100.0, R_max=100.0):
 
     return (X.data.numpy(), Y.data.numpy(), R.numpy())
 
-def test_given_data(X, Y, R, w, J, T):
+def test_given_data(X, Y, R, w, J, T, u):
     print(w.data.view(-1, numFeatures))
     loss_normalizer = (Y - torch.mean(Y).expand_as(Y)).pow(2).sum().data[0]
     loss = 0
@@ -326,7 +358,7 @@ def test_given_data(X, Y, R, w, J, T):
         
         # calculate loss
         Pxt = torch.mv(P, X[t])
-        loss += (Y[t] - Pxt).pow(2).sum() 
+        loss += ((Y[t] - Pxt).pow(2).sum() * u[t])
     # loss += args.lambda_L1 * torch.norm(net.w.data)
     loss /= loss_normalizer
     print("Loss = %f" % loss.data[0])
@@ -348,6 +380,7 @@ if __name__ == "__main__":
         trainX, trainY, trainR = trainX.cuda(), trainY.cuda(), trainR.cuda()
         testX, testY, testR = testX.cuda(), testY.cuda(), testR.cuda()
         F_DIST = F_DIST.cuda()
+        u_train, u_test = u_train.cuda(), u_test.cuda()
         file_pre_gpu = "gpu, "
     else:
         file_pre_gpu = "cpu, "
@@ -360,18 +393,24 @@ if __name__ == "__main__":
         data = []
         # weights_before = net.w.data.view(-1, numFeatures).cpu().numpy()
         for e in xrange(1, args.epochs + 1):
-            train_res = train(net, optimizer, train_loss_normalizer)
+            train_res = train(net, optimizer, train_loss_normalizer, u_train)
             if e % 200 == 0:
                 print("e= %d,  loss=%.8f" % (e, train_res[1]))
             data.append([e, train_res[1]])
+            if e == args.epochs:
+                y_pred = train_res[2]
+        print(y_pred)
         data = np.array(data)
         # weights = net.w.data.view(-1, numFeatures).cpu().numpy()
         curr_time = time.localtime()
-        fname = "./stats/recovering_weights/w_" + str(curr_time.tm_year) + str(curr_time.tm_mon) + str(curr_time.tm_mday) + "_" + str(time.time()) + ".txt"
-        with open(fname, "w") as f:
+        fname = str(curr_time.tm_year) + str(curr_time.tm_mon) + str(curr_time.tm_mday) + "_" + str(time.time())
+        with open("./stats/recovering_weights/w_" + fname + ".txt", "w") as f:
             # np.savetxt(f, weights_before, fmt="%.15f")
             np.savetxt(f, data, fmt="%.8f")
             # np.savetxt(f, weights, fmt="%.15f")
+        plot_predicted_map("./stats/map_plots/w_" + fname + ".png",
+            ad.read_lat_long_from_Ffile("./data/loc_feature_with_avicaching_combined.csv"),
+            y_pred)
         sys.exit(0)
     #
     test_loss_normalizer = (testY - torch.mean(testY).expand_as(testY)).pow(2).sum()
@@ -388,11 +427,11 @@ if __name__ == "__main__":
     #
     for e in xrange(1, args.epochs + 1):
         # train
-        train_res = train(net, optimizer, train_loss_normalizer)
+        train_res = train(net, optimizer, train_loss_normalizer, u_train)
         train_time_loss.append(train_res)
         
         # test
-        test_res = test(net, test_loss_normalizer)
+        test_res = test(net, test_loss_normalizer, u_test)
         test_time_loss.append(test_res)
         
         total_time += (train_res[0] + test_res[0])

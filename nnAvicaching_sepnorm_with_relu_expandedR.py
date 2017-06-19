@@ -9,11 +9,8 @@ except KeyError as e:
 import matplotlib.pyplot as plt
 import avicaching_data as ad
 # import torch packages
-import torch
-import torch.nn as nn
-import torch.nn.functional as torchfun
+import torch, torch.nn as nn, torch.nn.functional as torchfun, torch.optim as optim
 from torch.autograd import Variable
-import torch.optim as optim
 
 # training specs
 parser = argparse.ArgumentParser(description="NN for Avicaching model")
@@ -43,16 +40,15 @@ parser.add_argument("--train-percent", type=float, default=0.8, metavar="T",
     help="breaks the data into T percent training and rest testing (default=0.8)")
 
 args = parser.parse_args()
-
 # assigning cuda check to a single variable
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
 # constants
 offset_division = 0.000001  # to avoid division by zero
+torchten = torch.FloatTensor
 
 # parameters and data
 J, T = args.locations, args.time
-torchten = torch.FloatTensor
 F_DIST, numFeatures = [], 0
 trainX, trainY, trainR, testX, testY, testR = [], [], [], [], [], []
 
@@ -69,16 +65,14 @@ class MyNet(nn.Module):
         super(MyNet, self).__init__()
         self.J = J
         self.eta = eta
-        self.w1 = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
-        # self.w2 = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
+        self.w = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
 
     def forward(self, inp):
         """
         Forward in the network; multiply the weights and return the softmax
         """    
         # weight -> relu -> softmax
-        inp = torchfun.relu(torch.bmm(inp, self.w1))
-        # inp = torch.bmm(inp, self.w2).view(-1, self.J)
+        inp = torchfun.relu(torch.bmm(inp, self.w))
         inp = inp.view(-1, self.J)
 
         # add eta to inp[u][u]
@@ -93,7 +87,6 @@ def normalize(x, along_dim=None, using_max=True):
     Normalizes x by dividing each element by the maximum if using_max is True and by the sum
     if using_max is False. Finding the maximum/sum is specified by along_dim. If along_dim is an int, the max is 
     calculated along that dimension, if it's None, whole x's max/sum is calculated
-    Since division with 0 might be encountered, offset helps tackle that.
     """
     if using_max:
     	return x / (np.amax(x, axis=along_dim) + offset_division)
@@ -101,13 +94,16 @@ def normalize(x, along_dim=None, using_max=True):
     	return x / (np.sum(x, axis=along_dim, keepdims=True) + offset_division)
 
 def build_input(rt):
-    # join fdist and expanded r
+    """
+    Builds the final input for the NN. Joins F_DIST and expanded R
+    """
     return torch.cat([F_DIST, rt.repeat(J, 1, 1)], dim=2)
 
 def expand_R(rt, R_max=15):
-    # rt[u] must be expanded into a vector of 15 elements
-    # which should contain rt[u] ones in the beginning
-    # followed by zeros.
+    """
+    Expands R into a matrix with each R[u] having R_max elements,
+    where the first R[u] columns are 1's and rest 0's
+    """
     newrt = torchten(J, 15)
     if args.cuda:
         newrt = newrt.cuda()
@@ -118,7 +114,7 @@ def expand_R(rt, R_max=15):
 
 def train(net, optimizer, loss_normalizer):
     """
-    Trains the network using MyNet
+    Trains the NN using MyNet
     """
     loss = 0
     start_time = time.time()
@@ -137,7 +133,6 @@ def train(net, optimizer, loss_normalizer):
         Pxt = torch.mv(P, trainX[t])
         loss += (trainY[t] - Pxt).pow(2).sum()
     # loss += args.lambda_L1 * torch.norm(net.w.data)
-    # print(loss, loss_normalizer)
     loss /= loss_normalizer.data[0]
     
     # backpropagate
@@ -345,9 +340,6 @@ if __name__ == "__main__":
     net = MyNet(J, numFeatures, args.eta)
     # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
-    # optimizer = optim.Adadelta(net.parameters(), lr=args.lr)
-    # optimizer = optim.Adagrad(net.parameters(), lr=args.lr)
-    # optimizer = optim.Adamax(net.parameters(), lr=args.lr)
 
     # SET!!
     if args.cuda:

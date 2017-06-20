@@ -40,6 +40,8 @@ parser.add_argument("--hide-loss-plot", action="store_true", default=False,
     help="hides the loss plot, which is only saved")
 parser.add_argument("--hide-map-plot", action="store_true", default=False,
     help="hides the map plot, which is only saved")
+parser.add_argument("--expand-R", action="store_true", default=False,
+    help="expands the reward vectors into matrices with distributed rewards")
 parser.add_argument("--train-percent", type=float, default=0.8, metavar="T",
     help="breaks the data into T percent training and rest testing (default=0.8)")
 
@@ -85,7 +87,7 @@ def read_set_data():
     # process data for the NN
     numFeatures = len(F[0]) + 1     # distance included
     F_DIST = torchten(ad.combine_DIST_F(F, DIST, J, numFeatures))
-    numFeatures += 15               # for rewards later
+    numFeatures += 1                # for rewards later
 
     X, Y, R = [], [], []
     # operate on XYR data
@@ -135,14 +137,16 @@ def read_set_data():
     testX = Variable(torchten(testX), requires_grad=False)
     testY = Variable(torchten(testY), requires_grad=False)
 
-    # expand R (trainR and testR)
-    trainR_ext = torchten(num_train, J, 15)
-    testR_ext = torchten(num_test, J, 15)
-    for t in xrange(num_train):
-        trainR_ext[t] = expand_R(trainR[t], R_max=15)
-    for t in xrange(num_test):
-        testR_ext[t] = expand_R(testR[t], R_max=15)
-    trainR, testR = trainR_ext, testR_ext
+    if args.expand_R:
+        # expand R (trainR and testR)
+        trainR_ext = torchten(num_train, J, 15)
+        testR_ext = torchten(num_test, J, 15)
+        for t in xrange(num_train):
+            trainR_ext[t] = expand_R(trainR[t], R_max=15)
+        for t in xrange(num_test):
+            testR_ext[t] = expand_R(testR[t], R_max=15)
+        trainR, testR = trainR_ext, testR_ext
+        numFeatures += 14
 
 def make_rand_data(X_max=100.0, R_max=100.0):
     """
@@ -311,7 +315,9 @@ def build_input(rt):
     """
     Builds the final input for the NN. Joins F_DIST and expanded R
     """
-    return torch.cat([F_DIST, rt.repeat(J, 1, 1)], dim=2)
+    if args.expand_R:
+        return torch.cat([F_DIST, rt.repeat(J, 1, 1)], dim=2)
+    return torch.cat([F_DIST, rt.repeat(J, 1)], dim=2)
 
 # =============================================================================
 # logs and plots
@@ -394,7 +400,7 @@ def plot_predicted_map(file_name, lat_long, point_info, title, plot_offset=0.05)
         z[lo_k_mesh][la_k_mesh] = point_info[k]
 
     map_fig = plt.figure(2)
-    plt.pcolormesh(lo, la, z, cmap=plt.cm.get_cmap('Greys'), vmin=0.0, vmax=z.max())
+    plt.pcolormesh(lo, la, z, cmap=plt.cm.get_cmap('Greys'), vmin=0.0, vmax=0.01)
     plt.axis([lo.min(), lo.max(), la.min(), la.max()])
     plt.colorbar()
     plt.title(title)
@@ -453,6 +459,8 @@ if __name__ == "__main__":
         file_pre_gpu = "gpu, "
     else:
         file_pre_gpu = "cpu, "
+    if args.expand_R:
+        file_pre_gpu = "expandedR, " + file_pre_gpu
 
     # scalar + tensor currently not supported in pytorch
     train_loss_normalizer = (torch.mv(torch.t(trainY - \
@@ -497,7 +505,7 @@ if __name__ == "__main__":
             y_pred = test_res[2] if args.should_test else train_res[2]
         
     # FINISH!!
-    # print(net.w.data.view(-1, numFeatures))
+    print(net.w.data.view(-1, numFeatures))
     # log and plot the results: epoch vs loss
     if args.rand_xyr:
         file_pre = "randXYR_epochs=%d, " % (args.epochs)
@@ -518,3 +526,5 @@ if __name__ == "__main__":
     plot_predicted_map("./stats/map_plots/" + fname + ".png",
             ad.read_lat_long_from_Ffile("./data/loc_feature_with_avicaching_combined.csv", J),
             y_pred, log_name)
+    np.savetxt("./stats/weights/" + fname + ".txt", 
+        net.w.data.view(-1, numFeatures).cpu().numpy(), fmt="%.15f", delimiter=" ")

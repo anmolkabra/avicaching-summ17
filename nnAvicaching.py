@@ -138,7 +138,7 @@ def train(net, optimizer, loss_normalizer, u):
         Pxt = torch.mv(P, trainX[t])
         P_data[t] = Pxt.data
         loss += (u[t] * (trainY[t] - Pxt)).pow(2).sum()
-    # loss += args.lambda_L1 * torch.norm(net.w.data)
+    loss += args.lambda_L1 * torch.norm(net.w.data)
     loss /= loss_normalizer
     
     # backpropagate
@@ -172,7 +172,7 @@ def test(net, loss_normalizer, u):
         Pxt = torch.mv(P, testX[t])
         P_data[t] = Pxt.data
         loss += (u[t] * (testY[t] - Pxt)).pow(2).sum()
-    # loss += args.lambda_L1 * torch.norm(net.w.data)
+    loss += args.lambda_L1 * torch.norm(net.w.data)
     loss /= loss_normalizer
 
     end_time = time.time()

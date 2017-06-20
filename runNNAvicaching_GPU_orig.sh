@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-for e in 200 400 600
+for lambda in 1.0 5.0 10.0
 do
-    for lr in 0.1 0.01
-    do
-        python nnAvicaching.py --lr $lr --epochs $e --save-plot
-    done
+        python nnAvicaching.py --epochs 10000 --hide-loss-plot --hide-map-plot
 done

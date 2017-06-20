@@ -202,27 +202,37 @@ def save_log(file_name, x, y, title):
                     x[i], y[0][i][1], y[0][i][0],
                     y[1][i][1], y[1][i][0]))
 
+def find_idx_of_nearest_el(array, value):
+    return (np.abs(array - value)).argmin()
+
 def plot_predicted_map(file_name, lat_long, point_info):
-    lati = np.sort(lat_long[:, 0])
-    longi = np.sort(lat_long[:, 1])
-    z = np.empty([J, J])
-    lo, la = np.meshgrid(longi, lati)
+    lati = lat_long[:, 0]
+    longi = lat_long[:, 1]
+    lo_min, lo_max = math.floor(min(longi)), math.ceil(max(longi))
+    la_min, la_max = math.floor(min(lati)), math.ceil(max(lati))
+    lo_range = np.linspace(lo_min, lo_max, num=200, retstep=True)
+    la_range = np.linspace(la_min, la_max, num=200, retstep=True)
+    print(lo_range)
+    print(la_range)
+
+    lo, la = np.meshgrid(lo_range[0], la_range[0])
     print(lo)
     print(la)
-    z = np.zeros([J, J])
-    for k in xrange(len(lati)):
+
+    z = np.zeros([200, 200])
+    for k in xrange(J):
         # find lati[k] in the mesh, longi[k] in the mesh
-        lo_k_mesh = np.where(lo[0] == longi[k])[0][0]
-        la_k_mesh = np.where(la[:, 0] == lati[k])[0][0]
+        lo_k_mesh = find_idx_of_nearest_el(lo[0], longi[k])
+        la_k_mesh = find_idx_of_nearest_el(la[:, 0], lati[k])
+        print(lo_k_mesh, la_k_mesh)
         z[lo_k_mesh][la_k_mesh] = point_info[k]
     print(z)
-    z_max = z.max()
-    print(z_max)
-    plt.pcolor(lo, la, z, cmap=plt.cm.get_cmap('Blues'), vmin=0.0, vmax=z_max)
+    plt.pcolor(lo, la, z, cmap=plt.cm.get_cmap('Blues'), vmin=0.0, vmax=z.max())
     plt.axis([lo.min(), lo.max(), la.min(), la.max()])
     plt.colorbar()
     plt.savefig(file_name, bbox_inches="tight", dpi=200)
     plt.show()
+
 def read_set_data():
     """
     Reads and sets up the datasets

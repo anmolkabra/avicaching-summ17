@@ -12,7 +12,9 @@ import avicaching_data as ad
 import torch, torch.nn as nn, torch.nn.functional as torchfun, torch.optim as optim
 from torch.autograd import Variable
 
+# =============================================================================
 # training specs
+# =============================================================================
 parser = argparse.ArgumentParser(description="NN for Avicaching model")
 parser.add_argument("--lr", type=float, default=0.01, metavar="LR",
     help="inputs learning rate of the network (default=0.01)")
@@ -46,11 +48,17 @@ args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 args.should_test = (args.train_percent != 1.0)
 
+# =============================================================================
 # constants
+# =============================================================================
+
 offset_division = 0.000001  # to avoid division by zero
 torchten = torch.FloatTensor
 
+# =============================================================================
 # parameters and data
+# =============================================================================
+
 J, T = args.locations, args.time
 F_DIST, numFeatures = [], 0
 trainX, trainY, trainR, testX, testY, testR = [], [], [], [], [], []
@@ -59,209 +67,9 @@ u_train, u_test = np.array([]), np.array([])
 num_train = int(math.floor(args.train_percent * T))
 num_test = T - num_train
 
-# MyNet class
-class MyNet(nn.Module):
-
-    def __init__(self, J, numFeatures, eta):
-        """
-        Initializes MyNet
-        """
-        super(MyNet, self).__init__()
-        self.J = J
-        self.eta = eta
-        self.w = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
-
-    def forward(self, inp):
-        """
-        Forward in the network; multiply the weights and return the softmax
-        """    
-        # weight -> relu -> softmax
-        inp = torchfun.relu(torch.bmm(inp, self.w))
-        inp = inp.view(-1, self.J)
-
-        # add eta to inp[u][u]
-        # eta_matrix = Variable(self.eta * torch.eye(J).type(torchten))
-        # if args.cuda:
-        # 	 eta_matrix = eta_matrix.cuda()
-        # inp += eta_matrix
-        return torchfun.softmax(inp)
-
-def normalize(x, along_dim=None, using_max=True):
-    """
-    Normalizes x by dividing each element by the maximum if using_max is True and by the sum
-    if using_max is False. Finding the maximum/sum is specified by along_dim. If along_dim is an int, the max is 
-    calculated along that dimension, if it's None, whole x's max/sum is calculated
-    """
-    if using_max:
-    	return x / (np.amax(x, axis=along_dim) + offset_division)
-    else:
-    	return x / (np.sum(x, axis=along_dim, keepdims=True) + offset_division)
-
-def build_input(rt):
-    """
-    Builds the final input for the NN. Joins F_DIST and expanded R
-    """
-    return torch.cat([F_DIST, rt.repeat(J, 1, 1)], dim=2)
-
-def expand_R(rt, R_max=15):
-    """
-    Expands R into a matrix with each R[u] having R_max elements,
-    where the first R[u] columns are 1's and rest 0's
-    """
-    newrt = torchten(J, 15)
-    if args.cuda:
-        newrt = newrt.cuda()
-    for u in xrange(J):
-        r = int(rt[u])
-        newrt[u] = torch.cat([torch.ones(r), torch.zeros(R_max - r)], dim=0)
-    return newrt
-
-def train(net, optimizer, loss_normalizer, u):
-    """
-    Trains the NN using MyNet
-    """
-    loss = 0
-    P_data = torch.zeros(num_train, J)
-    start_time = time.time()
-    
-    for t in xrange(num_train):
-        # build the input by appending trainR[t] to F_DIST
-        inp = build_input(trainR[t])
-        if args.cuda:
-            inp = inp.cuda()
-        inp = Variable(inp)
-    
-        # feed in data
-        P = net(inp).t()    # P is now weighted -> softmax
-    
-        # calculate loss
-        Pxt = torch.mv(P, trainX[t])
-        P_data[t] = Pxt.data
-        loss += (u[t] * (trainY[t] - Pxt)).pow(2).sum()
-    loss += args.lambda_L1 * torch.norm(net.w.data)
-    loss /= loss_normalizer
-    
-    # backpropagate
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
-
-    end_time = time.time()
-    return (end_time - start_time, loss.data[0], 
-        torch.mean(P_data, dim=0).squeeze().cpu().numpy())
-
-def test(net, loss_normalizer, u):
-    """
-    Test the network using MyNet
-    """
-    loss = 0
-    P_data = torch.zeros(num_train, J)
-    start_time = time.time()
-    
-    for t in xrange(num_test):
-        # build the input by appending testR[t]
-        inp = build_input(testR[t])
-        if args.cuda:
-            inp = inp.cuda()
-        inp = Variable(inp)
-        
-        # feed in data
-        P = net(inp).t()    # P is now weighted -> softmax
-        
-        # calculate loss
-        Pxt = torch.mv(P, testX[t])
-        P_data[t] = Pxt.data
-        loss += (u[t] * (testY[t] - Pxt)).pow(2).sum()
-    loss += args.lambda_L1 * torch.norm(net.w.data)
-    loss /= loss_normalizer
-
-    end_time = time.time()
-    return (end_time - start_time, loss.data[0], 
-        torch.mean(P_data, dim=0).squeeze().cpu().numpy())
-
-def save_plot(file_name, x, y, xlabel, ylabel, title):
-    """
-    Saves and shows the loss plot of train and test periods
-    """
-    # get the losses from data
-    train_losses = [i for j in y[0] for i in j][1::2]
-    test_losses = [i for j in y[1] for i in j][1::2]
-    
-    # plot details
-    plt.figure(1)
-    train_label, = plt.plot(x, train_losses, "r-", label="Train Loss") 
-    plt.ylabel(ylabel)
-    plt.grid(True, which="major", axis="both", color="k", ls="dotted", lw="1.0")
-    plt.grid(True, which="minor", axis="y", color="k", ls="dotted", lw="0.5")
-    plt.minorticks_on()
-    plt.xlabel(xlabel)
-
-    if args.should_test:
-        test_label, = plt.plot(x, test_losses, "b-", label="Test Loss")
-        plt.legend(handles=[train_label, test_label])
-    else:
-        plt.legend(handles=[train_label])
-    
-    plt.title(title)
-    plt.savefig(file_name, bbox_inches="tight", dpi=200)
-    if not args.hide_loss_plot:
-        plt.show()
-
-def save_log(file_name, x, y, title):
-    """
-    Saves the log of train and test periods to a file
-    """
-    with open(file_name, "wt") as f:
-        f.write(title + "\n")
-        for i in range(0, len(x), args.log_interval):
-            f.write("epoch = %d\t\ttrainloss = %.4f, traintime = %.4f" % (
-                x[i], y[0][i][1], y[0][i][0]))
-            if args.should_test:
-                f.write("\t\ttestloss = %.4f, testtime = %.4f" % (
-                    y[1][i][1], y[1][i][0]))
-            f.write("\n")
-
-def find_idx_of_nearest_el(array, value):
-    """
-    Helper function to plot_predicted_map(). Finds the index of the element in
-    array closest to value
-    """
-    return (np.abs(array - value)).argmin()
-
-def plot_predicted_map(file_name, lat_long, point_info, title, plot_offset=0.05):
-    """
-    Plots the a scatter plot of point_info on the map specified by the lats
-    and longs and saves to a file
-    """
-    # find the dimensions of the plot
-    lati = lat_long[:, 0]
-    longi = lat_long[:, 1]
-    lo_min, lo_max = min(longi) - plot_offset, max(longi) + plot_offset
-    la_min, la_max = min(lati) - plot_offset, max(lati) + plot_offset
-    plot_width = max(lo_max - lo_min, la_max - la_min)
-    lo_max = lo_min + plot_width
-    la_max = la_min + plot_width
-
-    lo_range = np.linspace(lo_min, lo_max, num=J + 20, retstep=True)
-    la_range = np.linspace(la_min, la_max, num=J + 20, retstep=True)
-
-    lo, la = np.meshgrid(lo_range[0], la_range[0])
-
-    z = np.zeros([J + 20, J + 20])
-    for k in xrange(J):
-        # find lati[k] in the mesh, longi[k] in the mesh
-        lo_k_mesh = find_idx_of_nearest_el(lo[0], longi[k])
-        la_k_mesh = find_idx_of_nearest_el(la[:, 0], lati[k])
-        z[lo_k_mesh][la_k_mesh] = point_info[k]
-
-    plt.figure(2)
-    plt.pcolor(lo, la, z, cmap=plt.cm.get_cmap('Blues'), vmin=0.0, vmax=z.max())
-    plt.axis([lo.min(), lo.max(), la.min(), la.max()])
-    plt.colorbar()
-    plt.title(title)
-    plt.savefig(file_name, bbox_inches="tight", dpi=200)
-    if not args.hide_map_plot:
-        plt.show()
+# =============================================================================
+# data input functions
+# =============================================================================
 
 def read_set_data():
     """
@@ -398,9 +206,233 @@ def test_given_data(X, Y, R, w, J, T, u):
     loss /= loss_normalizer
     print("Loss = %f" % loss.data[0])
 
+# =============================================================================
+# MyNet class
+# =============================================================================
+
+class MyNet(nn.Module):
+
+    def __init__(self, J, numFeatures, eta):
+        """
+        Initializes MyNet
+        """
+        super(MyNet, self).__init__()
+        self.J = J
+        self.eta = eta
+        self.w = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
+
+    def forward(self, inp):
+        """
+        Forward in the network; multiply the weights and return the softmax
+        """    
+        # weight -> relu -> softmax
+        inp = torchfun.relu(torch.bmm(inp, self.w))
+        inp = inp.view(-1, self.J)
+
+        # add eta to inp[u][u]
+        # eta_matrix = Variable(self.eta * torch.eye(J).type(torchten))
+        # if args.cuda:
+        # 	 eta_matrix = eta_matrix.cuda()
+        # inp += eta_matrix
+        return torchfun.softmax(inp)
+
+# =============================================================================
+# training and testing routines
+# =============================================================================
+
+def train(net, optimizer, loss_normalizer, u):
+    """
+    Trains the NN using MyNet
+    """
+    loss = 0
+    P_data = torch.zeros(num_train, J)
+    start_time = time.time()
+    
+    for t in xrange(num_train):
+        # build the input by appending trainR[t] to F_DIST
+        inp = build_input(trainR[t])
+        if args.cuda:
+            inp = inp.cuda()
+        inp = Variable(inp)
+    
+        # feed in data
+        P = net(inp).t()    # P is now weighted -> softmax
+    
+        # calculate loss
+        Pxt = torch.mv(P, trainX[t])
+        P_data[t] = Pxt.data
+        loss += (u[t] * (trainY[t] - Pxt)).pow(2).sum()
+    # loss += args.lambda_L1 * torch.norm(net.w.data)
+    loss /= loss_normalizer
+    
+    # backpropagate
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+    end_time = time.time()
+    return (end_time - start_time, loss.data[0], 
+        torch.mean(P_data, dim=0).squeeze().cpu().numpy())
+
+def test(net, loss_normalizer, u):
+    """
+    Test the network using MyNet
+    """
+    loss = 0
+    P_data = torch.zeros(num_train, J)
+    start_time = time.time()
+    
+    for t in xrange(num_test):
+        # build the input by appending testR[t]
+        inp = build_input(testR[t])
+        if args.cuda:
+            inp = inp.cuda()
+        inp = Variable(inp)
+        
+        # feed in data
+        P = net(inp).t()    # P is now weighted -> softmax
+        
+        # calculate loss
+        Pxt = torch.mv(P, testX[t])
+        P_data[t] = Pxt.data
+        loss += (u[t] * (testY[t] - Pxt)).pow(2).sum()
+    # loss += args.lambda_L1 * torch.norm(net.w.data)
+    loss /= loss_normalizer
+
+    end_time = time.time()
+    return (end_time - start_time, loss.data[0], 
+        torch.mean(P_data, dim=0).squeeze().cpu().numpy())
+
+# =============================================================================
+# utility functions for training and testing routines
+# =============================================================================
+
+def build_input(rt):
+    """
+    Builds the final input for the NN. Joins F_DIST and expanded R
+    """
+    return torch.cat([F_DIST, rt.repeat(J, 1, 1)], dim=2)
+
+# =============================================================================
+# logs and plots
+# =============================================================================
+
+def save_plot(file_name, x, y, xlabel, ylabel, title):
+    """
+    Saves and shows the loss plot of train and test periods
+    """
+    # get the losses from data
+    train_losses = [i for j in y[0] for i in j][1::2]
+    test_losses = [i for j in y[1] for i in j][1::2]
+    
+    # plot details
+    plt.figure(1)
+    train_label, = plt.plot(x, train_losses, "r-", label="Train Loss") 
+    plt.ylabel(ylabel)
+    plt.grid(True, which="major", axis="both", color="k", ls="dotted", lw="1.0")
+    plt.grid(True, which="minor", axis="y", color="k", ls="dotted", lw="0.5")
+    plt.minorticks_on()
+    plt.xlabel(xlabel)
+
+    if args.should_test:
+        test_label, = plt.plot(x, test_losses, "b-", label="Test Loss")
+        plt.legend(handles=[train_label, test_label])
+    else:
+        plt.legend(handles=[train_label])
+    
+    plt.title(title)
+    plt.savefig(file_name, bbox_inches="tight", dpi=200)
+    if not args.hide_loss_plot:
+        plt.show()
+
+def save_log(file_name, x, y, title):
+    """
+    Saves the log of train and test periods to a file
+    """
+    with open(file_name, "wt") as f:
+        f.write(title + "\n")
+        for i in range(0, len(x), args.log_interval):
+            f.write("epoch = %d\t\ttrainloss = %.4f, traintime = %.4f" % (
+                x[i], y[0][i][1], y[0][i][0]))
+            if args.should_test:
+                f.write("\t\ttestloss = %.4f, testtime = %.4f" % (
+                    y[1][i][1], y[1][i][0]))
+            f.write("\n")
+
+def find_idx_of_nearest_el(array, value):
+    """
+    Helper function to plot_predicted_map(). Finds the index of the element in
+    array closest to value
+    """
+    return (np.abs(array - value)).argmin()
+
+def plot_predicted_map(file_name, lat_long, point_info, title, plot_offset=0.05):
+    """
+    Plots the a scatter plot of point_info on the map specified by the lats
+    and longs and saves to a file
+    """
+    # find the dimensions of the plot
+    lati = lat_long[:, 0]
+    longi = lat_long[:, 1]
+    lo_min, lo_max = min(longi) - plot_offset, max(longi) + plot_offset
+    la_min, la_max = min(lati) - plot_offset, max(lati) + plot_offset
+    plot_width = max(lo_max - lo_min, la_max - la_min)
+    lo_max = lo_min + plot_width
+    la_max = la_min + plot_width
+
+    lo_range = np.linspace(lo_min, lo_max, num=J + 20, retstep=True)
+    la_range = np.linspace(la_min, la_max, num=J + 20, retstep=True)
+
+    lo, la = np.meshgrid(lo_range[0], la_range[0])
+
+    z = np.zeros([J + 20, J + 20])
+    for k in xrange(J):
+        # find lati[k] in the mesh, longi[k] in the mesh
+        lo_k_mesh = find_idx_of_nearest_el(lo[0], longi[k])
+        la_k_mesh = find_idx_of_nearest_el(la[:, 0], lati[k])
+        z[lo_k_mesh][la_k_mesh] = point_info[k]
+
+    plt.figure(2)
+    plt.pcolor(lo, la, z, cmap=plt.cm.get_cmap('Blues'), vmin=0.0, vmax=z.max())
+    plt.axis([lo.min(), lo.max(), la.min(), la.max()])
+    plt.colorbar()
+    plt.title(title)
+    plt.savefig(file_name, bbox_inches="tight", dpi=200)
+    if not args.hide_map_plot:
+        plt.show()
+
+# =============================================================================
+# misc utility functions
+# =============================================================================
+
+def normalize(x, along_dim=None, using_max=True):
+    """
+    Normalizes x by dividing each element by the maximum if using_max is True and by the sum
+    if using_max is False. Finding the maximum/sum is specified by along_dim. If along_dim is an int, the max is 
+    calculated along that dimension, if it's None, whole x's max/sum is calculated
+    """
+    if using_max:
+        return x / (np.amax(x, axis=along_dim) + offset_division)
+    else:
+        return x / (np.sum(x, axis=along_dim, keepdims=True) + offset_division)
+
+def expand_R(rt, R_max=15):
+    """
+    Expands R into a matrix with each R[u] having R_max elements,
+    where the first R[u] columns are 1's and rest 0's
+    """
+    newrt = torchten(J, 15)
+    if args.cuda:
+        newrt = newrt.cuda()
+    for u in xrange(J):
+        r = int(rt[u])
+        newrt[u] = torch.cat([torch.ones(r), torch.zeros(R_max - r)], dim=0)
+    return newrt
+
 # ==========================================================
-# MAIN PROGRAM
+# main program
 # ==========================================================
+
 if __name__ == "__main__":
     # READY!!
     read_set_data()
@@ -423,40 +455,7 @@ if __name__ == "__main__":
     # scalar + tensor currently not supported in pytorch
     train_loss_normalizer = (torch.mv(torch.t(trainY - \
         torch.mean(trainY).expand_as(trainY)).data, u_train)).pow(2).sum()
-    #
-    # if not args.should_test:
-    #     # only training
-    #     data = []
-    #     # weights_before = net.w.data.view(-1, numFeatures).cpu().numpy()
-        
-    #     for e in xrange(1, args.epochs + 1):
-    #         # train
-    #         train_res = train(net, optimizer, train_loss_normalizer, u_train)
-    #         if e % 200 == 0:
-    #             print("e= %d,  loss=%.8f" % (e, train_res[1]))
-    #         data.append([e, train_res[1]])
-    #         if e == args.epochs:
-    #             # NN's final prediction
-    #             y_pred = train_res[2]
-    #     print(y_pred)
-        
-    #     data = np.array(data)
-    #     # weights = net.w.data.view(-1, numFeatures).cpu().numpy()
-        
-    #     # save data
-    #     log_name = "tp=%.1f, lr=%.3e, mom=%.3f, eta=%.3f, lam=%.3f" % (
-    #         args.train_percent, args.lr, args.momentum, args.eta, args.lambda_L1)
-        
 
-    #     # with open("./stats/recovering_weights/" + fname + ".txt", "w") as f:
-    #     #     # np.savetxt(f, weights_before, fmt="%.15f")
-    #     #     np.savetxt(f, data, fmt="%.8f")
-    #     #     # np.savetxt(f, weights, fmt="%.15f")
-    #     plot_predicted_map("./stats/map_plots/w_" + fname + ".png",
-    #         ad.read_lat_long_from_Ffile("./data/loc_feature_with_avicaching_combined.csv"),
-    #         y_pred)
-    #     sys.exit(0)
-    #
     if args.should_test:
         test_loss_normalizer = (torch.mv(torch.t(testY - \
             torch.mean(testY).expand_as(testY)).data, u_test)).pow(2).sum()
@@ -503,8 +502,8 @@ if __name__ == "__main__":
     else:
         file_pre = "origXYR_epochs=%d, " % (args.epochs)
 
-    log_name = "train=%3.0f%%, lr=%.3e, mom=%.3f, eta=%.3f, lam=%.3f, time=%.4f sec" % (
-        args.train_percent * 100, args.lr, args.momentum, args.eta, args.lambda_L1, total_time)
+    log_name = "train=%3.0f%%, time=%.4f sec" % (
+        args.train_percent * 100, total_time)
     
     epoch_data = np.arange(1, args.epochs + 1)
     fname = file_pre_gpu + file_pre + log_name

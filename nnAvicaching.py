@@ -188,7 +188,7 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
     test_losses = [i for j in y[1] for i in j][1::2]
     
     # plot details
-    plt.figure(1)
+    loss_fig = plt.figure(1)
     train_label, = plt.plot(x, train_losses, "r-", label="Train Loss") 
     plt.ylabel(ylabel)
     plt.grid(True, which="major", axis="both", color="k", ls="dotted", lw="1.0")
@@ -203,9 +203,10 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
         plt.legend(handles=[train_label])
     
     plt.title(title)
-    plt.savefig(file_name, bbox_inches="tight", dpi=200)
+    loss_fig.savefig(file_name, bbox_inches="tight", dpi=200)
     if not args.hide_loss_plot:
         plt.show()
+    plt.close()
 
 def save_log(file_name, x, y, title):
     """
@@ -242,26 +243,27 @@ def plot_predicted_map(file_name, lat_long, point_info, title, plot_offset=0.05)
     lo_max = lo_min + plot_width
     la_max = la_min + plot_width
 
-    lo_range = np.linspace(lo_min, lo_max, num=J + 20, retstep=True)
-    la_range = np.linspace(la_min, la_max, num=J + 20, retstep=True)
+    lo_range = np.linspace(lo_min, lo_max, num=J + 10, retstep=True)
+    la_range = np.linspace(la_min, la_max, num=J + 10, retstep=True)
 
     lo, la = np.meshgrid(lo_range[0], la_range[0])
 
-    z = np.zeros([J + 20, J + 20])
+    z = np.zeros([J + 10, J + 10])
     for k in xrange(J):
         # find lati[k] in the mesh, longi[k] in the mesh
         lo_k_mesh = find_idx_of_nearest_el(lo[0], longi[k])
         la_k_mesh = find_idx_of_nearest_el(la[:, 0], lati[k])
         z[lo_k_mesh][la_k_mesh] = point_info[k]
 
-    plt.figure(2)
-    plt.pcolor(lo, la, z, cmap=plt.cm.get_cmap('Blues'), vmin=0.0, vmax=z.max())
+    map_fig = plt.figure(2)
+    plt.pcolormesh(lo, la, z, cmap=plt.cm.get_cmap('Greys'), vmin=0.0, vmax=z.max())
     plt.axis([lo.min(), lo.max(), la.min(), la.max()])
     plt.colorbar()
     plt.title(title)
-    plt.savefig(file_name, bbox_inches="tight", dpi=200)
+    map_fig.savefig(file_name, bbox_inches="tight", dpi=200)
     if not args.hide_map_plot:
         plt.show()
+    plt.close()
 
 def read_set_data():
     """

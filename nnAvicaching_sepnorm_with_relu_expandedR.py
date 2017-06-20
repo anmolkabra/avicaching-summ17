@@ -34,14 +34,17 @@ parser.add_argument("--rand-xyr", action="store_true", default=False,
     help="uses random xyr data")
 parser.add_argument("--log-interval", type=int, default=1, metavar="I",
     help="prints training information at I epoch intervals (default=1)")
-parser.add_argument("--save-plot", action="store_true", default=False,
-    help="saves the plot instead of opening it")
+parser.add_argument("--hide-loss-plot", action="store_true", default=False,
+    help="hides the loss plot, which is only saved")
+parser.add_argument("--hide-map-plot", action="store_true", default=False,
+    help="hides the map plot, which is only saved")
 parser.add_argument("--train-percent", type=float, default=0.8, metavar="T",
     help="breaks the data into T percent training and rest testing (default=0.8)")
 
 args = parser.parse_args()
-# assigning cuda check to a single variable
+# assigning cuda check and test check to single variables
 args.cuda = not args.no_cuda and torch.cuda.is_available()
+args.should_test = (args.train_percent != 1.0)
 
 # constants
 offset_division = 0.000001  # to avoid division by zero
@@ -136,7 +139,7 @@ def train(net, optimizer, loss_normalizer, u):
         P_data[t] = Pxt.data
         loss += (u[t] * (trainY[t] - Pxt)).pow(2).sum()
     # loss += args.lambda_L1 * torch.norm(net.w.data)
-    loss /= loss_normalizer.data[0]
+    loss /= loss_normalizer
     
     # backpropagate
     optimizer.zero_grad()
@@ -144,7 +147,6 @@ def train(net, optimizer, loss_normalizer, u):
     optimizer.step()
 
     end_time = time.time()
-    
     return (end_time - start_time, loss.data[0], 
         torch.mean(P_data, dim=0).squeeze().cpu().numpy())
 
@@ -153,6 +155,7 @@ def test(net, loss_normalizer, u):
     Test the network using MyNet
     """
     loss = 0
+    P_data = torch.zeros(num_train, J)
     start_time = time.time()
     
     for t in xrange(num_test):
@@ -167,71 +170,98 @@ def test(net, loss_normalizer, u):
         
         # calculate loss
         Pxt = torch.mv(P, testX[t])
-        loss += ((testY[t] - Pxt).pow(2).sum() * u[t])
+        P_data[t] = Pxt.data
+        loss += (u[t] * (testY[t] - Pxt)).pow(2).sum()
     # loss += args.lambda_L1 * torch.norm(net.w.data)
-    loss /= loss_normalizer.data[0]
+    loss /= loss_normalizer
 
     end_time = time.time()
-    return (end_time - start_time, loss.data[0])
+    return (end_time - start_time, loss.data[0], 
+        torch.mean(P_data, dim=0).squeeze().cpu().numpy())
 
 def save_plot(file_name, x, y, xlabel, ylabel, title):
+    """
+    Saves and shows the loss plot of train and test periods
+    """
     # get the losses from data
     train_losses = [i for j in y[0] for i in j][1::2]
     test_losses = [i for j in y[1] for i in j][1::2]
     
     # plot details
+    plt.figure(1)
     train_label, = plt.plot(x, train_losses, "r-", label="Train Loss") 
-    test_label, = plt.plot(x, test_losses, "b-", label="Test Loss")
     plt.ylabel(ylabel)
     plt.grid(True, which="major", axis="both", color="k", ls="dotted", lw="1.0")
     plt.grid(True, which="minor", axis="y", color="k", ls="dotted", lw="0.5")
     plt.minorticks_on()
     plt.xlabel(xlabel)
-    plt.legend(handles=[train_label, test_label])
-    plt.title(title)
-    if args.save_plot:
-        plt.savefig(file_name, bbox_inches="tight", dpi=200)
+
+    if args.should_test:
+        test_label, = plt.plot(x, test_losses, "b-", label="Test Loss")
+        plt.legend(handles=[train_label, test_label])
     else:
+        plt.legend(handles=[train_label])
+    
+    plt.title(title)
+    plt.savefig(file_name, bbox_inches="tight", dpi=200)
+    if not args.hide_loss_plot:
         plt.show()
 
 def save_log(file_name, x, y, title):
+    """
+    Saves the log of train and test periods to a file
+    """
     with open(file_name, "wt") as f:
         f.write(title + "\n")
         for i in range(0, len(x), args.log_interval):
-            f.write("epoch = %d\t\ttrainloss = %.8f, traintime = %.4f\t\ttestloss = %.8f, testtime = %.4f\n" % (
-                    x[i], y[0][i][1], y[0][i][0],
+            f.write("epoch = %d\t\ttrainloss = %.4f, traintime = %.4f" % (
+                x[i], y[0][i][1], y[0][i][0]))
+            if args.should_test:
+                f.write("\t\ttestloss = %.4f, testtime = %.4f" % (
                     y[1][i][1], y[1][i][0]))
+            f.write("\n")
 
 def find_idx_of_nearest_el(array, value):
+    """
+    Helper function to plot_predicted_map(). Finds the index of the element in
+    array closest to value
+    """
     return (np.abs(array - value)).argmin()
 
-def plot_predicted_map(file_name, lat_long, point_info):
+def plot_predicted_map(file_name, lat_long, point_info, title, plot_offset=0.05):
+    """
+    Plots the a scatter plot of point_info on the map specified by the lats
+    and longs and saves to a file
+    """
+    # find the dimensions of the plot
     lati = lat_long[:, 0]
     longi = lat_long[:, 1]
-    lo_min, lo_max = math.floor(min(longi)), math.ceil(max(longi))
-    la_min, la_max = math.floor(min(lati)), math.ceil(max(lati))
-    lo_range = np.linspace(lo_min, lo_max, num=200, retstep=True)
-    la_range = np.linspace(la_min, la_max, num=200, retstep=True)
-    print(lo_range)
-    print(la_range)
+    lo_min, lo_max = min(longi) - plot_offset, max(longi) + plot_offset
+    la_min, la_max = min(lati) - plot_offset, max(lati) + plot_offset
+    plot_width = max(lo_max - lo_min, la_max - la_min)
+    lo_max = lo_min + plot_width
+    la_max = la_min + plot_width
+
+    lo_range = np.linspace(lo_min, lo_max, num=J + 20, retstep=True)
+    la_range = np.linspace(la_min, la_max, num=J + 20, retstep=True)
 
     lo, la = np.meshgrid(lo_range[0], la_range[0])
-    print(lo)
-    print(la)
 
-    z = np.zeros([200, 200])
+    z = np.zeros([J + 20, J + 20])
     for k in xrange(J):
         # find lati[k] in the mesh, longi[k] in the mesh
         lo_k_mesh = find_idx_of_nearest_el(lo[0], longi[k])
         la_k_mesh = find_idx_of_nearest_el(la[:, 0], lati[k])
-        print(lo_k_mesh, la_k_mesh)
         z[lo_k_mesh][la_k_mesh] = point_info[k]
-    print(z)
+
+    plt.figure(2)
     plt.pcolor(lo, la, z, cmap=plt.cm.get_cmap('Blues'), vmin=0.0, vmax=z.max())
     plt.axis([lo.min(), lo.max(), la.min(), la.max()])
     plt.colorbar()
+    plt.title(title)
     plt.savefig(file_name, bbox_inches="tight", dpi=200)
-    plt.show()
+    if not args.hide_map_plot:
+        plt.show()
 
 def read_set_data():
     """
@@ -240,7 +270,7 @@ def read_set_data():
     global trainX, trainY, trainR, testX, testY, testR, F_DIST, numFeatures
     global u_train, u_test
     # read f and dist datasets from file, operate on them
-    F = ad.read_F_file("./data/loc_feature_with_avicaching_combined.csv")
+    F = ad.read_F_file("./data/loc_feature_with_avicaching_combined.csv", J)
     DIST = ad.read_dist_file("./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
     F, DIST = normalize(F, along_dim=0, using_max=True), normalize(DIST, using_max=True)  # normalize using max
     
@@ -269,14 +299,13 @@ def read_set_data():
     else:
         X, Y, R = ad.read_XYR_file("./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
     
-    u = np.sum(Y, axis=1) 
-    print(u, u.size)
+    u = np.sum(Y, axis=1)   # u weights for calculating losses
 
     # normalize X, Y using sum along rows
     X, Y = normalize(X, along_dim=1, using_max=False), normalize(Y, along_dim=1, using_max=False)
 
     # split the XYR data
-    if args.train_percent != 1.0:
+    if args.should_test:
         # training and testing, shuffle and split the data
         shuffle_order = np.random.permutation(T)
         trainX, testX = ad.split_along_row(X[shuffle_order], num_train)
@@ -284,7 +313,7 @@ def read_set_data():
         trainR, testR = ad.split_along_row(R[shuffle_order], num_train)
         u_train, u_test = ad.split_along_row(u[shuffle_order], num_train)   
     else:
-        # no testing, split the data only to be merged later (bad code)
+        # no testing, split the data -> test Matrices are empty
         trainX, testX = ad.split_along_row(X, num_train)
         trainY, testY = ad.split_along_row(Y, num_train)
         trainR, testR = ad.split_along_row(R, num_train)
@@ -306,10 +335,6 @@ def read_set_data():
     for t in xrange(num_test):
         testR_ext[t] = expand_R(testR[t], R_max=15)
     trainR, testR = trainR_ext, testR_ext
-
-    # print(trainX)
-    # print(trainY)
-    # print(trainR)
 
 def make_rand_data(X_max=100.0, R_max=100.0):
     """
@@ -342,15 +367,15 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         Y[t] = torch.mv(P, X[t])
 
     # for verification of random data, save weights ---------------------------
-    w2_matrix = w2.data.view(-1, numFeatures).numpy()
-    np.savetxt("./data/randXYR_weights.txt", w2_matrix, fmt="%.15f", delimiter=" ")
+    w_matrix = w.data.view(-1, numFeatures).numpy()
+    np.savetxt("./data/randXYR_weights.txt", w_matrix, fmt="%.15f", delimiter=" ")
     # -------------------------------------------------------------------------
 
     return (X.data.numpy(), Y.data.numpy(), R.numpy())
 
 def test_given_data(X, Y, R, w, J, T, u):
-    print(w.data.view(-1, numFeatures))
-    loss_normalizer = (Y - torch.mean(Y).expand_as(Y)).pow(2).sum().data[0]
+    loss_normalizer = (torch.mv(torch.t(Y - \
+        torch.mean(Y).expand_as(Y)).data, u)).pow(2).sum()
     loss = 0
 
     for t in xrange(T):
@@ -396,34 +421,45 @@ if __name__ == "__main__":
         file_pre_gpu = "cpu, "
 
     # scalar + tensor currently not supported in pytorch
-    train_loss_normalizer = (trainY - torch.mean(trainY).expand_as(trainY)).pow(2).sum()
+    train_loss_normalizer = (torch.mv(torch.t(trainY - \
+        torch.mean(trainY).expand_as(trainY)).data, u_train)).pow(2).sum()
     #
-    if args.train_percent == 1.0:
-        # verifying that new random weights converge to stored ones
-        data = []
-        # weights_before = net.w.data.view(-1, numFeatures).cpu().numpy()
-        for e in xrange(1, args.epochs + 1):
-            train_res = train(net, optimizer, train_loss_normalizer, u_train)
-            if e % 200 == 0:
-                print("e= %d,  loss=%.8f" % (e, train_res[1]))
-            data.append([e, train_res[1]])
-            if e == args.epochs:
-                y_pred = train_res[2]
-        print(y_pred)
-        data = np.array(data)
-        # weights = net.w.data.view(-1, numFeatures).cpu().numpy()
-        curr_time = time.localtime()
-        fname = str(curr_time.tm_year) + str(curr_time.tm_mon) + str(curr_time.tm_mday) + "_" + str(time.time())
-        with open("./stats/recovering_weights/w_" + fname + ".txt", "w") as f:
-            # np.savetxt(f, weights_before, fmt="%.15f")
-            np.savetxt(f, data, fmt="%.8f")
-            # np.savetxt(f, weights, fmt="%.15f")
-        plot_predicted_map("./stats/map_plots/w_" + fname + ".png",
-            ad.read_lat_long_from_Ffile("./data/loc_feature_with_avicaching_combined.csv"),
-            y_pred)
-        sys.exit(0)
+    # if not args.should_test:
+    #     # only training
+    #     data = []
+    #     # weights_before = net.w.data.view(-1, numFeatures).cpu().numpy()
+        
+    #     for e in xrange(1, args.epochs + 1):
+    #         # train
+    #         train_res = train(net, optimizer, train_loss_normalizer, u_train)
+    #         if e % 200 == 0:
+    #             print("e= %d,  loss=%.8f" % (e, train_res[1]))
+    #         data.append([e, train_res[1]])
+    #         if e == args.epochs:
+    #             # NN's final prediction
+    #             y_pred = train_res[2]
+    #     print(y_pred)
+        
+    #     data = np.array(data)
+    #     # weights = net.w.data.view(-1, numFeatures).cpu().numpy()
+        
+    #     # save data
+    #     log_name = "tp=%.1f, lr=%.3e, mom=%.3f, eta=%.3f, lam=%.3f" % (
+    #         args.train_percent, args.lr, args.momentum, args.eta, args.lambda_L1)
+        
+
+    #     # with open("./stats/recovering_weights/" + fname + ".txt", "w") as f:
+    #     #     # np.savetxt(f, weights_before, fmt="%.15f")
+    #     #     np.savetxt(f, data, fmt="%.8f")
+    #     #     # np.savetxt(f, weights, fmt="%.15f")
+    #     plot_predicted_map("./stats/map_plots/w_" + fname + ".png",
+    #         ad.read_lat_long_from_Ffile("./data/loc_feature_with_avicaching_combined.csv"),
+    #         y_pred)
+    #     sys.exit(0)
     #
-    test_loss_normalizer = (testY - torch.mean(testY).expand_as(testY)).pow(2).sum()
+    if args.should_test:
+        test_loss_normalizer = (torch.mv(torch.t(testY - \
+            torch.mean(testY).expand_as(testY)).data, u_test)).pow(2).sum()
     
     # GO!!
     train_time_loss, test_time_loss, total_time = [], [], 0.0
@@ -438,13 +474,26 @@ if __name__ == "__main__":
     for e in xrange(1, args.epochs + 1):
         # train
         train_res = train(net, optimizer, train_loss_normalizer, u_train)
-        train_time_loss.append(train_res)
-        
-        # test
-        test_res = test(net, test_loss_normalizer, u_test)
-        test_time_loss.append(test_res)
-        
-        total_time += (train_res[0] + test_res[0])
+        train_time_loss.append(train_res[0:2])
+        total_time += (train_res[0])
+
+        # print results
+        if e % 20 == 0:
+            print("e= %2d, loss=%.8f" % (e, train_res[1]), end="")
+
+        if args.should_test:
+            # test
+            test_res = test(net, test_loss_normalizer, u_test)
+            test_time_loss.append(test_res[0:2])
+            total_time += test_res[0]
+            if e % 20 == 0:
+                print(", testloss=%.8f\n" % (test_res[1]), end="")
+        else:
+            print("\n", end="")
+
+        if e == args.epochs:
+            # NN's final prediction
+            y_pred = test_res[2] if args.should_test else train_res[2]
         
     # FINISH!!
     # print(net.w.data.view(-1, numFeatures))
@@ -454,13 +503,17 @@ if __name__ == "__main__":
     else:
         file_pre = "origXYR_epochs=%d, " % (args.epochs)
 
-    log_name = "lr=%.3e, mom=%.3f, eta=%.3f, lam=%.3f, time=%.4f sec" % (
-        args.lr, args.momentum, args.eta, args.lambda_L1, total_time)
+    log_name = "train=%3.0f%%, lr=%.3e, mom=%.3f, eta=%.3f, lam=%.3f, time=%.4f sec" % (
+        args.train_percent * 100, args.lr, args.momentum, args.eta, args.lambda_L1, total_time)
     
     epoch_data = np.arange(1, args.epochs + 1)
-
-    save_plot("./stats/plots/" + file_pre_gpu + file_pre + log_name + ".png",
-        epoch_data, [train_time_loss, test_time_loss],
-        "epoch", "loss", log_name)
-    save_log("./stats/logs/" + file_pre_gpu + file_pre + log_name + ".txt",
-        epoch_data, [train_time_loss, test_time_loss], log_name)
+    fname = file_pre_gpu + file_pre + log_name
+    
+    # save amd plot data
+    save_plot("./stats/plots/" + fname + ".png", epoch_data, 
+        [train_time_loss, test_time_loss], "epoch", "loss", log_name)
+    save_log("./stats/logs/" + fname + ".txt", epoch_data, 
+        [train_time_loss, test_time_loss], log_name)
+    plot_predicted_map("./stats/map_plots/" + fname + ".png",
+            ad.read_lat_long_from_Ffile("./data/loc_feature_with_avicaching_combined.csv", J),
+            y_pred, log_name)

@@ -28,11 +28,11 @@ def read_XYR_file(file_name, locs, T):
                     R = np.vstack([R, line_vec])
     return (X, Y, R)
 
-def read_F_file(file_name):
+def read_F_file(file_name, locs):
     F = []
     with open(file_name, "r") as fufile:
         next(fufile)        # skip header row of fufile
-        for idx, line in enumerate(fufile):
+        for idx, line in zip(xrange(locs), fufile):
             line_vec = np.array(map(float, line.split(",")[:-3]))  # ignore last 3 cols
             if idx == 0:
                 # F init
@@ -99,11 +99,11 @@ def read_weights_file(file_name, locs):
                 w = np.vstack([w, line_vec])
     return w
 
-def read_lat_long_from_Ffile(file_name, lat_col=33, long_col=34):
+def read_lat_long_from_Ffile(file_name, locs, lat_col=33, long_col=34):
     lat_long = []
     with open(file_name, "r") as fufile:
         next(fufile)        # skip header row of fufile
-        for idx, line in enumerate(fufile):
+        for idx, line in zip(xrange(locs), fufile):
             line_vec = np.array(map(float, line.split(",")[lat_col:long_col + 1]))
             if idx == 0:
                 # lat_long init

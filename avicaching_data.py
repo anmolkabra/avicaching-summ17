@@ -79,12 +79,12 @@ def save_rand_XYR(file_name, X, Y, R, J=116, T=173):
     
     np.savetxt(file_name, XYR, fmt="%.15f", delimiter=" ")
 
-def split_along_row(M, num):
+def split_along_dim(M, num, dim):
     """
     Shuffles and splits the matrix M into 2 along dimension 0 at index num, returning
     two matrices
     """
-    return np.split(M, [num], axis=0)
+    return np.split(M, [num], axis=dim)
 
 def read_weights_file(file_name, locs):
     w = []
@@ -112,3 +112,14 @@ def read_lat_long_from_Ffile(file_name, locs, lat_col=33, long_col=34):
                 # append lat_long info
                 lat_long = np.vstack([lat_long, line_vec])
     return lat_long
+
+def normalize(x, along_dim=None, using_max=True, offset_division=0.000001):
+    """
+    Normalizes x by dividing each element by the maximum if using_max is True and by the sum
+    if using_max is False. Finding the maximum/sum is specified by along_dim. If along_dim is an int, the max is 
+    calculated along that dimension, if it's None, whole x's max/sum is calculated
+    """
+    if using_max:
+        return x / (np.amax(x, axis=along_dim) + offset_division)
+    else:
+        return x / (np.sum(x, axis=along_dim, keepdims=True) + offset_division)

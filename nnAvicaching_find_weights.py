@@ -15,7 +15,7 @@ from torch.autograd import Variable
 # =============================================================================
 # training specs
 # =============================================================================
-parser = argparse.ArgumentParser(description="NN for Avicaching model")
+parser = argparse.ArgumentParser(description="NN Avicaching model for finding weights")
 parser.add_argument("--lr", type=float, default=0.01, metavar="LR",
     help="inputs learning rate of the network (default=0.01)")
 parser.add_argument("--momentum", type=float, default=1.0, metavar="M",
@@ -51,16 +51,9 @@ args.cuda = not args.no_cuda and torch.cuda.is_available()
 args.should_test = (args.train_percent != 1.0)
 
 # =============================================================================
-# constants
+# constants and parameters
 # =============================================================================
-
-offset_division = 0.000001  # to avoid division by zero
 torchten = torch.FloatTensor
-
-# =============================================================================
-# parameters and data
-# =============================================================================
-
 J, T = args.locations, args.time
 F_DIST, numFeatures = [], 0
 trainX, trainY, trainR, testX, testY, testR = [], [], [], [], [], []
@@ -72,7 +65,6 @@ num_test = T - num_train
 # =============================================================================
 # data input functions
 # =============================================================================
-
 def read_set_data():
     """
     Reads and sets up the datasets
@@ -82,7 +74,7 @@ def read_set_data():
     # read f and dist datasets from file, operate on them
     F = ad.read_F_file("./data/loc_feature_with_avicaching_combined.csv", J)
     DIST = ad.read_dist_file("./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
-    F, DIST = normalize(F, along_dim=0, using_max=True), normalize(DIST, using_max=True)  # normalize using max
+    F, DIST = ad.normalize(F, along_dim=0, using_max=True), ad.normalize(DIST, using_max=True)  # normalize using max
     
     # process data for the NN
     numFeatures = len(F[0]) + 1     # distance included
@@ -112,22 +104,24 @@ def read_set_data():
     u = np.sum(Y, axis=1)   # u weights for calculating losses
 
     # normalize X, Y using sum along rows
-    X, Y = normalize(X, along_dim=1, using_max=False), normalize(Y, along_dim=1, using_max=False)
+    X, Y = ad.normalize(X, along_dim=1, using_max=False), ad.normalize(Y, along_dim=1, using_max=False)
+    if not args.expand_R:
+        R = ad.normalize(R, along_dim=0, using_max=False)
 
     # split the XYR data
     if args.should_test:
         # training and testing, shuffle and split the data
         shuffle_order = np.random.permutation(T)
-        trainX, testX = ad.split_along_row(X[shuffle_order], num_train)
-        trainY, testY = ad.split_along_row(Y[shuffle_order], num_train)
-        trainR, testR = ad.split_along_row(R[shuffle_order], num_train)
-        u_train, u_test = ad.split_along_row(u[shuffle_order], num_train)   
+        trainX, testX = ad.split_along_dim(X[shuffle_order], num_train, dim=0)
+        trainY, testY = ad.split_along_dim(Y[shuffle_order], num_train, dim=0)
+        trainR, testR = ad.split_along_dim(R[shuffle_order], num_train, dim=0)
+        u_train, u_test = ad.split_along_dim(u[shuffle_order], num_train, dim=0)   
     else:
         # no testing, split the data -> test Matrices are empty
-        trainX, testX = ad.split_along_row(X, num_train)
-        trainY, testY = ad.split_along_row(Y, num_train)
-        trainR, testR = ad.split_along_row(R, num_train)
-        u_train, u_test = ad.split_along_row(u, num_train)
+        trainX, testX = ad.split_along_dim(X, num_train, dim=0)
+        trainY, testY = ad.split_along_dim(Y, num_train, dim=0)
+        trainR, testR = ad.split_along_dim(R, num_train, dim=0)
+        u_train, u_test = ad.split_along_dim(u, num_train, dim=0)
 
     # change the input data into pytorch tensors and variables
     trainR, testR = torchten(trainR), torchten(testR)
@@ -213,7 +207,6 @@ def test_given_data(X, Y, R, w, J, T, u):
 # =============================================================================
 # MyNet class
 # =============================================================================
-
 class MyNet(nn.Module):
 
     def __init__(self, J, numFeatures, eta):
@@ -243,7 +236,6 @@ class MyNet(nn.Module):
 # =============================================================================
 # training and testing routines
 # =============================================================================
-
 def train(net, optimizer, loss_normalizer, u):
     """
     Trains the NN using MyNet
@@ -310,7 +302,6 @@ def test(net, loss_normalizer, u):
 # =============================================================================
 # utility functions for training and testing routines
 # =============================================================================
-
 def build_input(rt):
     """
     Builds the final input for the NN. Joins F_DIST and expanded R
@@ -322,7 +313,6 @@ def build_input(rt):
 # =============================================================================
 # logs and plots
 # =============================================================================
-
 def save_plot(file_name, x, y, xlabel, ylabel, title):
     """
     Saves and shows the loss plot of train and test periods
@@ -412,18 +402,6 @@ def plot_predicted_map(file_name, lat_long, point_info, title, plot_offset=0.05)
 # =============================================================================
 # misc utility functions
 # =============================================================================
-
-def normalize(x, along_dim=None, using_max=True):
-    """
-    Normalizes x by dividing each element by the maximum if using_max is True and by the sum
-    if using_max is False. Finding the maximum/sum is specified by along_dim. If along_dim is an int, the max is 
-    calculated along that dimension, if it's None, whole x's max/sum is calculated
-    """
-    if using_max:
-        return x / (np.amax(x, axis=along_dim) + offset_division)
-    else:
-        return x / (np.sum(x, axis=along_dim, keepdims=True) + offset_division)
-
 def expand_R(rt, R_max=15):
     """
     Expands R into a matrix with each R[u] having R_max elements,
@@ -437,10 +415,9 @@ def expand_R(rt, R_max=15):
         newrt[u] = torch.cat([torch.ones(r), torch.zeros(R_max - r)], dim=0)
     return newrt
 
-# ==========================================================
+# =============================================================================
 # main program
-# ==========================================================
-
+# =============================================================================
 if __name__ == "__main__":
     # READY!!
     read_set_data()

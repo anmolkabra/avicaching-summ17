@@ -26,7 +26,7 @@ parser.add_argument("--eta", type=float, default=10.0, metavar="F",
 parser.add_argument("--rewards", type=float, default=1000.0, metavar="R",
     help="inputs the total budget of rewards to be distributed (default=1000.0)")
 parser.add_argument("--weights-file", type=str, 
-    default="./stats/weights/gpu, origXYR_epochs=1000, train= 60%, time=87.7247 sec.txt", 
+    default="./stats/weights/normalizedR_gpu, origXYR_epochs=1000, train= 80%, time=98.6947 sec.txt", 
     metavar="f", help="inputs the location of the file to use weights from")
 parser.add_argument("--log-interval", type=int, default=1, metavar="I",
     help="prints training information at I epoch intervals (default=1)")
@@ -161,12 +161,11 @@ if __name__ == "__main__":
     net = MyNet(J, totalR, args.eta)
     if args.cuda:
         net.cuda()
-    # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
-    optimizer = optim.Adam(net.parameters(), lr=args.lr)
-
+    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
+    
     for e in xrange(1, args.epochs + 1):
         train_res = train(net, optimizer)
-        if e % 2 == 0:
-            print(train_res[0], train_res[1])
+        if e % 200 == 0:
+            print("epoch=%5d, loss=%.10f" % (e, train_res[1]))
     print(net.R.data)
     print(torch.sum(net.R.data, dim=1))

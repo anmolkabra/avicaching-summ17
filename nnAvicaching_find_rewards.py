@@ -44,6 +44,7 @@ J, T, weights_file_name, totalR = args.locations, args.time, args.weights_file, 
 X, W_for_r, F_DIST, numFeatures = [], [], [], 0
 F_DIST_weighted = []
 torchten = torch.DoubleTensor
+tol = 1e-8
 
 # ==========
 # data input
@@ -85,8 +86,8 @@ class MyNet(nn.Module):
 
         # initiate R
         self.r = np.random.multinomial(self.totalR, [1 / float(J)] * J, size=1)
-        # self.r = ad.normalize(self.r, using_max=False)
-        self.R = nn.Parameter(torchten(self.r))
+        normalizedR = ad.normalize(self.r, using_max=False)
+        self.R = nn.Parameter(torchten(normalizedR))
         print(self.R)
 
     def forward(self, inp):
@@ -102,7 +103,7 @@ class MyNet(nn.Module):
         return torchfun.softmax(inp)
 
 def train(net, optimizer):
-    global W_for_r
+    global W_for_r, tol
     start_time = time.time()
 
     # build input
@@ -129,15 +130,22 @@ def train(net, optimizer):
 
     #R_grad = net.R.grad.data
     #print(R_grad)
+    #update = net.R.data - args.lr * net.R.grad.data
+    #print(update)
+    #net.R.grad.data[update < 0.0] = 0.0
     #print(net.R.grad.data)
-    net.R.grad.data = net.R.grad.data - torch.mean(net.R.grad.data)
+    net.R.grad.data -= torch.mean(net.R.grad.data)
+    
     #print(net.R.grad.data)
     #print(torch.sum(net.R.grad.data))
     optimizer.step()
+    #print(net.R.data)
+    #print(torch.sum(net.R.data))
+    #sys.exit()
     #print(net.R.grad.data)
 
     # min R must be 0
-    net.R.data = net.R.data.clamp(min=0)
+    #net.R.data = net.R.data.clamp(min=0)
     
     end_time = time.time()
     return (end_time - start_time, loss.data[0])
@@ -161,11 +169,12 @@ if __name__ == "__main__":
     net = MyNet(J, totalR, args.eta)
     if args.cuda:
         net.cuda()
-    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
+    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, nesterov=True)
     
+    print(torch.sum(net.R.data))
     for e in xrange(1, args.epochs + 1):
         train_res = train(net, optimizer)
         if e % 200 == 0:
             print("epoch=%5d, loss=%.10f" % (e, train_res[1]))
     print(net.R.data)
-    print(torch.sum(net.R.data, dim=1))
+    print(torch.sum(net.R.data))

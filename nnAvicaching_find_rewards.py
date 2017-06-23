@@ -26,7 +26,7 @@ parser.add_argument("--eta", type=float, default=10.0, metavar="F",
 parser.add_argument("--rewards", type=float, default=1000.0, metavar="R",
     help="inputs the total budget of rewards to be distributed (default=1000.0)")
 parser.add_argument("--weights-file", type=str, 
-    default="./stats/weights/gpu, origXYR_epochs=1000, train= 80%, time=98.0417 sec.txt", 
+    default="./stats/find_weights/weights/gpu, origXYR_epochs=1000, train= 80%, time=98.0417 sec.txt", 
     metavar="f", help="inputs the location of the file to use weights from")
 parser.add_argument("--log-interval", type=int, default=1, metavar="I",
     help="prints training information at I epoch intervals (default=1)")

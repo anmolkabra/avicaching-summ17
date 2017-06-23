@@ -503,12 +503,12 @@ if __name__ == "__main__":
     fname = file_pre_gpu + file_pre + log_name
     
     # save amd plot data
-    save_plot("./stats/plots/" + fname + ".png", epoch_data, 
+    save_plot("./stats/find_weights/plots/" + fname + ".png", epoch_data, 
         [train_time_loss, test_time_loss], "epoch", "loss", log_name)
-    save_log("./stats/logs/" + fname + ".txt", epoch_data, 
+    save_log("./stats/find_weights/logs/" + fname + ".txt", epoch_data, 
         [train_time_loss, test_time_loss], log_name)
-    plot_predicted_map("./stats/map_plots/" + fname + ".png",
+    plot_predicted_map("./stats/find_weights/map_plots/" + fname + ".png",
             ad.read_lat_long_from_Ffile("./data/loc_feature_with_avicaching_combined.csv", J),
             y_pred, log_name)
-    np.savetxt("./stats/weights/" + fname + ".txt", 
+    np.savetxt("./stats/find_weights/weights/" + fname + ".txt", 
         net.w.data.view(-1, numFeatures).cpu().numpy(), fmt="%.15f", delimiter=" ")

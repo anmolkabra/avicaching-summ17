@@ -26,7 +26,6 @@ def build_A(N):
     """
     A = np.hstack( (np.eye(N), np.negative(np.eye(N))) )
     A = np.vstack( (A, np.negative(np.hstack( (np.eye(N), np.eye(N)) ))) )
-    # A = np.vstack( (A, np.negative(np.hstack( (np.eye(N), np.zeros( (N, N) )) ))) )
     A = np.vstack( (A, np.hstack( (np.ones(N), np.zeros(N)) )) )
     return A
 
@@ -47,9 +46,6 @@ def run_lp(N, r_i_o, R):
     A = build_A(N)
     b = build_b(N, r_i_o, R)
     c = build_c(N)
-    #print(A, A.shape)
-    #print(b, b.shape)
-    #print(c, c.shape)
     return sp_opt.linprog(c, A_ub=A, b_ub=b)   # default non negative bounds
 
 # rio = np.random.randn(5)

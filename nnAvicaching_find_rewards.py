@@ -32,22 +32,30 @@ parser.add_argument("--log-interval", type=int, default=1, metavar="I",
     help="prints training information at I epoch intervals (default=1)")
 parser.add_argument("--expand-R", action="store_true", default=False,
     help="expands the reward vectors into matrices with distributed rewards")
+parser.add_argument('--seed', type=int, default=1, metavar='S',
+                    help='random seed (default: 1)')
 
 args = parser.parse_args()
 # assigning cuda check and test check to single variables
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
-# ====
+torch.manual_seed(args.seed)
+np.random.seed(seed=args.seed)
+if args.cuda:
+    torch.cuda.manual_seed(args.seed)
+
+# =============================================================================
 # parameters and constants
-# =====
+# =============================================================================
+np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 J, T, weights_file_name, totalR = args.locations, args.time, args.weights_file, args.rewards
 X, W_for_r, F_DIST, numFeatures = [], [], [], 0
 F_DIST_weighted = []
-torchten = torch.DoubleTensor
+torchten = torch.FloatTensor
 
-# ==========
+# =============================================================================
 # data input
-# =========
+# =============================================================================
 def read_set_data():
     global X, W, F_DIST, numFeatures, F_DIST_weighted, W_for_r
     # read f and dist datasets from file, operate on them
@@ -74,9 +82,9 @@ def read_set_data():
     
     W_for_r, X = Variable(torchten(W_for_r), requires_grad=False), Variable(torchten(X), requires_grad=False)
 
-# ==============
+# =============================================================================
 # MyNet class
-# ==================
+# =============================================================================
 class MyNet(nn.Module):
 
     def __init__(self, J, totalR, eta):
@@ -86,12 +94,12 @@ class MyNet(nn.Module):
         # initiate R
         self.r = np.random.multinomial(self.totalR, [1 / float(J)] * J, size=1)
         normalizedR = ad.normalize(self.r, using_max=False)
-        print("random rewards: ", self.r)
+        self.R = nn.Parameter(torchten(normalizedR))
+        print("random rewards:\n", self.r)
 
     def forward(self, inp):
         repeatedR = self.R.repeat(J, 1).unsqueeze(dim=2)
-        inp = torch.bmm(repeatedR, W_for_r).view(-1, J)
-        inp += F_DIST_weighted
+        inp = torch.bmm(repeatedR, W_for_r).view(-1, J) + F_DIST_weighted
         inp = torchfun.relu(inp)
         # add eta to inp[u][u]
         # eta_matrix = Variable(self.eta * torch.eye(J).type(torchten))
@@ -105,10 +113,8 @@ def train(net, optimizer):
     start_time = time.time()
 
     # build input
-    #inp = build_input()
     if args.cuda:
         W_for_r = W_for_r.cuda()
-    #inp = Variable(inp)
     
     # feed in data
     P = net(W_for_r).t()    # P is now weighted -> softmax
@@ -116,8 +122,6 @@ def train(net, optimizer):
     # calculate loss
     Y = torch.mv(P, X)
     loss = (Y - torch.mean(Y).expand_as(Y)).pow(2).sum() / J
-
-    # print(net.R.grad)
 
     # backpropagate
     optimizer.zero_grad()
@@ -151,8 +155,11 @@ if __name__ == "__main__":
         net.cuda()
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, nesterov=True)
 
+    total_time = 0
     for e in xrange(1, args.epochs + 1):
         train_res = train(net, optimizer)
+        total_time += train_res[0]
         if e % 2 == 0:
-            print("epoch=%5d, loss=%.10f, budget=%.10f" % (e, train_res[1], train_res[2]))
-    print("determined rewards: ", net.R.data * 1000)
+            print("epoch=%5d, loss=%.10f, budget=%.10f" % (e, train_res[1], train_res[2]), train_res[0])
+    print("determined rewards:\n", net.R.data.cpu().numpy() * 1000)
+    print("total time: %.5f" % total_time)

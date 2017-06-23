@@ -44,11 +44,18 @@ parser.add_argument("--expand-R", action="store_true", default=False,
     help="expands the reward vectors into matrices with distributed rewards")
 parser.add_argument("--train-percent", type=float, default=0.8, metavar="T",
     help="breaks the data into T percent training and rest testing (default=0.8)")
+parser.add_argument('--seed', type=int, default=1, metavar='S',
+                    help='random seed (default: 1)')
 
 args = parser.parse_args()
 # assigning cuda check and test check to single variables
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 args.should_test = (args.train_percent != 1.0)
+
+torch.manual_seed(args.seed)
+np.random.seed(seed=args.seed)
+if args.cuda:
+    torch.cuda.manual_seed(args.seed)
 
 # =============================================================================
 # constants and parameters

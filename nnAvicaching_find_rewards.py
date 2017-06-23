@@ -26,7 +26,7 @@ parser.add_argument("--eta", type=float, default=10.0, metavar="F",
 parser.add_argument("--rewards", type=float, default=1000.0, metavar="R",
     help="inputs the total budget of rewards to be distributed (default=1000.0)")
 parser.add_argument("--weights-file", type=str, 
-    default="./stats/weights/normalizedR_gpu, origXYR_epochs=1000, train= 80%, time=98.6947 sec.txt", 
+    default="./stats/weights/gpu, origXYR_epochs=1000, train= 80%, time=98.0417 sec.txt", 
     metavar="f", help="inputs the location of the file to use weights from")
 parser.add_argument("--log-interval", type=int, default=1, metavar="I",
     help="prints training information at I epoch intervals (default=1)")
@@ -113,10 +113,6 @@ def train(net, optimizer):
     global W_for_r, lp_A, lp_c
     start_time = time.time()
 
-    # build input
-    if args.cuda:
-        W_for_r = W_for_r.cuda()
-    
     # feed in data
     P = net(W_for_r).t()    # P is now weighted -> softmax
     
@@ -131,6 +127,8 @@ def train(net, optimizer):
     # update the rewards and constrain them
     optimizer.step()
     net.R.data = torchten(lp.run_lp(lp_A, lp_c, J, net.R.data.squeeze().cpu().numpy(), 1.0).x[:J]).unsqueeze(dim=0)
+    if args.cuda:
+        net.R.data = net.R.data.cuda()
 
     end_time = time.time()
     return (end_time - start_time, loss.data[0], net.R.data.sum())
@@ -152,8 +150,10 @@ def build_input(rt):
 if __name__ == "__main__":
     read_set_data()
     net = MyNet(J, totalR, args.eta)
+    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, nesterov=True)
     if args.cuda:
         net.cuda()
+        W_for_r, F_DIST_weighted, X = W_for_r.cuda(), F_DIST_weighted.cuda(), X.cuda()
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, nesterov=True)
     lp_A, lp_c = lp.build_A(J), lp.build_c(J)
 
@@ -161,7 +161,7 @@ if __name__ == "__main__":
     for e in xrange(1, args.epochs + 1):
         train_res = train(net, optimizer)
         total_time += train_res[0]
-        if e % 2 == 0:
+        if e % 20 == 0:
             print("epoch=%5d, loss=%.10f, budget=%.10f" % (e, train_res[1], train_res[2]), train_res[0])
     print("determined rewards:\n", net.R.data.cpu().numpy() * 1000)
     print("total time: %.5f" % total_time)

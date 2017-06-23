@@ -39,13 +39,11 @@ def build_b(N, r_i_o, R):
 def build_c(N):
     return np.hstack( (np.zeros(N), np.ones(N)) )
 
-def run_lp(N, r_i_o, R):
+def run_lp(A, c, N, r_i_o, R):
     """
     returns the result of the lp problem
     """
-    A = build_A(N)
     b = build_b(N, r_i_o, R)
-    c = build_c(N)
     return sp_opt.linprog(c, A_ub=A, b_ub=b)   # default non negative bounds
 
 # rio = np.random.randn(5)

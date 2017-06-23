@@ -3,7 +3,7 @@ from __future__ import print_function
 import torch, torch.nn as nn, torch.nn.functional as torchfun, torch.optim as optim
 from torch.autograd import Variable
 import numpy as np, argparse, time, os, sys
-import avicaching_data as ad, lp
+import avicaching_data as ad
 
 # =============================================================================
 # options
@@ -32,6 +32,10 @@ parser.add_argument("--log-interval", type=int, default=1, metavar="I",
     help="prints training information at I epoch intervals (default=1)")
 parser.add_argument("--expand-R", action="store_true", default=False,
     help="expands the reward vectors into matrices with distributed rewards")
+parser.add_argument("--lambda-loss", type=float, default=10.0,
+    help="inputs the lambda for penalizing rewards amounting to greater than total rewards (default=10.0)")
+parser.add_argument("--lambda-update", type=float, default=0.01,
+    help="inputs the learning rate for lambda (default=0.01)")
 parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
 
@@ -48,11 +52,11 @@ if args.cuda:
 # parameters and constants
 # =============================================================================
 np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
-J, T, weights_file_name, totalR = args.locations, args.time, args.weights_file, args.rewards
+J, T, weights_file_name = args.locations, args.time, args.weights_file
+totalR, l = args.rewards, args.lambda_loss
 X, W_for_r, F_DIST, numFeatures = [], [], [], 0
 F_DIST_weighted = []
 torchten = torch.FloatTensor
-lp_A, lp_c = [], []
 
 # =============================================================================
 # data input
@@ -110,7 +114,7 @@ class MyNet(nn.Module):
         return torchfun.softmax(inp)
 
 def train(net, optimizer):
-    global W_for_r, lp_A, lp_c
+    global W_for_r, l, totalR
     start_time = time.time()
 
     # build input
@@ -122,7 +126,8 @@ def train(net, optimizer):
     
     # calculate loss
     Y = torch.mv(P, X)
-    loss = torch.norm(Y - torch.mean(Y).expand_as(Y)).pow(2) / J
+    loss = torch.norm(Y - torch.mean(Y).expand_as(Y)).pow(2) / J + \
+        l * torchfun.relu(torch.sum(net.R) - 1.0)
 
     # backpropagate
     optimizer.zero_grad()
@@ -130,7 +135,8 @@ def train(net, optimizer):
     
     # update the rewards and constrain them
     optimizer.step()
-    net.R.data = torchten(lp.run_lp(lp_A, lp_c, J, net.R.data.squeeze().cpu().numpy(), 1.0).x[:J]).unsqueeze(dim=0)
+    net.R.data = project_to_min(net.R.data, 0.0)
+    l += (args.lambda_update * (torch.sum(net.R.data) - 1.0))   # update lambda
 
     end_time = time.time()
     return (end_time - start_time, loss.data[0], net.R.data.sum())
@@ -155,13 +161,12 @@ if __name__ == "__main__":
     if args.cuda:
         net.cuda()
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, nesterov=True)
-    lp_A, lp_c = lp.build_A(J), lp.build_c(J)
 
     total_time = 0
     for e in xrange(1, args.epochs + 1):
         train_res = train(net, optimizer)
         total_time += train_res[0]
-        if e % 2 == 0:
-            print("epoch=%5d, loss=%.10f, budget=%.10f" % (e, train_res[1], train_res[2]), train_res[0])
+        if e % 20 == 0:
+            print("epoch=%5d, loss=%.10f, budget=%.10f" % (e, train_res[1], train_res[2]), train_res[0], l)
     print("determined rewards:\n", net.R.data.cpu().numpy() * 1000)
     print("total time: %.5f" % total_time)

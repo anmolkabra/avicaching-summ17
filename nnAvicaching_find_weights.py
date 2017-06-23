@@ -24,7 +24,7 @@ parser.add_argument("--no-cuda", action="store_true", default=False,
     help="disables CUDA training")
 parser.add_argument("--epochs", type=int, default=10, metavar="E",
     help="inputs the number of epochs to train for")
-parser.add_argument("--locations", type=int, default=116, metavar="L",
+parser.add_argument("--locations", type=int, default=116, metavar="J",
     help="inputs the number of locations (default=116)")
 parser.add_argument("--time", type=int, default=173, metavar="T",
     help="inputs total time of data collection; number of weeks (default=173)")

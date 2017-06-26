@@ -3,7 +3,13 @@ from __future__ import print_function
 import torch, torch.nn as nn, torch.nn.functional as torchfun, torch.optim as optim
 from torch.autograd import Variable
 import numpy as np, argparse, time, os, sys
-import avicaching_data as ad, lp
+import avicaching_data as ad, lp, matplotlib
+try:
+    os.environ["DISPLAY"]
+except KeyError as e:
+    # working without X/GUI environment
+    matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 # =============================================================================
 # options
@@ -36,6 +42,8 @@ parser.add_argument("--log-interval", type=int, default=1, metavar="I",
     help="prints training information at I epoch intervals (default=1)")
 parser.add_argument('--seed', type=int, default=1, metavar='S',
     help='random seed (default=1)')
+parser.add_argument("--hide-loss-plot", action="store_true", default=False,
+    help="hides the loss plot, which is only saved")
 
 args = parser.parse_args()
 # assigning cuda check and test check to single variables
@@ -153,6 +161,9 @@ def test_rewards(net, r):
     end_time = time.time()
     return (end_time - start_time, loss.data[0])
 
+# =============================================================================
+# logs and plots
+# =============================================================================
 def save_log(file_name, rewards, results, title):
     """
     Saves the log of train and test periods to a file
@@ -160,7 +171,29 @@ def save_log(file_name, rewards, results, title):
     with open(file_name, "wt") as f:
         f.write(title + "\n")
         np.savetxt(f, rewards, fmt="%.15f", delimiter=" ")
-        f.write("time = %.4f\t\tloss = %.4f\n" % (results[0], results[1]))
+        f.write("time = %.4f\t\tloss = %.15f\n" % (results[0], results[1]))
+
+def save_plot(file_name, x, y, xlabel, ylabel, title):
+    """
+    Saves and shows the loss plot of train and test periods
+    """
+    # get the losses from data
+    train_losses = [i for j in y for i in j][1::2]
+    
+    # plot details
+    loss_fig = plt.figure(1)
+    train_label, = plt.plot(x, train_losses, "r-", label="Train Loss") 
+    plt.ylabel(ylabel)
+    plt.grid(True, which="major", axis="both", color="k", ls="dotted", lw="1.0")
+    plt.grid(True, which="minor", axis="y", color="k", ls="dotted", lw="0.5")
+    plt.minorticks_on()
+    plt.xlabel(xlabel)
+
+    plt.title(title)
+    loss_fig.savefig(file_name, bbox_inches="tight", dpi=200)
+    if not args.hide_loss_plot:
+        plt.show()
+    plt.close()
 
 # =============================================================================
 # main program
@@ -187,16 +220,16 @@ if __name__ == "__main__":
     lp_A, lp_c = lp.build_A(J), lp.build_c(J)
 
     total_time = 0.0
+    train_time_loss = []
     for e in xrange(1, args.epochs + 1):
         train_res = train(net, optimizer)
+        train_time_loss.append(train_res[0:2])
         total_time += train_res[0]
         if e % 20 == 0:
-            print("epoch=%5d, loss=%.10f, budget=%.10f" % (e, train_res[1], train_res[2]), train_res[0])
+            print("epoch=%5d, loss=%.10f, budget=%.10f" % (e, train_res[1], train_res[2]))
 
     # save and plot
     rew = net.R.data.cpu().numpy() * totalR
-    print("determined rewards:\n", rew)
-    print("total time: %.5f" % total_time)
 
     if args.rand_xyr:
         file_pre = "randXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
@@ -207,6 +240,8 @@ if __name__ == "__main__":
     epoch_data = np.arange(1, args.epochs + 1)
     fname = file_pre_gpu + file_pre + log_name
 
-    save_log("./stats/find_rewards/" + fname + ".txt", rew, train_res, weights_file_name)
+    save_plot("./stats/find_rewards/plots/" + fname + ".png", epoch_data, 
+        train_time_loss, "epoch", "loss", log_name)
+    save_log("./stats/find_rewards/logs/" + fname + ".txt", rew, train_res, weights_file_name)
 
     print("---> " + fname + " DONE")

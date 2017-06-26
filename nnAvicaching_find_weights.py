@@ -18,8 +18,6 @@ from torch.autograd import Variable
 parser = argparse.ArgumentParser(description="NN Avicaching model for finding weights")
 parser.add_argument("--lr", type=float, default=0.01, metavar="LR",
     help="inputs learning rate of the network (default=0.01)")
-parser.add_argument("--momentum", type=float, default=1.0, metavar="M",
-    help="inputs SGD momentum (default=1.0)")
 parser.add_argument("--no-cuda", action="store_true", default=False,
     help="disables CUDA training")
 parser.add_argument("--epochs", type=int, default=10, metavar="E",
@@ -45,7 +43,7 @@ parser.add_argument("--expand-R", action="store_true", default=False,
 parser.add_argument("--train-percent", type=float, default=0.8, metavar="T",
     help="breaks the data into T percent training and rest testing (default=0.8)")
 parser.add_argument('--seed', type=int, default=1, metavar='S',
-                    help='random seed (default: 1)')
+    help='random seed (default=1)')
 
 args = parser.parse_args()
 # assigning cuda check and test check to single variables
@@ -61,9 +59,8 @@ if args.cuda:
 # constants and parameters
 # =============================================================================
 torchten = torch.FloatTensor
-J, T = args.locations, args.time
-F_DIST, numFeatures = [], 0
-trainX, trainY, trainR, testX, testY, testR = [], [], [], [], [], []
+J, T, numFeatures = args.locations, args.time, 0
+trainX, trainY, trainR, testX, testY, testR, F_DIST = [], [], [], [], [], [], []
 u_train, u_test = np.array([]), np.array([])
 
 num_train = int(math.floor(args.train_percent * T))
@@ -156,11 +153,11 @@ def make_rand_data(X_max=100.0, R_max=100.0):
     # create random X and R and w
     X = np.floor(np.random.rand(T, J) * X_max)
     R = torchten(np.floor(np.random.rand(T, J) * R_max))
-    w = Variable(torch.randn(J, numFeatures, 1))
+    w = Variable(torch.randn(J, numFeatures, 1)).type(torchten)
     Y = np.empty([T, J])
     X, Y = Variable(torchten(X), requires_grad=False), Variable(torchten(Y), requires_grad=False)
     if args.cuda:
-        X, Y, R = X.cuda(), Y.cuda(), R.cuda()
+        X, Y, R, w = X.cuda(), Y.cuda(), R.cuda(), w.cuda()
     
     # build Y
     for t in xrange(T):
@@ -171,20 +168,23 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         inp = Variable(inp)
         
         # feed in data
-        inp = torch.bmm(inp, w).view(-1, J)
-        # for u in xrange(len(inp)):
-        #     inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
+        inp = torchfun.relu(torch.bmm(inp, w)).view(-1, J)
+        # add eta to inp[u][u]
+        # eta_matrix = Variable(eta * torch.eye(J).type(torchten))
+        # if args.cuda:
+        #    eta_matrix = eta_matrix.cuda()
+        # inp += eta_matrix
         P = torchfun.softmax(inp).t()   # P is now weighted -> softmax
         
         # calculate Y
         Y[t] = torch.mv(P, X[t])
 
     # for verification of random data, save weights ---------------------------
-    w_matrix = w.data.view(-1, numFeatures).numpy()
+    w_matrix = w.data.view(-1, numFeatures).cpu().numpy()
     np.savetxt("./data/randXYR_weights.txt", w_matrix, fmt="%.15f", delimiter=" ")
     # -------------------------------------------------------------------------
 
-    return (X.data.numpy(), Y.data.numpy(), R.numpy())
+    return (X.data.cpu().numpy(), Y.data.cpu().numpy(), R.cpu().numpy())
 
 def test_given_data(X, Y, R, w, J, T, u):
     loss_normalizer = (torch.mv(torch.t(Y - \
@@ -199,14 +199,17 @@ def test_given_data(X, Y, R, w, J, T, u):
         inp = Variable(inp)
         
         # feed in data
-        inp = torch.bmm(inp, w).view(-1, J)
-        # for u in xrange(len(inp)):
-        #     inp[u, u] = inp[u, u].clone() + self.eta    # inp[u][u]
+        inp = torchfun.relu(torch.bmm(inp, w)).view(-1, J)
+        # add eta to inp[u][u]
+        # eta_matrix = Variable(eta * torch.eye(J).type(torchten))
+        # if args.cuda:
+        #    eta_matrix = eta_matrix.cuda()
+        # inp += eta_matrix
         P = torchfun.softmax(inp).t()   # P is now weighted -> softmax
         
         # calculate loss
         Pxt = torch.mv(P, X[t])
-        loss += ((Y[t] - Pxt).pow(2).sum() * u[t])
+        loss += (u[t] * (Y[t] - Pxt)).pow(2).sum()
     # loss += args.lambda_L1 * torch.norm(net.w.data)
     loss /= loss_normalizer
     print("Loss = %f" % loss.data[0])
@@ -216,25 +219,23 @@ def test_given_data(X, Y, R, w, J, T, u):
 # =============================================================================
 class MyNet(nn.Module):
 
-    def __init__(self, J, numFeatures, eta):
+    def __init__(self):
         """
         Initializes MyNet
         """
         super(MyNet, self).__init__()
-        self.J = J
-        self.eta = eta
         self.w = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
 
     def forward(self, inp):
         """
-        Forward in the network; multiply the weights and return the softmax
+        Forward in the network; multiply the weights, take the relu and return
+        the softmax
         """    
         # weight -> relu -> softmax
-        inp = torchfun.relu(torch.bmm(inp, self.w))
-        inp = inp.view(-1, self.J)
+        inp = torchfun.relu(torch.bmm(inp, self.w)).view(-1, J)
 
         # add eta to inp[u][u]
-        # eta_matrix = Variable(self.eta * torch.eye(J).type(torchten))
+        # eta_matrix = Variable(eta * torch.eye(J).type(torchten))
         # if args.cuda:
         # 	 eta_matrix = eta_matrix.cuda()
         # inp += eta_matrix
@@ -282,7 +283,7 @@ def test(net, loss_normalizer, u):
     Test the network using MyNet
     """
     loss = 0
-    P_data = torch.zeros(num_train, J)
+    P_data = torch.zeros(num_test, J)
     start_time = time.time()
     
     for t in xrange(num_test):
@@ -428,7 +429,7 @@ def expand_R(rt, R_max=15):
 if __name__ == "__main__":
     # READY!!
     read_set_data()
-    net = MyNet(J, numFeatures, args.eta)
+    net = MyNet()
     # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
 
@@ -489,15 +490,14 @@ if __name__ == "__main__":
             y_pred = test_res[2] if args.should_test else train_res[2]
         
     # FINISH!!
-    print(net.w.data.view(-1, numFeatures))
     # log and plot the results: epoch vs loss
     if args.rand_xyr:
-        file_pre = "randXYR_epochs=%d, " % (args.epochs)
+        file_pre = "randXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
     else:
-        file_pre = "origXYR_epochs=%d, " % (args.epochs)
+        file_pre = "origXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
 
-    log_name = "train=%3.0f%%, time=%.4f sec" % (
-        args.train_percent * 100, total_time)
+    log_name = "train=%3.0f%%, lr=%.3e, time=%.4f sec" % (
+        args.train_percent * 100, args.lr, total_time)
     
     epoch_data = np.arange(1, args.epochs + 1)
     fname = file_pre_gpu + file_pre + log_name
@@ -512,3 +512,5 @@ if __name__ == "__main__":
             y_pred, log_name)
     np.savetxt("./stats/find_weights/weights/" + fname + ".txt", 
         net.w.data.view(-1, numFeatures).cpu().numpy(), fmt="%.15f", delimiter=" ")
+
+    print("---> " + fname + " DONE")

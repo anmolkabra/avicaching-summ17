@@ -62,6 +62,8 @@ X, W_for_r, F_DIST_weighted, numFeatures = [], [], [], 0
 torchten = torch.FloatTensor
 lp_A, lp_c = [], []
 
+randXYR_file = "./data/randXYR" + str(J) + ".txt"
+
 # =============================================================================
 # data input
 # =============================================================================
@@ -74,7 +76,7 @@ def read_set_data():
     # read W and X
     W = ad.read_weights_file(weights_file_name, J)
     if args.rand_xyr:
-        X, _, _ = ad.read_XYR_file("./data/randXYR.txt", J, T)
+        X, _, _ = ad.read_XYR_file(randXYR_file, J, T)
     else:
         X, _, _ = ad.read_XYR_file("./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
 

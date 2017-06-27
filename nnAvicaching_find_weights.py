@@ -66,6 +66,9 @@ u_train, u_test = np.array([]), np.array([])
 num_train = int(math.floor(args.train_percent * T))
 num_test = T - num_train
 
+randXYR_file = "./data/randXYR" + str(J) + ".txt"
+randXYR_weights_file = "./data/randXYR" + str(J) + "_weights.txt"
+
 # =============================================================================
 # data input functions
 # =============================================================================
@@ -88,10 +91,12 @@ def read_set_data():
     X, Y, R = [], [], []
     # operate on XYR data
     if args.rand_xyr:
-        if not os.path.isfile("./data/randXYR.txt"):
+        if not os.path.isfile(randXYR_file):
+            print('a')
             # file doesn't exists, make random data, write to file
             X, Y, R = make_rand_data()
-            ad.save_rand_XYR("./data/randXYR.txt", X, Y, R, J, T)
+            ad.save_rand_XYR(randXYR_file, X, Y, R, J, T)
+            sys.exit()
         #
         # print("Verifying randXYR...")
         # X, Y, R = ad.read_XYR_file("./randXYR.txt", J, T)
@@ -101,7 +106,7 @@ def read_set_data():
         
         # test_given_data(X, Y, R, w, J, T)
         #
-        X, Y, R = ad.read_XYR_file("./data/randXYR.txt", J, T)
+        X, Y, R = ad.read_XYR_file(randXYR_file, J, T)
     else:
         X, Y, R = ad.read_XYR_file("./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
     
@@ -178,10 +183,11 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         
         # calculate Y
         Y[t] = torch.mv(P, X[t])
+        print(t)
 
     # for verification of random data, save weights ---------------------------
     w_matrix = w.data.view(-1, numFeatures).cpu().numpy()
-    np.savetxt("./data/randXYR_weights.txt", w_matrix, fmt="%.15f", delimiter=" ")
+    np.savetxt(randXYR_weights_file, w_matrix, fmt="%.15f", delimiter=" ")
     # -------------------------------------------------------------------------
 
     return (X.data.cpu().numpy(), Y.data.cpu().numpy(), R.cpu().numpy())

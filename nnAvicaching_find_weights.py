@@ -102,7 +102,7 @@ def read_set_data():
             # file doesn't exists, make random data, write to file
             X, Y, R = make_rand_data()
             ad.save_rand_XYR(randXYR_file, X, Y, R, J, T)
-            sys.exit()
+            # sys.exit()
         #
         # print("Verifying randXYR...")
         # X, Y, R = ad.read_XYR_file("./randXYR.txt", J, T)

@@ -123,3 +123,132 @@ def normalize(x, along_dim=None, using_max=True, offset_division=0.000001):
         return x / (np.amax(x, axis=along_dim) + offset_division)
     else:
         return x / (np.sum(x, axis=along_dim, keepdims=True) + offset_division)
+
+def make_rand_F_file(file_name, J):
+    """
+    I admit this is very bad code. I didn't care about optimizing this data
+    constructor
+    """
+    # num visits  -- type random int
+    num_visits = np.floor(np.random.rand(J) * 1000)
+    # num species -- type random int
+    num_species = np.floor(np.random.rand(J) * 500)
+    # NLCD2011_FS_C11_375_PLAND -- type random float
+    NLCD2011_FS_C11_375_PLAND = np.random.rand(J) * 100
+    # NLCD2011_FS_C12_375_PLAND -- zeros
+    NLCD2011_FS_C12_375_PLAND = np.zeros(J)
+    # NLCD2011_FS_C21_375_PLAND -- type random float
+    NLCD2011_FS_C21_375_PLAND = np.random.rand(J) * 20
+    # NLCD2011_FS_C22_375_PLAND -- type random float
+    NLCD2011_FS_C22_375_PLAND = np.random.rand(J) * 50
+    # NLCD2011_FS_C23_375_PLAND -- type random float
+    NLCD2011_FS_C23_375_PLAND = np.random.rand(J) * 50
+    # NLCD2011_FS_C24_375_PLAND -- type random float
+    NLCD2011_FS_C24_375_PLAND = np.random.rand(J) * 20
+    # NLCD2011_FS_C31_375_PLAND -- type random float
+    NLCD2011_FS_C31_375_PLAND = np.random.rand(J) * 2
+    # NLCD2011_FS_C41_375_PLAND -- type random float
+    NLCD2011_FS_C41_375_PLAND = np.random.rand(J) * 100
+    # NLCD2011_FS_C42_375_PLAND -- type random float
+    NLCD2011_FS_C42_375_PLAND = np.random.rand(J) * 20
+    # NLCD2011_FS_C43_375_PLAND -- type random float
+    NLCD2011_FS_C43_375_PLAND = np.random.rand(J) * 20
+    # NLCD2011_FS_C52_375_PLAND -- type random float
+    NLCD2011_FS_C52_375_PLAND = np.random.rand(J) * 20
+    # NLCD2011_FS_C71_375_PLAND -- type random float
+    NLCD2011_FS_C71_375_PLAND = np.random.rand(J) * 2
+    # NLCD2011_FS_C81_375_PLAND -- type random float
+    NLCD2011_FS_C81_375_PLAND = np.random.rand(J) * 100
+    # NLCD2011_FS_C82_375_PLAND -- type random float
+    NLCD2011_FS_C82_375_PLAND = np.random.rand(J) * 80
+    # NLCD2011_FS_C90_375_PLAND -- type random float
+    NLCD2011_FS_C90_375_PLAND = np.random.rand(J) * 20
+    # NLCD2011_FS_C95_375_PLAND -- type random float
+    NLCD2011_FS_C95_375_PLAND = np.random.rand(J) * 2
+    # HOUSING_DENSITY -- type random float
+    HOUSING_DENSITY = np.random.rand(J) * 500
+    # HOUSING_PERCENT_VACANT -- type random float
+    HOUSING_PERCENT_VACANT = np.random.rand(J) * 0.1
+    # ELEV_GT -- type random int
+    ELEV_GT = np.floor(np.random.rand(J) * 500)
+    # DIST_FROM_FLOWING_FRESH -- type random int
+    DIST_FROM_FLOWING_FRESH = np.floor(np.random.rand(J) * 5)
+    # DIST_IN_FLOWING_FRESH -- type random int
+    DIST_IN_FLOWING_FRESH = np.floor(np.random.rand(J) * 10)
+    # DIST_FROM_STANDING_FRESH -- type random int
+    DIST_FROM_STANDING_FRESH = np.floor(np.random.rand(J) * 10)
+    # DIST_IN_STANDING_FRESH -- type random int
+    DIST_IN_STANDING_FRESH = np.floor(np.random.rand(J) * 10)
+    # DIST_FROM_WET_VEG_FRESH -- type random int
+    DIST_FROM_WET_VEG_FRESH = np.floor(np.random.rand(J) * 10)
+    # DIST_IN_WET_VEG_FRESH -- type random int
+    DIST_IN_WET_VEG_FRESH = np.floor(np.random.rand(J) * 10)
+    # DIST_FROM_FLOWING_BRACKISH -- type random int
+    DIST_FROM_FLOWING_BRACKISH = np.floor(np.random.rand(J) * 10)
+    # DIST_IN_FLOWING_BRACKISH -- type random int
+    DIST_IN_FLOWING_BRACKISH = np.floor(np.random.rand(J) * 10)
+    # DIST_FROM_STANDING_BRACKISH -- type random int
+    DIST_FROM_STANDING_BRACKISH = np.floor(np.random.rand(J) * 10)
+    # DIST_IN_STANDING_BRACKISH -- type random int
+    DIST_IN_STANDING_BRACKISH = np.floor(np.random.rand(J) * 10)
+    # DIST_FROM_WET_VEG_BRACKISH -- type random int
+    DIST_FROM_WET_VEG_BRACKISH = np.floor(np.random.rand(J) * 10)
+    # DIST_IN_WET_VEG_BRACKISH -- type random int
+    DIST_IN_WET_VEG_BRACKISH = np.floor(np.random.rand(J) * 10)
+    # LATITUDE -- type intersperse between 42 44
+    LATITUDE = np.linspace(42, 44, num=J)
+    # LONGITUDE --type intersperse between -75 -77
+    LONGITUDE = np.linspace(-75, -77, num=J)
+    # LOC_ID --random
+    LOC_ID = np.random.rand(J)
+
+
+    ###
+    data = np.vstack([num_visits,
+        num_species,
+        NLCD2011_FS_C11_375_PLAND,
+        NLCD2011_FS_C12_375_PLAND,
+        NLCD2011_FS_C21_375_PLAND,
+        NLCD2011_FS_C22_375_PLAND,
+        NLCD2011_FS_C23_375_PLAND,
+        NLCD2011_FS_C24_375_PLAND,
+        NLCD2011_FS_C31_375_PLAND,
+        NLCD2011_FS_C41_375_PLAND,
+        NLCD2011_FS_C42_375_PLAND,
+        NLCD2011_FS_C43_375_PLAND,
+        NLCD2011_FS_C52_375_PLAND,
+        NLCD2011_FS_C71_375_PLAND,
+        NLCD2011_FS_C81_375_PLAND,
+        NLCD2011_FS_C82_375_PLAND,
+        NLCD2011_FS_C90_375_PLAND,
+        NLCD2011_FS_C95_375_PLAND,
+        HOUSING_DENSITY,
+        HOUSING_PERCENT_VACANT,
+        ELEV_GT,
+        DIST_FROM_FLOWING_FRESH,
+        DIST_IN_FLOWING_FRESH,
+        DIST_FROM_STANDING_FRESH,
+        DIST_IN_STANDING_FRESH,
+        DIST_FROM_WET_VEG_FRESH,
+        DIST_IN_WET_VEG_FRESH,
+        DIST_FROM_FLOWING_BRACKISH,
+        DIST_IN_FLOWING_BRACKISH,
+        DIST_FROM_STANDING_BRACKISH,
+        DIST_IN_STANDING_BRACKISH,
+        DIST_FROM_WET_VEG_BRACKISH,
+        DIST_IN_WET_VEG_BRACKISH,
+        LATITUDE,
+        LONGITUDE,
+        LOC_ID])
+
+    with open(file_name, "w") as f:
+        f.write("num visits,num species,NLCD2011_FS_C11_375_PLAND,NLCD2011_FS_C12_375_PLAND,NLCD2011_FS_C21_375_PLAND,NLCD2011_FS_C22_375_PLAND,NLCD2011_FS_C23_375_PLAND,NLCD2011_FS_C24_375_PLAND,NLCD2011_FS_C31_375_PLAND,NLCD2011_FS_C41_375_PLAND,NLCD2011_FS_C42_375_PLAND,NLCD2011_FS_C43_375_PLAND,NLCD2011_FS_C52_375_PLAND,NLCD2011_FS_C71_375_PLAND,NLCD2011_FS_C81_375_PLAND,NLCD2011_FS_C82_375_PLAND,NLCD2011_FS_C90_375_PLAND,NLCD2011_FS_C95_375_PLAND,HOUSING_DENSITY,HOUSING_PERCENT_VACANT,ELEV_GT,DIST_FROM_FLOWING_FRESH,DIST_IN_FLOWING_FRESH,DIST_FROM_STANDING_FRESH,DIST_IN_STANDING_FRESH,DIST_FROM_WET_VEG_FRESH,DIST_IN_WET_VEG_FRESH,DIST_FROM_FLOWING_BRACKISH,DIST_IN_FLOWING_BRACKISH,DIST_FROM_STANDING_BRACKISH,DIST_IN_STANDING_BRACKISH,DIST_FROM_WET_VEG_BRACKISH,DIST_IN_WET_VEG_BRACKISH,LATITUDE,LONGITUDE,LOC_ID")
+        np.savetxt(f, data.T, fmt="%.5f", delimiter=",")
+
+def make_rand_DIST_file(file_name, J):
+    """
+    J x J random matrix max 100. diagonal elements 0
+    """
+    data = np.random.rand(J, J) * 100
+    data[np.diag_indices(J)] = 0.0
+    np.savetxt(file_name, data, fmt="%.6f", delimiter=" ")

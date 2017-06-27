@@ -31,8 +31,8 @@ parser.add_argument("--eta", type=float, default=10.0, metavar="F",
     help="inputs parameter eta in the model (default=10.0)")
 parser.add_argument("--rewards", type=float, default=1000.0, metavar="R",
     help="inputs the total budget of rewards to be distributed (default=1000.0)")
-parser.add_argument("--rand-xyr", action="store_true", default=False,
-    help="uses random xyr data")
+parser.add_argument("--rand", action="store_true", default=False,
+    help="uses random data")
 parser.add_argument("--weights-file", type=str, 
     default="./stats/find_weights/weights/gpu, origXYR_epochs=1000, train= 80%, time=98.0417 sec.txt", 
     metavar="f", help="inputs the location of the file to use weights from")
@@ -62,7 +62,9 @@ X, W_for_r, F_DIST_weighted, numFeatures = [], [], [], 0
 torchten = torch.FloatTensor
 lp_A, lp_c = [], []
 
-randXYR_file = "./data/randXYR" + str(J) + ".txt"
+randXYR_file = "./data/random/randXYR" + str(J) + ".txt"
+randF_file = "./data/random/randF" + str(J) + ".csv"
+randDIST_file = "./data/random/randDIST" + str(J) + ".txt"
 
 # =============================================================================
 # data input
@@ -70,12 +72,16 @@ randXYR_file = "./data/randXYR" + str(J) + ".txt"
 def read_set_data():
     global X, numFeatures, F_DIST_weighted, W_for_r
     # read f and dist datasets from file, operate on them
-    F = ad.read_F_file("./data/loc_feature_with_avicaching_combined.csv", J)
-    DIST = ad.read_dist_file("./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
+    if args.rand:
+        F = ad.read_F_file(randF_file, J)
+        DIST = ad.read_dist_file(randDIST_file, J)
+    else:
+        F = ad.read_F_file("./data/loc_feature_with_avicaching_combined.csv", J)
+        DIST = ad.read_dist_file("./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
 
     # read W and X
     W = ad.read_weights_file(weights_file_name, J)
-    if args.rand_xyr:
+    if args.rand:
         X, _, _ = ad.read_XYR_file(randXYR_file, J, T)
     else:
         X, _, _ = ad.read_XYR_file("./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
@@ -233,7 +239,7 @@ if __name__ == "__main__":
     # save and plot
     rew = net.R.data.cpu().numpy() * totalR
 
-    if args.rand_xyr:
+    if args.rand:
         file_pre = "randXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
     else:
         file_pre = "origXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)

@@ -30,7 +30,7 @@ parser.add_argument("--eta", type=float, default=10.0, metavar="F",
     help="inputs parameter eta in the model (default=10.0)")
 parser.add_argument("--lambda-L1", type=float, default=10.0, metavar="LAM",
     help="inputs the L1 regularizing coefficient")
-parser.add_argument("--rand-xyr", action="store_true", default=False,
+parser.add_argument("--rand", action="store_true", default=False,
     help="uses random xyr data")
 parser.add_argument("--log-interval", type=int, default=1, metavar="I",
     help="prints training information at I epoch intervals (default=1)")
@@ -66,8 +66,10 @@ u_train, u_test = np.array([]), np.array([])
 num_train = int(math.floor(args.train_percent * T))
 num_test = T - num_train
 
-randXYR_file = "./data/randXYR" + str(J) + ".txt"
-randXYR_weights_file = "./data/randXYR" + str(J) + "_weights.txt"
+randXYR_file = "./data/random/randXYR" + str(J) + ".txt"
+randXYR_weights_file = "./data/random/randXYR" + str(J) + "_weights.txt"
+randF_file = "./data/random/randF" + str(J) + ".csv"
+randDIST_file = "./data/random/randDIST" + str(J) + ".txt"
 
 # =============================================================================
 # data input functions
@@ -79,8 +81,12 @@ def read_set_data():
     global trainX, trainY, trainR, testX, testY, testR, F_DIST, numFeatures
     global u_train, u_test
     # read f and dist datasets from file, operate on them
-    F = ad.read_F_file("./data/loc_feature_with_avicaching_combined.csv", J)
-    DIST = ad.read_dist_file("./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
+    if args.rand:
+        F = ad.read_F_file(randF_file, J)
+        DIST = ad.read_dist_file(randDIST_file, J)
+    else:
+        F = ad.read_F_file("./data/loc_feature_with_avicaching_combined.csv", J)
+        DIST = ad.read_dist_file("./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
     F, DIST = ad.normalize(F, along_dim=0, using_max=True), ad.normalize(DIST, using_max=True)  # normalize using max
     
     # process data for the NN
@@ -90,7 +96,7 @@ def read_set_data():
 
     X, Y, R = [], [], []
     # operate on XYR data
-    if args.rand_xyr:
+    if args.rand:
         if not os.path.isfile(randXYR_file):
             print('a')
             # file doesn't exists, make random data, write to file
@@ -156,9 +162,9 @@ def make_rand_data(X_max=100.0, R_max=100.0):
     Creates random X and R and calculates Y based on random weights
     """
     # create random X and R and w
-    X = np.floor(np.random.rand(T, J) * X_max)
-    R = torchten(np.floor(np.random.rand(T, J) * R_max))
-    w = Variable(torch.randn(J, numFeatures, 1)).type(torchten)
+    X = ad.normalize(np.floor(np.random.rand(T, J) * X_max), along_dim=1, using_max=False)
+    R = torchten(ad.normalize(np.floor(np.random.rand(T, J) * R_max), along_dim=0, using_max=False))
+    w = Variable(torch.randn(J, numFeatures, 1).type(torchten))
     Y = np.empty([T, J])
     X, Y = Variable(torchten(X), requires_grad=False), Variable(torchten(Y), requires_grad=False)
     if args.cuda:
@@ -497,7 +503,7 @@ if __name__ == "__main__":
         
     # FINISH!!
     # log and plot the results: epoch vs loss
-    if args.rand_xyr:
+    if args.rand:
         file_pre = "randXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
     else:
         file_pre = "origXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)

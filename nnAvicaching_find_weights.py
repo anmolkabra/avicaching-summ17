@@ -40,6 +40,8 @@ parser.add_argument("--hide-map-plot", action="store_true", default=False,
     help="hides the map plot, which is only saved")
 parser.add_argument("--expand-R", action="store_true", default=False,
     help="expands the reward vectors into matrices with distributed rewards")
+parser.add_argument("--no-plots", action="store_true", default=False,
+    help="skips generating plot maps")
 parser.add_argument("--train-percent", type=float, default=0.8, metavar="T",
     help="breaks the data into T percent training and rest testing (default=0.8)")
 parser.add_argument('--seed', type=int, default=1, metavar='S',
@@ -98,7 +100,6 @@ def read_set_data():
     # operate on XYR data
     if args.rand:
         if not os.path.isfile(randXYR_file):
-            print('a')
             # file doesn't exists, make random data, write to file
             X, Y, R = make_rand_data()
             ad.save_rand_XYR(randXYR_file, X, Y, R, J, T)
@@ -192,7 +193,6 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         
         # calculate Y
         Y[t] = torch.mv(P, X[t])
-        print(t)
 
     # for verification of random data, save weights ---------------------------
     w_matrix = w.data.view(-1, numFeatures).cpu().numpy()
@@ -508,24 +508,26 @@ if __name__ == "__main__":
     # log and plot the results: epoch vs loss
     if args.rand:
         file_pre = "randXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
+        lat_long = ad.read_lat_long_from_Ffile(randF_file, J)
     else:
         file_pre = "origXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
+        lat_long = ad.read_lat_long_from_Ffile("./data/loc_feature_with_avicaching_combined.csv", J)
 
     log_name = "train=%3.0f%%, lr=%.3e, time=%.4f sec" % (
         args.train_percent * 100, args.lr, total_time)
     
     epoch_data = np.arange(1, args.epochs + 1)
     fname = file_pre_gpu + file_pre + log_name
-    
     # save amd plot data
-    save_plot("./stats/find_weights/plots/" + fname + ".png", epoch_data, 
-        [train_time_loss, test_time_loss], "epoch", "loss", log_name)
     save_log("./stats/find_weights/logs/" + fname + ".txt", epoch_data, 
         [train_time_loss, test_time_loss], log_name)
-    plot_predicted_map("./stats/find_weights/map_plots/" + fname + ".png",
-            ad.read_lat_long_from_Ffile("./data/loc_feature_with_avicaching_combined.csv", J),
-            y_pred, log_name)
     np.savetxt("./stats/find_weights/weights/" + fname + ".txt", 
         net.w.data.view(-1, numFeatures).cpu().numpy(), fmt="%.15f", delimiter=" ")
 
+    if not args.no_plots:
+        save_plot("./stats/find_weights/plots/" + fname + ".png", epoch_data, 
+            [train_time_loss, test_time_loss], "epoch", "loss", log_name)
+        plot_predicted_map("./stats/find_weights/map_plots/" + fname + ".png",
+            lat_long, y_pred, log_name)
+    
     print("---> " + fname + " DONE")

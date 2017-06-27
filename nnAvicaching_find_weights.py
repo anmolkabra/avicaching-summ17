@@ -88,7 +88,7 @@ def read_set_data():
         F = ad.read_F_file("./data/loc_feature_with_avicaching_combined.csv", J)
         DIST = ad.read_dist_file("./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
     F, DIST = ad.normalize(F, along_dim=0, using_max=True), ad.normalize(DIST, using_max=True)  # normalize using max
-    
+
     # process data for the NN
     numFeatures = len(F[0]) + 1     # distance included
     F_DIST = torchten(ad.combine_DIST_F(F, DIST, J, numFeatures))
@@ -162,16 +162,16 @@ def make_rand_data(X_max=100.0, R_max=100.0):
     Creates random X and R and calculates Y based on random weights
     """
     # create random X and R and w
-    X = ad.normalize(np.floor(np.random.rand(T, J) * X_max), along_dim=1, using_max=False)
-    R = torchten(ad.normalize(np.floor(np.random.rand(T, J) * R_max), along_dim=0, using_max=False))
+    global F_DIST
+    origX = np.floor(np.random.rand(T, J) * X_max)
+    origR = np.floor(np.random.rand(T, J) * R_max)
+    X = ad.normalize(origX, along_dim=1, using_max=False)
+    R = torchten(ad.normalize(origR, along_dim=0, using_max=False))
     w = Variable(torch.randn(J, numFeatures, 1).type(torchten))
     Y = np.empty([T, J])
     X, Y = Variable(torchten(X), requires_grad=False), Variable(torchten(Y), requires_grad=False)
     if args.cuda:
-        X, Y, R, w = X.cuda(), Y.cuda(), R.cuda(), w.cuda()
-
-    print(F_DIST)
-    print(R)
+        X, Y, R, w, F_DIST = X.cuda(), Y.cuda(), R.cuda(), w.cuda(), F_DIST.cuda()
     
     # build Y
     for t in xrange(T):

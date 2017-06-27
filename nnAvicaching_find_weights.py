@@ -163,6 +163,9 @@ def make_rand_data(X_max=100.0, R_max=100.0):
     X, Y = Variable(torchten(X), requires_grad=False), Variable(torchten(Y), requires_grad=False)
     if args.cuda:
         X, Y, R, w = X.cuda(), Y.cuda(), R.cuda(), w.cuda()
+
+    print(F_DIST)
+    print(R)
     
     # build Y
     for t in xrange(T):

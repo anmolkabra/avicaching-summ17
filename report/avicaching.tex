@@ -5,7 +5,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath, amssymb}
 \usepackage{algorithm}
-\usepackage[noend]{algpseudocode}
+\usepackage{algpseudocode}
 %\usepackage{times} % Use the Times font
 %\usepackage[T1]{fontenc}
 \linespread{1.25}
@@ -137,10 +137,17 @@
     \begin{algorithm}
         \caption{Constructing the Input Dataset} \label{alg:Constructing the Input Dataset}
         \begin{algorithmic}[1]
-            \State operation 0
-            \State operation 1
+            \State $\mathbf{d} \gets \Call{Normalize}{\mathbf{d}}$\Comment{$\mathbf{d}[u][v]$ is the distance between locations $u$ and $v$}
+            \State $\mathbf{f} \gets \Call{Normalize}{\mathbf{f}, axis = 0}$\Comment{$\mathbf{f}[u]$ is a vector of env. features at location $u$}
+            \State $\mathbf{r_t} \gets \Call{Normalize}{\mathbf{r_t}, axis = 0}$\Comment{$\mathbf{r_t}[u]$ is the reward at location $u$}
+            \For{$v = 1, 2, \dots J$}
+                \For{$u = 1, 2, \dots J$}
+                    \State $\mathbf{F}[v][u] \gets [\mathbf{d}[v][u], \mathbf{f}[u], \mathbf{r_t}[u]]$
+                \EndFor
+            \EndFor
         \end{algorithmic}
     \end{algorithm}
+    
     
     \subsubsection{Algorithm for Identification Problem}
     \begin{figure}[H]

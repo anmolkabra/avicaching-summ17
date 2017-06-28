@@ -263,16 +263,17 @@ def train(net, optimizer, loss_normalizer, u):
     """
     Trains the NN using MyNet
     """
-    loss, loop_time = 0, 0
+    loss = 0
     P_data = torch.zeros(num_train, J)
-
+    start_time = time.time()
+    
     for t in xrange(num_train):
         # build the input by appending trainR[t] to F_DIST
         inp = build_input(trainR[t])
         if args.cuda:
             inp = inp.cuda()
         inp = Variable(inp)
-        loop_start = time.time()
+    
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
     
@@ -280,28 +281,25 @@ def train(net, optimizer, loss_normalizer, u):
         Pxt = torch.mv(P, trainX[t])
         P_data[t] = Pxt.data
         loss += (u[t] * (trainY[t] - Pxt)).pow(2).sum()
-        
-        loop_time += (time.time() - loop_start)
-
     # loss += args.lambda_L1 * torch.norm(net.w.data)
-    start_outside = time.time()
     loss /= loss_normalizer
-
+    
     # backpropagate
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
 
-    end_time = (time.time() - start_outside) + loop_time
-    return (end_time, loss.data[0], 
+    end_time = time.time()
+    return (end_time - start_time, loss.data[0], 
         torch.mean(P_data, dim=0).squeeze().cpu().numpy())
 
 def test(net, loss_normalizer, u):
     """
     Test the network using MyNet
     """
-    loss, loop_time = 0, 0
+    loss = 0
     P_data = torch.zeros(num_test, J)
+    start_time = time.time()
     
     for t in xrange(num_test):
         # build the input by appending testR[t]
@@ -309,7 +307,7 @@ def test(net, loss_normalizer, u):
         if args.cuda:
             inp = inp.cuda()
         inp = Variable(inp)
-        loop_start = time.time()
+        
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
         
@@ -317,15 +315,11 @@ def test(net, loss_normalizer, u):
         Pxt = torch.mv(P, testX[t])
         P_data[t] = Pxt.data
         loss += (u[t] * (testY[t] - Pxt)).pow(2).sum()
-
-        loop_time += (time.time() - loop_start)
-
     # loss += args.lambda_L1 * torch.norm(net.w.data)
-    start_outside = time.time()
     loss /= loss_normalizer
 
-    end_time = (time.time() - start_outside) + loop_time
-    return (end_time, loss.data[0], 
+    end_time = time.time()
+    return (end_time - start_time, loss.data[0], 
         torch.mean(P_data, dim=0).squeeze().cpu().numpy())
 
 # =============================================================================

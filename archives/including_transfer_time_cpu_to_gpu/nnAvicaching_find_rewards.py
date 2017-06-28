@@ -127,7 +127,7 @@ class MyNet(nn.Module):
 
 def train(net, optimizer):
     global W_for_r, lp_A, lp_c
-    start_train = time.time()
+    start_time = time.time()
 
     # feed in data
     P = net(W_for_r).t()    # P is now weighted -> softmax
@@ -142,17 +142,12 @@ def train(net, optimizer):
     
     # update the rewards and constrain them
     optimizer.step()
-    end_train = time.time() - start_train
-
-    r_on_cpu = net.R.data.squeeze().cpu().numpy()   # transfer data
-    start_lp = time.time()
-    net.R.data = torchten(lp.run_lp(lp_A, lp_c, J, r_on_cpu, 1.0).x[:J]).unsqueeze(dim=0)
-    end_lp = time.time() - start_lp
+    net.R.data = torchten(lp.run_lp(lp_A, lp_c, J, net.R.data.squeeze().cpu().numpy(), 1.0).x[:J]).unsqueeze(dim=0)
     if args.cuda:
-        # transfer data
         net.R.data = net.R.data.cuda()
 
-    return (end_train + end_lp, loss.data[0], net.R.data.sum())
+    end_time = time.time()
+    return (end_time - start_time, loss.data[0], net.R.data.sum())
 
 def test_rewards(net, r):
     global W_for_r

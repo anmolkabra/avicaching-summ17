@@ -86,18 +86,11 @@ def split_along_dim(M, num, dim):
     """
     return np.split(M, [num], axis=dim)
 
-def read_weights_file(file_name, locs):
-    w = []
-    with open(file_name, "r") as wfile:
-        for idx, line in zip(xrange(locs), wfile):
-            line_vec = np.array(map(float, line.split()))
-            if idx == 0:
-                # w init
-                w = line_vec
-            else:
-                # append w info
-                w = np.vstack([w, line_vec])
-    return w
+def read_weights_file(file_name, locs, numFeatures):
+    data = np.loadtxt(file_name)
+    w1, w2 = split_along_dim(data, len(data) - locs, dim=0)
+    w1 = w1.reshape((locs, numFeatures, numFeatures))
+    return (w1, w2)
 
 def read_lat_long_from_Ffile(file_name, locs, lat_col=33, long_col=34):
     lat_long = []

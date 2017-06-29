@@ -80,7 +80,7 @@ def read_set_data():
         DIST = ad.read_dist_file("./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
 
     # read W and X
-    W = ad.read_weights_file(weights_file_name, J)
+    w1, w2 = ad.read_weights_file(weights_file_name, J, numFeatures)
     if args.rand:
         X, _, _ = ad.read_XYR_file(randXYR_file, J, T)
     else:

@@ -154,7 +154,7 @@ def train(net, optimizer):
 
     return (end_train + end_lp, loss.data[0], net.R.data.sum())
 
-def test_rewards(net, r):
+def test_rewards(r):
     global W_for_r
     start_time = time.time()
 
@@ -177,13 +177,14 @@ def test_rewards(net, r):
 # =============================================================================
 # logs and plots
 # =============================================================================
-def save_log(file_name, rewards, results, title):
+def save_log(file_name, results, title, rewards=None):
     """
     Saves the log of train and test periods to a file
     """
     with open(file_name, "wt") as f:
         f.write(title + "\n")
-        np.savetxt(f, rewards, fmt="%.15f", delimiter=" ")
+        if rewards is not None:
+            np.savetxt(f, rewards, fmt="%.15f", delimiter=" ")
         f.write("time = %.4f\t\tloss = %.15f\n" % (results[0], results[1]))
 
 def save_plot(file_name, x, y, xlabel, ylabel, title):
@@ -215,11 +216,11 @@ if __name__ == "__main__":
     read_set_data()
     if args.test:
         rewards = np.loadtxt(args.test, delimiter=" ")[:J]
-        rewards = torchten(ad.normalize(rewards, using_max=False))
-        res = test_rewards(net, r)
+        rewards = Variable(torchten(ad.normalize(rewards, using_max=False)))
+        res = test_rewards(rewards)
         # save results
-        fname = "testing " + args.test
-        save_log("./stats/find_rewards/" + fname + ".txt", rewards, res, weights_file_name)
+        fname = "testing " + args.test[args.test.rfind("/") + 1:]
+        save_log("./stats/find_rewards/" + fname + ".txt", res, weights_file_name)
         sys.exit(0)
     
     net = MyNet()
@@ -256,6 +257,6 @@ if __name__ == "__main__":
 
     save_plot("./stats/find_rewards/plots/" + fname + ".png", epoch_data, 
         train_time_loss, "epoch", "loss", log_name)
-    save_log("./stats/find_rewards/logs/" + fname + ".txt", rew, train_res, weights_file_name)
+    save_log("./stats/find_rewards/logs/" + fname + ".txt", train_res, weights_file_name, rew)
 
     print("---> " + fname + " DONE")

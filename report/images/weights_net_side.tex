@@ -1,0 +1,49 @@
+\documentclass[tikz, margin=2mm, convert={density=300,size=1920x1080,outext=.png}]{standalone}
+
+\begin{document}
+    \tikzset{
+        every neuron/.style={
+            circle,
+            draw=none,
+            fill=gray!80,
+            minimum size=0.75cm
+        },
+        neuron missing/.style={
+            draw=none, 
+            scale=2,
+            fill=none,
+            text height=0.333cm,
+            execute at begin node=\color{black}$\vdots$
+        },
+    }
+    \begin{tikzpicture}[x=1cm, y=1cm, >=stealth]
+        
+        \foreach \m/\l [count=\y] in {1,2,3,missing,n}
+            \node [every neuron/.try, neuron \m/.try] (input-\m) at (0,-\y) {};
+        
+        \foreach \m [count=\y] in {1,2,3,missing,n}
+            \node [every neuron/.try, neuron \m/.try ] (hidden-\m) at (2,-\y) {};
+        
+        \node [every neuron] (output-1) at (4,-3) {$O$};
+        
+        \foreach \i in {1,2,3,n}
+            \foreach \j in {1,2,3,n}
+                \draw [->] (input-\i) -- (hidden-\j);
+        
+        \foreach \i in {1,2,3,n}
+            \draw [->] (hidden-\i) -- (output-1);
+        
+        % labels
+        \foreach \l [count=\i] in {1,2,3,n} {
+            \draw [<-] (input-\l) -- ++(-1,0);
+            \node at (input-\l) {$I_\l$};
+        }
+        \foreach \l [count=\i] in {1,2,3,n}
+            \node at (hidden-\l) {$H_\l$};
+        \draw [->] (output-1) -- ++(1,0) node [right] {$softmax(\Gamma_i)$};
+        \foreach \l [count=\x from 0] in {Input, Hidden, Output}
+            \node [align=center, above] at (\x*2,0) {\textsc{\l}};
+        \node at (1, -.5) {$\mathbf{w_1}$};
+        \node at (3, -1.5) {$\mathbf{w_2}$};
+    \end{tikzpicture}
+\end{document}

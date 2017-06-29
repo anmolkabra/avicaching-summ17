@@ -13,7 +13,7 @@
 \usepackage{microtype} % Slightly tweak font spacing for aesthetics
 \usepackage[english]{babel} % Language hyphenation and typographical rules
 \usepackage{tikz}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage{url}
 \usepackage{graphicx}
 \usepackage{float}
@@ -38,17 +38,18 @@
     One such predictive model is Avicaching \cite{Xue2016Avi1} in the eBird platform [cite], which aims to ``maximize the utility and accessibility of the vast numbers of bird observations made each year by recreational and professional bird watchers'' [cite website]. Since the eBird dataset is heterogeneous geographically, Avicaching tries to homogenize future observations by providing observer-citizens incentives to visit under-sampled locations \cite{Xue2016Avi1}. Therefore, the Avicaching game can be modeled as two separate problems - identifying parameters of citizens' behavior on a specific set of rewards (incentives), and pooling rewards from a budget to locations such that the citizens' predicted behavior is homogeneous \cite{Xue2016Avi2}.
     
     \subsection{Identification Problem} \label{sec:iden_problem}
-    This subroutine will learn parameters of the change in citizens' behavior due to rewards. Specifically, given datasets $\vect{y_t}$ and $\vect{x_t}$ of citizens' visit densities with and without the rewards $\vect(r_t)$, we want to find weights $\matr{w}$ that caused the change from $\vect{x_t}$ to $\vect{y_t}$, factoring in possible influence due to environmental factors $\matr{f}$ and distances between locations $\matr{d}$. Therefore, the model is:
+    This subroutine will learn parameters of the change in citizens' behavior due to rewards. Specifically, given datasets $\vect{y_t}$ and $\vect{x_t}$ of citizens' visit densities with and without the rewards $\vect{r_t}$, we want to find weights $\matr{w_1}$ and $\matr{w_2}$ that caused the change from $\vect{x_t}$ to $\vect{y_t}$, factoring in possible influence due to environmental factors $\matr{f}$ and distances between locations $\matr{d}$. Although the original model proposed to learn a single set of weights $\matr{w}$, our proposed model considers two sets of weights $\matr{w_1}$ and $\matr{w_2}$ as it may theoretically result into higher accuracy and lower loss. Mathematically, our model can be formulated as:
     \begin{equation} \label{eq:iden_problem}
     \begin{aligned}
     & \underset{\matr{w}}{\text{minimize}}
-    & & Z_I(\matr{w}) = \sum_{t} (u_t(\vect{y_t} - \matr{P}(\matr{f}, \vect{r_t}; \matr{w})\vect{x_t}))^{2}
+    & & Z_I(\matr{w}) = \sum_{t} (u_t(\vect{y_t} - \matr{P}(\matr{f}, \vect{r_t}; \matr{w_1}, \matr{w_2})\vect{x_t}))^{2}
     \end{aligned}
     \end{equation}
     where $u_t$ is the total number of submissions at time $t$ for a given citizen and elements $p_{u, v}$ of $P$ are given as:
     \begin{equation} \label{eq:puv_equation}
-    p_{u, v} = \frac{\exp{(\matr{w} \cdot [d_{u, v}, \vect{f_{u, v}}, r_{u}])}}{\sum_{u'} \exp{(\matr{w} \cdot [d_{u', v}, \vect{f_{u', v}}, r_{u'}]}}
+    p_{u, v} = \frac{\exp(\matr{w_2} \cdot \text{reLU} (\matr{w_1} \cdot [d_{u, v}, \vect{f_{u, v}}, r_{u}]))}{\sum_{u'} \exp(\matr{w_2} \cdot \text{reLU} (\matr{w_1} \cdot [d_{u', v}, \vect{f_{u', v}}, r_{u'}]))} = \frac{\exp(\Gamma_{u, v})}{\sum_{u'}\exp(\Gamma_{u', v})} = \text{softmax}(\Gamma_{u, v})
     \end{equation}
+    In the expression for $p_{u,v}$ (equation \ref{eq:puv_equation}), softmax is the function: softmax$(z_i) = \frac{\exp(z_i)}{\sum_{i}\exp(z_i)}$ and the reLU$(\cdot)$ function is a rectified Linear Unit defined as: reLU$(z) = \text{max}(0, z)$.
     
     \subsection{Pricing Problem} \label{sec:pricing_problem}
     The Pricing subroutine will attempt to allocate rewards to all locations such that the predicted behavior is least heterogeneous, given the learned parameters from Section \ref{sec:iden_problem}. This optimization problem can be written as:
@@ -57,74 +58,12 @@
     & \underset{\vect{r}}{\text{minimize}}
     & & Z_P(\vect{r}) = \frac{1}{n}\lVert \vect{y} - \mean{\vect{y}} \rVert\\
     & \text{subject to}
-    & & \vect{y} = \matr{P}(\matr{f}, \vect{r}; \matr{w}) \, \vect{x}\\
+    & & \vect{y} = \matr{P}(\matr{f}, \vect{r}; \matr{w_1}, \matr{w_2}) \, \vect{x}\\
     &&& \sum_{i} r_i \leq \mathcal{R}\\
     &&& r_i \geq 0
     \end{aligned}
     \end{equation}
     where $\mathcal{R}$ is total reward budget and $\matr{P}$ is defined as in Equation \ref{eq:puv_equation}.
-    
-%    \begin{tikzpicture}[x=(15:.5cm), y=(90:.5cm), z=(330:.5cm), >=stealth]
-%    \draw (0, 0, 0) -- (0, 0, 10) (4, 0, 0) -- (4, 0, 10);
-%    \foreach \z in {0, 5, 10} \foreach \x in {0,...,3}
-%    \foreach \y [evaluate={\b=random(0, 1);}] in {0,...,3}
-%    \filldraw [fill=white] (\x, \y, \z) -- (\x+1, \y, \z) -- (\x+1, \y+1, \z) --
-%    (\x, \y+1, \z) -- cycle (\x+.5, \y+.5, \z) node [yslant=tan(15)] {\b};
-%    \draw [dashed] (0, 4, 0) -- (0, 4, 10) (4, 4, 0) -- (4, 4, 10);
-%    \draw [->] (0, 4.5, 0)  -- (4, 4.5, 0)   node [near end, above left] {Column};
-%    \draw [->] (-.5, 4, 0)  -- (-.5, 0, 0)   node [midway, left] {Row};
-%    \draw [->] (4, 4.5, 10) -- (4, 4.5, 2.5) node [near end, above right] {Channel};
-%    \end{tikzpicture}
-%    
-%    \tikzset{%
-%        every neuron/.style={
-%            circle,
-%            draw,
-%            minimum size=1cm
-%        },
-%        neuron missing/.style={
-%            draw=none, 
-%            scale=4,
-%            text height=0.333cm,
-%            execute at begin node=\color{black}$\vdots$
-%        },
-%    }
-%    
-%    \begin{tikzpicture}[x=1.5cm, y=1.5cm, >=stealth]
-%    
-%    \foreach \m/\l [count=\y] in {1,2,3,missing,4}
-%    \node [every neuron/.try, neuron \m/.try] (input-\m) at (0,2.5-\y) {};
-%    
-%    \foreach \m [count=\y] in {1,missing,2}
-%    \node [every neuron/.try, neuron \m/.try ] (hidden-\m) at (2,2-\y*1.25) {};
-%    
-%    \foreach \m [count=\y] in {1,missing,2}
-%    \node [every neuron/.try, neuron \m/.try ] (output-\m) at (4,1.5-\y) {};
-%    
-%    \foreach \l [count=\i] in {1,2,3,n}
-%    \draw [<-] (input-\i) -- ++(-1,0)
-%    node [above, midway] {$I_\l$};
-%    
-%    \foreach \l [count=\i] in {1,n}
-%    \node [above] at (hidden-\i.north) {$H_\l$};
-%    
-%    \foreach \l [count=\i] in {1,n}
-%    \draw [->] (output-\i) -- ++(1,0)
-%    node [above, midway] {$O_\l$};
-%    
-%    \foreach \i in {1,...,4}
-%    \foreach \j in {1,...,2}
-%    \draw [->] (input-\i) -- (hidden-\j);
-%    
-%    \foreach \i in {1,...,2}
-%    \foreach \j in {1,...,2}
-%    \draw [->] (hidden-\i) -- (output-\j);
-%    
-%    \foreach \l [count=\x from 0] in {Input, Hidden, Ouput}
-%    \node [align=center, above] at (\x*2,2) {\l \\ layer};
-%    
-%    \end{tikzpicture}
-    
     
     \subsection{Computation Using GPUs} \label{sec:comp_using_GPUs}
     
@@ -159,7 +98,7 @@
             \State $\vect{r_t} \gets \Call{Normalize}{\vect{r_t}, axis = 0}$\Comment{$\vect{r_t}[u]$ is the reward at location $u$}
             \For{$v = 1, 2, \dots J$}
                 \For{$u = 1, 2, \dots J$}
-                    \State $\tens{F}[v][u] \gets [\matr{d}[v][u], \vect{f}[u], \vect{r_t}[u]]$ \ref{fig:Contents of Fvu}
+                    \State $\tens{F}[v][u] \gets [\matr{d}[v][u], \vect{f}[u], \vect{r_t}[u]]$ \Comment{Figure \ref{fig:Contents of Fvu}}
                 \EndFor
             \EndFor
         \end{algorithmic}

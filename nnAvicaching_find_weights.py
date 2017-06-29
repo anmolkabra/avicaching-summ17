@@ -190,8 +190,16 @@ def make_rand_data(X_max=100.0, R_max=100.0):
     # for verification of random data, save weights ---------------------------
     w1_matrix = w1.data.cpu().numpy()
     w2_matrix = w2.data.view(-1, numFeatures).cpu().numpy()
+
     with open(randXYR_weights_file, "w") as f:
-        np.savetxt(f, w1_matrix, fmt="%.15f", delimiter=" ")
+        # save w1
+        f.write('# w1 shape: {0}\n'.format(w1.shape))
+        for data_slice in w1_matrix:
+            f.write('# New slice\n')
+            np.savetxt(f, data_slice, fmt="%.15f", delimiter=" ")
+            
+        # save w2
+        f.write('# w2 shape: {0}\n'.format(w2.shape))
         np.savetxt(f, w2_matrix, fmt="%.15f", delimiter=" ")
     # -------------------------------------------------------------------------
 

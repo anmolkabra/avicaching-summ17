@@ -229,7 +229,8 @@ if __name__ == "__main__":
         file_pre_gpu = "gpu, "
     else:
         file_pre_gpu = "cpu, "
-    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, nesterov=True)
+    # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, nesterov=True)
+    optimizer = optim.Adam(net.parameters(), lr=args.lr)
     lp_A, lp_c = lp.build_A(J), lp.build_c(J)
 
     total_time = 0.0

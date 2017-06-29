@@ -132,16 +132,23 @@
     Since NVIDIA General Purpose GPUs enable faster computation on matrices, accelerated through CUDA and cuDNN, both the Identification Problem (Section \ref{sec:iden_problem}) and Pricing Problem (Section \ref{sec:pricing_problem}) were formulated as 2-layer Neural Networks using the PyTorch platform.
     
     \subsection{Design for Identification Problem}
-    \begin{wrapfigure}{r}{0.4\textwidth}
-        \centering
-        \includegraphics[width=0.3\textwidth]{weights_input_dataset}
-        \caption{A Tensor representing the Input Dataset}
-        \label{fig:A Tensor representing the Input Dataset}
-    \end{wrapfigure}
+    
     The Identification Problem (Section \ref{sec:iden_problem}) can be modeled as a typical 2-layered Neural Network, which learns the weights through multiple iterations of back-propagating the loss value $Z_I(\matr{w})$ (equation \ref{eq:iden_problem}) using gradient descent.
     
     \subsubsection{Structure of Input Dataset}
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=.4\textwidth]{weights_input_dataset}
+        \caption{A Tensor representing the Input Dataset}
+        \label{fig:A Tensor representing the Input Dataset}
+    \end{figure}
     
+    \begin{wrapfigure}{r}{0.4\textwidth}
+        \centering
+        \includegraphics[width=0.3\textwidth]{zoomup_Fuv}
+        \caption{Contents of $\vect{F}_{vu}$}
+        \label{fig:Contents of Fvu}
+    \end{wrapfigure}
     The input dataset comprising of environmental features $\vect{f}$ and given rewards $\vect{r_t}$ must be combined into a tensor (figure \ref{fig:A Tensor representing the Input Dataset}) that can be readily operated on by NVIDIA GPUs. Another advantage of building the dataset as discussed comes with the PyTorch library, which provides convenient handling of tensors residing on CPUs as well as GPUs. Algorithm \ref{alg:Constructing the Input Dataset} describes the steps to construct this dataset.
     
     \begin{algorithm}
@@ -152,13 +159,12 @@
             \State $\vect{r_t} \gets \Call{Normalize}{\vect{r_t}, axis = 0}$\Comment{$\vect{r_t}[u]$ is the reward at location $u$}
             \For{$v = 1, 2, \dots J$}
                 \For{$u = 1, 2, \dots J$}
-                    \State $\tens{F}[v][u] \gets [\matr{d}[v][u], \vect{f}[u], \vect{r_t}[u]]$
+                    \State $\tens{F}[v][u] \gets [\matr{d}[v][u], \vect{f}[u], \vect{r_t}[u]]$ \ref{fig:Contents of Fvu}
                 \EndFor
             \EndFor
         \end{algorithmic}
     \end{algorithm}
-    
-    
+       
     \subsubsection{Algorithm for Identification Problem}
     For learning the weights $\matr{w}$ in equation \ref{eq:iden_problem}, a Neural Network was built using the PyTorch library, which minimized the loss function using gradient descent routines. Figure \ref{fig:Neural Network designed for Identification Problem} illustrates the framework of the network used, calculating the vector $\vect{p_v}$. This network was fed in with data from different locations $v$, resulting into the matrix $\matr{P}$, which was then used to calculate the loss.
     \begin{figure}[H]

@@ -1,10 +1,10 @@
-\documentclass[tikz, convert={density=300,size=1920x1080,outext=.png}]{standalone}
+\documentclass[tikz, margin=2mm,convert={density=300,size=1920x1080,outext=.png}]{standalone}
 
 \usepackage{xcolor}
 
-\newcommand{\len}{10}
-\newcommand{\bre}{10}
-\newcommand{\hei}{5}
+\newcommand{\len}{10}% x direction
+\newcommand{\bre}{10}% y direction
+\newcommand{\hei}{5}% z direction
 \newcommand{\frontcolor}{black!15!white}
 \newcommand{\topcolor}{black!30!white}
 \newcommand{\sidecolor}{black!45!white}
@@ -20,9 +20,11 @@
         \coordinate (F) at (0, \bre, \hei);
         \coordinate (G) at (\len, \bre, \hei);
         
+        % color
         \fill[\frontcolor] (D) -- (E) -- (G) -- (F) -- cycle;
         \fill[\topcolor] (B) -- (C) -- (G) -- (F) -- cycle;
         \fill[\sidecolor] (O) -- (B) -- (F) -- (D) -- cycle;
+        
         % draw dotted dividing lines
         \foreach \z in {1, ..., 4}
             \draw[-] (0, 0, \z) -- (0, \bre, \z) -- (\len, \bre, \z); 
@@ -30,24 +32,27 @@
             \draw[-] (\x, 0, \hei) -- (\x, \bre, \hei) -- (\x, \bre, 0);
         \foreach \y in {1, ..., 9}
             \draw[-] (0, \y, 0) -- (0, \y, \hei) -- (\len, \y, \hei);
+        
+        % box edges
         \draw[line width=1.25pt] (B) -- (F) -- (G) -- (C) -- cycle;
         \draw[line width=1.25pt] (F) -- (D) -- (E) -- (G);
         \draw[line width=1.25pt] (B) -- (O) -- (D);
         
+        % dimension labels
+        \draw [->, line width=1.05pt] (0, 0, \hei+.5)  -- (\len, 0, \hei+.5)   node [midway, below, scale=2] {$u$};
+        \draw [->, line width=1.05pt] (\len+.5, \bre, \hei)  -- (\len+.5, 0, \hei)   node [midway, right, scale=2] {$v$};
         
-%        \draw[thick, gray] (10, 0, 0) -- (10, -10, 0) -- (0, -10, 0);
-%        \draw[thick, gray] (10, -10, 0) -- (10, -10, 5);
-%        % draw dotted dividing lines
-%        \foreach \z in {1, 2, 3, 4}
-%            \draw[dashed] (10, 0, \z) -- (0, 0, \z) -- (0, -10, \z); 
-%        \foreach \x in {1, ..., 9}
-%            \draw[dashed] (\x, 0, 0) -- (\x, 0, 5) -- (\x, -10, 5);
-%        \foreach \y in {-9, ..., -1}
-%            \draw[dashed] (0, \y, 0) -- (0, \y, 5) -- (10, \y, 5);
-%        \draw[thick] (0, 0, 0) -- (10, 0, 0) -- (10, 0, 5) -- (0, 0, 5) -- cycle;
-%        \draw[thick] (0, 0, 0) -- (0, -10, 0) -- (0, -10, 5) -- (0, 0, 5);
-%        \draw[thick] (0, -10, 5) -- (10, -10, 5) -- (10, 0, 5);
-        
-        
+        % labels on the faces
+        \node [draw=none, sloped, xslant=.25, rotate=15, scale=1.75] at (0.5, \bre-.5, \hei){$\mathbf{F}_{00}$};
+        \node [draw=none, sloped, xslant=.25, rotate=15, scale=1.75] at (0.5, \bre-1.5, \hei){$\mathbf{F}_{10}$};
+        \node [draw=none, sloped, xslant=.25, rotate=15, scale=1.75] at (1.5, \bre-0.5, \hei){$\mathbf{F}_{01}$};
+        \node [draw=none, sloped, xslant=.25, rotate=15, scale=1.75] at (6.5, \bre-5.5, \hei){$\mathbf{F}_{vu}$};
+        \foreach \x in {2.5, 3.5, 4.5}
+            \node [draw=none, sloped, xslant=.25, rotate=15, scale=4] at (0.5, \bre-\x, \hei){$\cdot$};
+        \foreach \x in {2.5, 3.5, 4.5}
+            \node [draw=none, sloped, xslant=.25, rotate=15, scale=4] at (\x, \bre-.5, \hei){$\cdot$};
+        \foreach \diag in {1.5, 2.5, 3.5}
+            \node [draw=none, sloped, xslant=.25, rotate=15, scale=4] at (\diag, \bre-\diag, \hei){$\cdot$};
+        \node [draw=none, sloped, xslant=.25, rotate=15, scale=4] at (0.5, \bre-2.5, \hei){$\cdot$};
     \end{tikzpicture}
 \end{document}

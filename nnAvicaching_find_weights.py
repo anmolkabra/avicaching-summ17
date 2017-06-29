@@ -103,16 +103,6 @@ def read_set_data():
             # file doesn't exists, make random data, write to file
             X, Y, R = make_rand_data()
             ad.save_rand_XYR(randXYR_file, X, Y, R, J, T)
-            # sys.exit()
-        #
-        # print("Verifying randXYR...")
-        # X, Y, R = ad.read_XYR_file("./randXYR.txt", J, T)
-        # w = ad.read_weights_file("./randXYR_weights.txt", J)
-        # X, Y, R, w = Variable(torchten(X)), Variable(torchten(Y)), torchten(R), torchten(w)
-        # w = Variable(torch.unsqueeze(w, dim=2))   # make w a 3d tensor
-        
-        # test_given_data(X, Y, R, w, J, T)
-        #
         X, Y, R = ad.read_XYR_file(randXYR_file, J, T)
     else:
         X, Y, R = ad.read_XYR_file("./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
@@ -168,11 +158,13 @@ def make_rand_data(X_max=100.0, R_max=100.0):
     origR = np.floor(np.random.rand(T, J) * R_max)
     X = ad.normalize(origX, along_dim=1, using_max=False)
     R = torchten(ad.normalize(origR, along_dim=0, using_max=False))
-    w = Variable(torch.randn(J, numFeatures, 1).type(torchten))
+    w1 = Variable(torch.randn(J, numFeatures, numFeatures).type(torchten))
+    w2 = Variable(torch.randn(J, numFeatures, 1).type(torchten))
     Y = np.empty([T, J])
     X, Y = Variable(torchten(X), requires_grad=False), Variable(torchten(Y), requires_grad=False)
     if args.cuda:
-        X, Y, R, w, F_DIST = X.cuda(), Y.cuda(), R.cuda(), w.cuda(), F_DIST.cuda()
+        X, Y, R, F_DIST = X.cuda(), Y.cuda(), R.cuda(), F_DIST.cuda()
+        w1, w2 = w1.cuda(), w2.cuda()
     
     # build Y
     for t in xrange(T):
@@ -183,7 +175,8 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         inp = Variable(inp)
         
         # feed in data
-        inp = torchfun.relu(torch.bmm(inp, w)).view(-1, J)
+        inp = torchfun.relu(torch.bmm(inp, w1)) # first layer
+        inp = torch.bmm(inp, w2).view(-1, J)
         # add eta to inp[u][u]
         # eta_matrix = Variable(eta * torch.eye(J).type(torchten))
         # if args.cuda:
@@ -195,13 +188,16 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         Y[t] = torch.mv(P, X[t])
 
     # for verification of random data, save weights ---------------------------
-    w_matrix = w.data.view(-1, numFeatures).cpu().numpy()
-    np.savetxt(randXYR_weights_file, w_matrix, fmt="%.15f", delimiter=" ")
+    w1_matrix = w1.data.cpu().numpy()
+    w2_matrix = w2.data.view(-1, numFeatures).cpu().numpy()
+    with open(randXYR_weights_file, "w") as f:
+        np.savetxt(f, w1_matrix, fmt="%.15f", delimiter=" ")
+        np.savetxt(f, w2_matrix, fmt="%.15f", delimiter=" ")
     # -------------------------------------------------------------------------
 
     return (X.data.cpu().numpy(), Y.data.cpu().numpy(), R.cpu().numpy())
 
-def test_given_data(X, Y, R, w, J, T, u):
+def test_given_data(X, Y, R, w1, w2, J, T, u):
     loss_normalizer = (torch.mv(torch.t(Y - \
         torch.mean(Y).expand_as(Y)).data, u)).pow(2).sum()
     loss = 0
@@ -214,7 +210,8 @@ def test_given_data(X, Y, R, w, J, T, u):
         inp = Variable(inp)
         
         # feed in data
-        inp = torchfun.relu(torch.bmm(inp, w)).view(-1, J)
+        inp = torchfun.relu(torch.bmm(inp, w1))
+        inp = torch.bmm(inp, w2).view(-1, J)
         # add eta to inp[u][u]
         # eta_matrix = Variable(eta * torch.eye(J).type(torchten))
         # if args.cuda:
@@ -239,15 +236,17 @@ class MyNet(nn.Module):
         Initializes MyNet
         """
         super(MyNet, self).__init__()
-        self.w = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
+        self.w1 = nn.Parameter(torch.randn(J, numFeatures, numFeatures).type(torchten))
+        self.w2 = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
 
     def forward(self, inp):
         """
         Forward in the network; multiply the weights, take the relu and return
         the softmax
         """    
-        # weight -> relu -> softmax
-        inp = torchfun.relu(torch.bmm(inp, self.w)).view(-1, J)
+        # weight -> relu -> weight -> softmax
+        inp = torchfun.relu(torch.bmm(inp, self.w1))
+        inp = torch.bmm(inp, self.w2).view(-1, J)
 
         # add eta to inp[u][u]
         # eta_matrix = Variable(eta * torch.eye(J).type(torchten))
@@ -478,14 +477,6 @@ if __name__ == "__main__":
     
     # GO!!
     train_time_loss, test_time_loss, total_time = [], [], 0.0
-    #
-    # print("Testing loss before training...")
-    # test_given_data(
-    #     torch.cat([trainX, testX]),
-    #     torch.cat([trainY, testY]),
-    #     torch.cat([trainR, testR]),
-    #     net.w, J, T)
-    #
     for e in xrange(1, args.epochs + 1):
         # train
         train_res = train(net, optimizer, train_loss_normalizer, u_train)
@@ -527,9 +518,18 @@ if __name__ == "__main__":
     # save amd plot data
     save_log("./stats/find_weights/logs/" + fname + ".txt", epoch_data, 
         [train_time_loss, test_time_loss], log_name)
-    np.savetxt("./stats/find_weights/weights/" + fname + ".txt", 
-        net.w.data.view(-1, numFeatures).cpu().numpy(), fmt="%.15f", delimiter=" ")
-
+    with open("./stats/find_weights/weights/" + fname + ".txt", "w") as f:
+        # save w1
+        w1 = net.w1.data.cpu().numpy()
+        f.write('# w1 shape: {0}\n'.format(w1.shape))
+        for data_slice in w1:
+            f.write('# New slice\n')
+            np.savetxt(f, data_slice, fmt="%.15f", delimiter=" ")
+            
+        # save w2
+        w2 = net.w2.data.view(-1, numFeatures).cpu().numpy()
+        f.write('# w2 shape: {0}\n'.format(w2.shape))
+        np.savetxt(f, w2, fmt="%.15f", delimiter=" ")
     if not args.no_plots:
         save_plot("./stats/find_weights/plots/" + fname + ".png", epoch_data, 
             [train_time_loss, test_time_loss], "epoch", "loss", log_name)

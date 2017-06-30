@@ -41,7 +41,8 @@ parser.add_argument("--test", type=str, default="",
 parser.add_argument("--log-interval", type=int, default=1, metavar="I",
     help="prints training information at I epoch intervals (default=1)")
 parser.add_argument('--seed', type=int, default=1, metavar='S',
-    help='random seed (default=1)')
+    help='seed (default=1)')
+
 parser.add_argument("--hide-loss-plot", action="store_true", default=False,
     help="hides the loss plot, which is only saved")
 
@@ -242,29 +243,36 @@ if __name__ == "__main__":
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
     lp_A, lp_c = lp.build_A(J), lp.build_c(J)
 
-    total_time = 0.0
+    total_time, best_loss = 0.0, float("inf")
     train_time_loss = []
     for e in xrange(1, args.epochs + 1):
         train_res = train(net, optimizer)
         train_time_loss.append(train_res[0:2])
+
+        if train_res[1] < best_loss:
+            # save the best result uptil now
+            best_loss = train_res[1]
+            best_rew = net.R.data
+        
         total_time += train_res[0]
         if e % 20 == 0:
             print("epoch=%5d, loss=%.10f, budget=%.10f" % (e, train_res[1], train_res[2]))
 
     # save and plot
-    rew = net.R.data.cpu().numpy() * totalR
+    best_rew = best_rew.cpu().numpy() * totalR
 
     if args.rand:
         file_pre = "randXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
     else:
         file_pre = "origXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
-    log_name = "lr=%.3e, time=%.4f sec" % (
-        args.lr, total_time)
+    log_name = "lr=%.3e, bestloss=%.6f, time=%.4f sec" % (
+        args.lr, best_loss, total_time)
     epoch_data = np.arange(1, args.epochs + 1)
     fname = file_pre_gpu + file_pre + log_name
 
     save_plot("./stats/find_rewards/plots/" + fname + ".png", epoch_data, 
         train_time_loss, "epoch", "loss", log_name)
-    save_log("./stats/find_rewards/logs/" + fname + ".txt", train_res, weights_file_name, rew)
+    save_log("./stats/find_rewards/logs/" + fname + ".txt", (train_res[0], best_loss),
+        weights_file_name, best_rew)
 
     print("---> " + fname + " DONE")

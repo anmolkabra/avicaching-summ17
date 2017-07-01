@@ -40,7 +40,7 @@
         }
         \foreach \l [count=\i] in {1,2,3,n}
             \node at (hidden-\l) {$H_\l$};
-        \draw [->] (output-1) -- ++(1,0) node [right] {$softmax(\Gamma_i)$};
+        \draw [->] (output-1) -- ++(1,0) node [right] {$softmax(\Gamma_{v, u_i})$};
         \foreach \l [count=\x from 0] in {Input, Hidden, Output}
             \node [align=center, above] at (\x*2,0) {\textsc{\l}};
         \node at (1, -.5) {$\mathbf{w_1}$};

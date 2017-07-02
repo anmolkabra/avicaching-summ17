@@ -16,6 +16,7 @@
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{wrapfig}
+\usepackage{multicol}
 \usepackage{subcaption}
 \hypersetup{
     colorlinks=true,
@@ -33,11 +34,6 @@
 \newcommand{\matr}[1]{\mathbf{#1}}  % matrix
 \newcommand{\tens}[1]{\mathbf{#1}}  % tensor
 \newcommand{\mean}[1]{\overline{#1}}    % mean overline
-\newcommand\Algphase[1]{%
-    \vspace*{-.7\baselineskip}\Statex\hspace*{\dimexpr-\algorithmicindent-2pt\relax}\rule{\textwidth}{0.4pt}%
-    \Statex\hspace*{-\algorithmicindent}\textbf{#1}%
-    \vspace*{-.5\baselineskip}\Statex\hspace*{\dimexpr-\algorithmicindent-2pt\relax}\rule{\textwidth}{0.4pt}%
-}
 
 \begin{document}
     \tableofcontents
@@ -57,7 +53,7 @@
     As discussed in Section \ref{sec:Introduction}, the model should learn parameters that caused the change in agents' behavior when a certain set of rewards was applied to locations in the experiment region. Specifically, given datasets $\vect{y_t}$ and $\vect{x_t}$ of agents' visit densities with and without the rewards $\vect{r_t}$, we want to find weights $\matr{w_1}$ and $\matr{w_2}$ that caused the change from $\vect{x_t}$ to $\vect{y_t}$, factoring in possible influence from environmental factors $\matr{f}$ and distances between locations $\matr{D}$. Although the original model proposed to learn a single set of weights $\matr{w}$ \cite{Xue2016Avi2}, this proposed model considers two sets of weights $\matr{w_1}$ and $\matr{w_2}$ as it may theoretically result into higher accuracy and lower loss. Mathematically, the model can be formulated as:
     \begin{equation} \label{eq:iden_problem}
     \begin{aligned}
-    & \underset{\matr{w}}{\text{minimize}}
+    & \underset{\matr{w_1}, \matr{w_2}}{\text{minimize}}
     & & Z_I(\matr{w_1}, \matr{w_2}) = \sum_{t} (\omega(\vect{y_t} - \matr{P}(\matr{f}, \vect{r_t}; \matr{w_1}, \matr{w_2})\vect{x_t}))^{2}
     \end{aligned}
     \end{equation}
@@ -68,7 +64,7 @@
     In the expression for $p_{u,v}$ (Equation \ref{eq:puv_equation}), softmax$(\cdot)$ is the function: softmax$(z_i) = \frac{\exp(z_i)}{\sum_{i}\exp(z_i)}$ and the reLU$(\cdot)$ function is a ``rectified Linear Unit'' defined as: reLU$(z) = \text{max}(0, z)$.\\
     To optimize the loss value $Z_I(\matr{w_1}, \matr{w_2})$ (Equation \ref{eq:iden_problem}), the neural network learns the set of weights through multiple iterations of backpropagating the loss using gradient descent. Furthermore, the program processes the dataset before feeding to the network to avoid unnecessary sub-iterations and promote batch operations on matrices. 
     
-    \subsubsection{Structure of Input Dataset} \label{sec:Structure of Input Dataset}
+    \subsubsection{Structure of Input Dataset for Identifying Weights} \label{sec:Structure of Input Dataset for Identifying Weights}
     \begin{figure}[H]
         \begin{subfigure}{.64\textwidth}
             \centering
@@ -103,7 +99,7 @@
         \end{algorithmic}
     \end{algorithm}
        
-    \subsubsection{Algorithm for the Program} \label{sec:Algorithm for the Program}
+    \subsubsection{Minimizing Loss for the Identification Problem} \label{sec:Minimizing Loss for the Identification Problem}
     As shown in Figure \ref{fig:Neural network designed for the Identification Problem}, the neural network is made of 3 fully connected layers - the input layer, the hidden layer with rectified Linear Units (reLU), and the output layer generating the results using the softmax$(\cdot)$ function. The network can also be visualized as a collection of 1-dimensional layers (Figure \ref{fig:Side view of the network}), with the softmax$(\cdot)$ calculated on the collection's output.
     \begin{figure}[H]
         \begin{subfigure}{.64\textwidth}
@@ -132,8 +128,8 @@
                 \State $\matr{P} \gets \matr{\Gamma}^T$
                 \State $loss \gets loss + (\omega(\matr{y}[t] - \matr{P} \cdot \matr{x}[t]))^2$
             \EndFor
-            \State $\Call{Gradient-Descent}{loss, \matr{w_1}, \matr{w_2}}$\Comment{\textbf{Phase 2: Backpropagate \& Update}}
-            \State $\matr{w_1}, \matr{w_2} \gets \Call{Update-Weights}{\matr{w_1}, \matr{w_2}}$
+            \State $\Call{Gradient-Descent}{loss, \matr{w_1}, \matr{w_2}}$\Comment{\textbf{Phase 2: Backpropagate}}
+            \State $\matr{w_1}, \matr{w_2} \gets \Call{Update-Using-Gradients}{\matr{w_1}, \matr{w_2}}$
             \State \Return $loss$
             \EndFunction
         \end{algorithmic}
@@ -152,11 +148,57 @@
     \end{aligned}
     \end{equation}
     where elements of $\matr{P}$ are defined as in Equation \ref{eq:puv_equation}. 
-    To allocate the rewards $\vect{r}$ optimally, the pricing problem is formulated akin that for the Identification Problem (Section \ref{sec:Identification Problem}). In fact, the structure of the network and dataset remain similar to that of the Identification Problem (Sections \ref{sec:Structure of Input Dataset} \& \ref{sec:Algorithm for the Program}), but the particulars are altered, as this routine would adjust the rewards based on the learned set of weights.
+    To allocate the rewards $\vect{r}$ optimally, the calculations for the pricing problem are akin to that for the Identification Problem (Section \ref{sec:Identification Problem}). However, since only 1 set of rewards need to be optimized, we use an altered 2-layer network instead of the 3-layer network used to identify the weights. While Equation \ref{eq:pricing_problem} looks like a typical Linear Programming problem, only a part of the formulation uses Linear Programming to constrain the rewards. The more computationally expensive part (calculation for $\matr{P}$ on a CPU) is modeled as a 2-layer network that minimizes the loss function $Z_P(\vect{r})$ using gradient descent. Although this use of a neural network may seem similar to that of the Identification Problem, there are major changes in the structure of the network used here. These alterations for the Pricing Problem and differences from the Identification Problem are discussed further in the following sections.
     
-    \subsection{Input Dataset for Finding Rewards}
+    \subsubsection{Input Dataset for Finding Rewards}
     
+    Since it is the set of rewards $\vect{r}$ that need to be optimized, they must serve as the ``weights'' of the network (note that ``weights'' refer to the edges of this network and not to the set of calculated weights $\matr{w_1}$ and $\matr{w_2}$). Therefore, the rewards $\vect{r}$ are no longer fed into the network but are its characteristic. Instead, the calculated weights $\matr{w_1}$ are fed into the network, and are ``weighted'' by the rewards.\\
     
+    The observation density datasets, $\matr{x}$ and $\matr{y}$, are also aggregated for all agents such that they give information in terms of locations $u$ only. This is also why rewards $\vect{r}$ does not depend on $t$ - we want a generalized set of rewards for all time $t$ per location $u$. Therefore, the algorithm for constructing $\matr{F}$ (Section \ref{sec:Structure of Input Dataset for Identifying Weights}) is same as Algorithm \ref{alg:Constructing the Input Dataset} but with a change - $\vect{r_t}$ replaced by $\vect{r}$.
+    
+    \subsubsection{Optimizing \& Constraining Rewards}
+    The algorithm for finding $\matr{P}$ is very similar to Phase 1 of Algorithm \ref{alg:Algorithm for the Identification Problem per iteration} but without any iterations of $t$, as $\vect{x}$ is a vector rather than a matrix. Also, since the program would predict $\vect{y}$, it does not need labels $\vect{y}$ as a dataset.
+    \begin{algorithm}
+        \caption{Solving the Pricing Problem} \label{alg:Solving the Pricing Problem}
+        \begin{algorithmic}[1]
+            \Function{Optimize-Rewards}{$\vect{x}, \matr{w_1}, \matr{w_2}, \matr{D}, \matr{f}$}
+            \Require $\vect{r}, \mathcal{R}$
+            \State $\matr{F} \gets \Call{Build-Dataset}{\matr{D}, \matr{f}, \vect{r}}$\Comment{Defined in Algorithm \ref{alg:Constructing the Input Dataset}}
+            \State $\matr{\Lambda} \gets \text{reLU}(\Call{Batch-Multiply}{\matr{F}, \matr{w_1}})$\Comment{\textbf{Phase 1: Solve for $\matr{P}$ and $loss$}}
+            \State $\matr{\Gamma} \gets \text{softmax}(\Call{Batch-Multiply}{\matr{\Lambda}, \matr{w_2}})$
+            \State $\matr{P} \gets \matr{\Gamma}^T$
+            \State $\vect{y} \gets \matr{P} \cdot \vect{x}$
+            \State $loss \gets \lVert \vect{y} - \mean{\vect{y}} \rVert / J$\Comment{$J$ is the number of locations}
+            \State $\Call{Gradient-Descent}{loss, \vect{r}}$\Comment{\textbf{Phase 2: Backpropagate}}
+            \State $\vect{r} \gets \Call{Update-Using-Gradients}{\vect{r}}$
+            \State $\vect{r} \gets \Call{LP}{\vect{r}, \mathcal{R}}$\Comment{LP($\cdot$) explained below}
+            \State \Return $loss$
+            \EndFunction
+        \end{algorithmic}
+    \end{algorithm}
+    After updating the rewards, the program constrains them using LP($\cdot$) such that $\sum_{i}r_i \leq \mathcal{R}$ and $r_i \geq 0$. To do so, the LP($\cdot$) finds another set of rewards $\vect{r'}$ such that the absolute difference between new and old rewards ($\sum_{i}|r'_i - r_i|$) is minimum. The mathematical formulation is given in Equation \ref{eq:lp_math_constrain_rewards}, which was implemented using SciPy's Optimize Module []. Since the module supports a standard format\footnote{minimize [$\vect{c}^T \cdot \vect{x}$]; subject to [$\matr{A} \cdot \vect{x} \leq \vect{b}, \, x_i \geq 0$]} for doing linear programming, Equation \ref{eq:lp_code_constrain_rewards} (after rearranging constraints and building $\matr{A}, \vect{b}$ and $\vect{c}$) is used, which is mathematically equivalent to Equation \ref{eq:lp_math_constrain_rewards}.
+    \begin{multicols}{2}
+        \begin{equation} \label{eq:lp_math_constrain_rewards}
+        \begin{aligned}
+            & \underset{\vect{r'}}{\text{minimize}}
+            & & \sum_{i}|r'_i - r_i|\\ \\
+            & \text{subject to}
+            & & \sum_{i}r'_i \leq \mathcal{R}\\
+            &&& r_i \geq 0
+        \end{aligned}
+        \end{equation}\break
+        \begin{equation} \label{eq:lp_code_constrain_rewards}
+        \begin{aligned}
+            & \underset{\vect{r'}, \vect{u}}{\text{minimize}}
+            & & \sum_{i} u_i\\
+            & \text{subject to}
+            & & r'_i - r_i \leq u_i\\
+            &&& r_i - r'_i \leq u_i\\
+            &&& \sum_{i} r'_i \leq \mathcal{R}\\
+            &&& r'_i, u_i \geq 0
+        \end{aligned}
+        \end{equation}
+    \end{multicols}
     \section{Experiments}
     
     \section{Results}

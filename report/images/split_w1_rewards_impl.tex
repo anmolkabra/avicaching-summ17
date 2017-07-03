@@ -1,0 +1,53 @@
+\documentclass[tikz, margin=2mm,convert={density=300,size=1920x1080,outext=.png}]{standalone}
+
+\usepackage{xcolor}
+
+\newcommand{\len}{7}% x direction
+\newcommand{\bre}{7}% y direction
+\newcommand{\hei}{4}% z direction
+\newcommand{\splitlen}{5.5}% for the box in behind
+\newcommand{\frontcolor}{black!15!white}
+\newcommand{\topcolor}{black!30!white}
+\newcommand{\sidecolor}{black!45!white}
+
+\begin{document}
+    \begin{tikzpicture}[x=(15:2cm), y=(90:2cm), z=(330:2cm), >=stealth]
+        \coordinate (splitO) at (0, 0, 0);
+        \coordinate (splitA) at (\splitlen, 0, 0);
+        \coordinate (splitB) at (0, \bre, 0);
+        \coordinate (splitC) at (\splitlen, \bre, 0);
+        \coordinate (splitD) at (0, 0, \hei);
+        \coordinate (splitE) at (\splitlen, 0, \hei);
+        \coordinate (splitF) at (0, \bre, \hei);
+        \coordinate (splitG) at (\splitlen, \bre, \hei);
+        
+        \coordinate (O) at (\splitlen+1, 0, 0);
+        \coordinate (A) at (\len, 0, 0);
+        \coordinate (B) at (\splitlen+1, \bre, 0);
+        \coordinate (C) at (\len, \bre, 0);
+        \coordinate (D) at (\splitlen+1, 0, \hei);
+        \coordinate (E) at (\len, 0, \hei);
+        \coordinate (F) at (\splitlen+1, \bre, \hei);
+        \coordinate (G) at (\len, \bre, \hei);
+        
+        % color
+        \fill[\frontcolor] (D) -- (E) -- (G) -- (F) -- cycle;
+        \fill[\topcolor] (B) -- (C) -- (G) -- (F) -- cycle;
+        \fill[\sidecolor] (O) -- (B) -- (F) -- (D) -- cycle;
+        
+        % box edges
+        \draw[line width=1.25pt] (B) -- (F) -- (G) -- (C) -- cycle;
+        \draw[line width=1.25pt] (F) -- (D) -- (E) -- (G);
+        \draw[line width=1.25pt] (B) -- (O) -- (D);
+        
+        % color
+        \fill[\frontcolor] (splitD) -- (splitE) -- (splitG) -- (splitF) -- cycle;
+        \fill[\topcolor] (splitB) -- (splitC) -- (splitG) -- (splitF) -- cycle;
+        \fill[\sidecolor] (splitO) -- (splitB) -- (splitF) -- (splitD) -- cycle;
+        
+        % box edges
+        \draw[line width=1.25pt] (splitB) -- (splitF) -- (splitG) -- (splitC) -- cycle;
+        \draw[line width=1.25pt] (splitF) -- (splitD) -- (splitE) -- (splitG);
+        \draw[line width=1.25pt] (splitB) -- (splitO) -- (splitD);
+    \end{tikzpicture}
+\end{document}

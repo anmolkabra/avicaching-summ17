@@ -6,7 +6,7 @@
 \usepackage{amsmath, amssymb}
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
-\linespread{1.25}
+\linespread{1.5}
 \usepackage[margin = 1in]{geometry}
 \usepackage{microtype} % Slightly tweak font spacing for aesthetics
 \usepackage[english]{babel} % Language hyphenation and typographical rules
@@ -20,8 +20,8 @@
 \usepackage{subcaption}
 \hypersetup{
     colorlinks=true,
-    linkcolor=red,      
-    urlcolor=blue,
+    linkcolor=black,      
+    urlcolor=red,
     bookmarks=true,
     citecolor=green!75!black
 }
@@ -156,7 +156,7 @@
     
     The observation density datasets, $\matr{x}$ and $\matr{y}$, are also aggregated for all agents such that they give information in terms of locations $u$ only. This is also why rewards $\vect{r}$ does not depend on $t$ - we want a generalized set of rewards for all time $t$ per location $u$. Therefore, the algorithm for constructing $\matr{F}$ (Section \ref{sec:Structure of Input Dataset for Identifying Weights}) is same as Algorithm \ref{alg:Constructing the Input Dataset} but with a change - $\vect{r_t}$ replaced by $\vect{r}$.
     
-    \subsubsection{Optimizing \& Constraining Rewards}
+    \subsubsection{Optimizing \& Constraining Rewards} \label{sec:Optimizing and Constraining Rewards}
     The algorithm for finding $\matr{P}$ is very similar to Phase 1 of Algorithm \ref{alg:Algorithm for the Identification Problem per iteration} but without any iterations of $t$, as $\vect{x}$ is a vector rather than a matrix. Also, since the program would predict $\vect{y}$, it does not need labels $\vect{y}$ as a dataset.\\
     
     \begin{algorithm}
@@ -177,7 +177,7 @@
             \EndFunction
         \end{algorithmic}
     \end{algorithm}
-    After updating the rewards, the program constrains them using LP($\cdot$) such that $\sum_{i}r_i \leq \mathcal{R}$ and $r_i \geq 0$. To do so, the LP($\cdot$) finds another set of rewards $\vect{r'}$ such that the absolute difference between new and old rewards ($\sum_{i}|r'_i - r_i|$) is minimum. The mathematical formulation is given in Equation \ref{eq:lp_math_constrain_rewards}, which was implemented using SciPy's Optimize Module []. Since the module supports a standard format\footnote{minimize [$\vect{c}^T \cdot \vect{x}$]; subject to [$\matr{A} \cdot \vect{x} \leq \vect{b}, \, x_i \geq 0$]} for doing linear programming, Equation \ref{eq:lp_code_constrain_rewards} (after rearranging constraints and building $\matr{A}, \vect{b}$ and $\vect{c}$) is used, which is mathematically equivalent to Equation \ref{eq:lp_math_constrain_rewards}.
+    After updating the rewards, the program constrains them using LP($\cdot$) such that $\sum_{i}r_i \leq \mathcal{R}$ and $r_i \geq 0$. To do so, the LP($\cdot$) finds another set of rewards $\vect{r'}$ such that the absolute difference between new and old rewards ($\sum_{i}|r'_i - r_i|$) is minimum. The mathematical formulation is given in Equation \ref{eq:lp_math_constrain_rewards}, which was implemented using SciPy's Optimize Module []. Since the module supports a standard format\footnote{minimize [$\vect{c}^T \cdot \vect{x}$]; subject to [$\matr{A} \cdot \vect{x} \leq \vect{b}, \, x_i \geq 0$] \label{foot:lp standard format}} for doing linear programming, Equation \ref{eq:lp_code_constrain_rewards} (after rearranging constraints and building $\matr{A}, \vect{b}$ and $\vect{c}$) is used, which is mathematically equivalent to Equation \ref{eq:lp_math_constrain_rewards}.
     \begin{multicols}{2}
         \begin{equation} \label{eq:lp_math_constrain_rewards}
         \begin{aligned}
@@ -208,10 +208,46 @@
     Although we display the final results in Section \ref{sec:Results}, several algorithms were used for \textsc{Gradient-Descent}($\cdot$) including but not limited to Stochastic Gradient Descent (SGD) [], Adam's Algorithm [] and RMSProp [] (PyTorch lets you choose the corresponding function) and Adam's algorithm was found to work best with the models. Consequently, all experiments were done using Adam's algorithm.
     
     \subsection{Specific Implementation Details for the Pricing Problem}
-    Among all the code optimizations in both models, some in that for the Pricing Problem are worth discussing, as they drastically differ from Algorithm \ref{alg:Solving the Pricing Problem}.
+    Among all the code optimizations in both models, some in that for the Pricing Problem are worth discussing, as they drastically differ from Algorithm \ref{alg:Solving the Pricing Problem} or are intricate. Most optimizations relevant to the Identification Problem are trivial and relate directly to those for the Pricing Problem. Therefore, only those in the Pricing Problem model are discussed.
     
     \subsubsection{Building the Dataset $\matr{F}$}
-    sad
+    Notice that we build the dataset $\matr{F}$ and batch-multiply it with $\matr{w_1}$ on each iteration/epoch (lines 2-3 of Algorithm \ref{alg:Solving the Pricing Problem}). Doing these steps are repetitive as most elements of $\matr{F}$, distances $\matr{D}$ and environmental feature vector $\vect{f}$, do not change unlike rewards $\vect{r}$. Moreover since $\matr{w_1}$ is fixed, Algorithm \ref{alg:Solving the Pricing Problem} would repetitively multiply the $\vect{f}$ and $\matr{D}$ components of $\matr{F}$ with $\matr{w_1}$. To avoid these unnecessary computations, we preprocessed most of $\matr{F}$ by batch-multiplying with $\matr{w_1}$ and only multiplied $\vect{r}$ with the corresponding elements of $\matr{w_1}$.\\
+    
+    Although this preprocessing might seem applicable for the model in Identification Problem too, it does not apply fully. Since the weights $\matr{w_1}$ are updated on each iteration/epoch, we cannot multiply them with parts of $\matr{F}$ beforehand (Algorithm \ref{alg:Algorithm for the Identification Problem per iteration}). However, we can combine $\matr{D}$ and $\vect{f}$ in the preprocessing stage and simply append $\vect{r}[t]$ on each iteration, saving computation time.
+    
+    \subsubsection{Modeling the Linear Programming Problem in the Standard Format}
+    The \texttt{scipy.optimize} module's \texttt{linprog} function requires that the arguments are in standard Linear Programming format (Footnote \ref{foot:lp standard format} in Section \ref{sec:Optimizing and Constraining Rewards}). As discussed in Section \ref{sec:Optimizing and Constraining Rewards}, Equation \ref{eq:lp_code_constrain_rewards} resembles the standard format more closely than \ref{eq:lp_math_constrain_rewards}, but it may not be clear how so.\\
+    
+    Considering $\vect{u}$ and $\vect{r'}$ as variables $\vect{x}$, Equation \ref{eq:lp_code_constrain_rewards} translates into Equation \ref{eq:lp_matrix_rewards} ($J$ is the number of locations).
+    \begin{equation} \label{eq:lp_matrix_rewards}
+    \begin{aligned}
+        & \text{minimize}
+        & & \begin{bmatrix}
+                \vect{0_J}\\
+                \vect{1_J}\\
+            \end{bmatrix}^T \cdot
+            \begin{bmatrix}
+                \vect{r'}\\
+                \vect{u}
+            \end{bmatrix}\\ \\
+        & \text{subject to}
+        & & \begin{bmatrix}
+                I_J & -I_J\\
+                -I_J & -I_J\\
+                \vect{1}^T_J & \vect{0}^T_J\\
+            \end{bmatrix} \cdot
+            \begin{bmatrix}
+                \vect{r'}\\
+                \vect{u}\\
+            \end{bmatrix} \leq
+            \begin{bmatrix}
+                \vect{r}\\
+                -\vect{r}\\
+                \mathcal{R}\\
+            \end{bmatrix}\\
+        &&& r'_i, u_i \geq 0
+    \end{aligned}
+    \end{equation}
     
     \section{Experiments} \label{sec:Experiments}
     

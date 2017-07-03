@@ -200,10 +200,23 @@
         \end{aligned}
         \end{equation}
     \end{multicols}
-    \section{Experiments}
+
+    \section{Implementation} \label{sec:Implementation}
+    The code can be found here[]. \\
+    Both the Identification and the Pricing Problem were programmed in Python 2.7 using NumPy 1.12.1, SciPy 0.19.1 and PyTorch 0.1.12 modules [web cites]. [Results from Python plotted in Matplotlib 2.0.2] With some code optimizations, the input dataset $\matr{F}$ was built using NumPy's \texttt{ndarray} and PyTorch's \texttt{tensor} functions. Since PyTorch offers NumPy-like code base but with dedicated neural network functions and submodules, PyTorch's \texttt{relu} and \texttt{softmax} functions were used along with other matrix operations.\\
     
-    \section{Results}
-    \section{Conclusion}
+    Although we display the final results in Section \ref{sec:Results}, several algorithms were used for \textsc{Gradient-Descent}($\cdot$) including but not limited to Stochastic Gradient Descent (SGD) [], Adam's Algorithm [] and RMSProp [] (PyTorch lets you choose the corresponding function) and Adam's algorithm was found to work best with the models. Consequently, all experiments were done using Adam's algorithm.
+    
+    \subsection{Specific Implementation Details for the Pricing Problem}
+    Among all the code optimizations in both models, some in that for the Pricing Problem are worth discussing, as they drastically differ from Algorithm \ref{alg:Solving the Pricing Problem}.
+    
+    \subsubsection{Building the Dataset $\matr{F}$}
+    sad
+    
+    \section{Experiments} \label{sec:Experiments}
+    
+    \section{Results} \label{sec:Results}
+    \section{Conclusion} \label{sec:Conclusion}
     
     \blindtext
     \bibliographystyle{ieeetr}

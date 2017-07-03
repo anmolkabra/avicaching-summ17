@@ -63,9 +63,9 @@ X, w1_for_r, w2, F_DIST_w1, numFeatures = [], [], [], [], 0
 torchten = torch.FloatTensor
 lp_A, lp_c = [], []
 
-randXYR_file = "./data/random/randXYR" + str(J) + ".txt"
-randF_file = "./data/random/randF" + str(J) + ".csv"
-randDIST_file = "./data/random/randDIST" + str(J) + ".txt"
+randXYR_file = "./data/random/randXYR" + str(116) + ".txt"
+randF_file = "./data/random/randF" + str(116) + ".csv"
+randDIST_file = "./data/random/randDIST" + str(116) + ".txt"
 
 # =============================================================================
 # data input

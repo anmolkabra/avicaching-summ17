@@ -34,7 +34,7 @@ parser.add_argument("--rewards", type=float, default=1000.0, metavar="R",
 parser.add_argument("--rand", action="store_true", default=False,
     help="uses random data")
 parser.add_argument("--weights-file", type=str, 
-    default="./stats/find_weights/weights/gpu, origXYR_epochs=1000, train= 80%, time=98.0417 sec.txt", 
+    default="./stats/find_weights/weights/gpu, origXYR_seed=1, epochs=10000, train= 80%, lr=1.000e-02, time=1260.1639 sec.txt", 
     metavar="f", help="inputs the location of the file to use weights from")
 parser.add_argument("--test", type=str, default="", 
     metavar="t", help="inputs the location of the file to test rewards from")

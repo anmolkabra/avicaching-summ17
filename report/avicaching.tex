@@ -11,6 +11,8 @@
 \usepackage{microtype} % Slightly tweak font spacing for aesthetics
 \usepackage[english]{babel} % Language hyphenation and typographical rules
 \usepackage{tikz}
+\usepackage{pgfplots}
+%\tikzexternalize
 \usepackage{hyperref}
 \usepackage{url}
 \usepackage{graphicx}
@@ -20,6 +22,8 @@
 \usepackage{subcaption}
 \usepackage{nomencl}
 \usepackage[titletoc, page]{appendix}
+\usepackage{caption}
+\captionsetup{font={small}}
 \hypersetup{
     colorlinks=true,
     linkcolor=black,      
@@ -34,7 +38,7 @@
 
 % nomenclature specs
 \makenomenclature
-\renewcommand{\nomname}{List of Functions, Symbols \& Terms}
+\renewcommand{\nomname}{List of Commonly Used Functions, Symbols \& Terms}
 %% This code creates the groups
 % -----------------------------------------
 \usepackage{etoolbox}
@@ -72,7 +76,7 @@
     
     % main body
     \section{Introduction} \label{sec:Introduction}
-    Optimizing predictive models on datasets that are obtained from citizen-science projects can be computationally expensive as these datasets grow in size with time. Consequently, models based on multiple-layered neural networks, Integer Programming and other optimization routines can prove increasingly difficult as the number of parameters increase, despite using the faster Central Processing Units (CPUs) \nomenclature[T]{CPU}{Central Processing Unit} in the market. Incidentally, it becomes difficult for citizen-science projects to scale if the organizers use CPUs to run optimization models. However, Graphical Processing Units \nomenclature[T]{GPU}{Graphical Processing Unit}(GPUs), which offer multiple cores to parallelize computation, can outperform CPUs in computing such predictive models if these models heavily rely on large-scale matrix multiplications. By using GPUs over CPUs to accelerate computation on a citizen-science project, the model could achieve better optimization in less time, enabling the project to scale.\\
+    Optimizing predictive models on datasets that are obtained from citizen-science projects can be computationally expensive as these datasets grow in size with time. Consequently, models based on multiple-layered neural networks, Integer Programming and other optimization routines can prove increasingly difficult as the number of parameters increase, despite using the faster Central Processing Units (CPUs) in the market. Incidentally, it becomes difficult for citizen-science projects to scale if the organizers use CPUs to run optimization models. However, Graphical Processing Units (GPUs), which offer multiple cores to parallelize computation, can outperform CPUs in computing such predictive models if these models heavily rely on large-scale matrix multiplications. By using GPUs over CPUs to accelerate computation on a citizen-science project, the model could achieve better optimization in less time, enabling the project to scale.\\
     
     Part of the eBird project, which aims to ``maximize the utility and accessibility of the vast numbers of bird observations made each year by recreational and professional bird watchers'', Avicaching is a incentive-driven game trying to homogenize the spatial distribution of citizens' (agents') observations [cite website]. Since the dataset of agents' observations in eBird is geographically heterogeneous (concentrated in some places like cities and sparse in others), Avicaching homogenizes the observation set by rewarding agents who visit under-sampled locations \cite{Xue2016Avi1}. To accomplish this task of specifying rewards at different locations based on the historical records of observations, Avicaching would learn the change in agents' behavior when a certain sample of rewards were applied to the set of locations, and then distribute a newer set of rewards across the locations based on those learned parameters \cite{Xue2016Avi2}. This requirement naturally translates into a predictive optimization problem, which is implemented using multiple-layered neural networks and linear programming.
 
@@ -244,7 +248,7 @@
     
     \subsection{Running the Identification Problem's Model}
     \subsubsection{Optimizing the Original Dataset}
-    The 3-layered neural network was run for 10000 epochs on the original dataset with learning rate = 0.01. Since we were aiming for optimization, we ran multiple tests (5 different seeds) of the model only with the GPU ``set''.\\
+    The 3-layered neural network was run for 10000 epochs on the original dataset, which was split 80:20 for training and testing sets, with learning rate = 0.01. Since we were aiming for optimization, we ran multiple tests (5 different seeds) of the model only with the GPU ``set''.\\
     
     To compare this model's optimization results with other model structures, the previously studied 2-layered network \cite{Xue2016Avi2} and a 4-layered neural network were used. The 4-layered network had another hidden layer with reLU, equivalent to the hidden layer in the current 3-layered network (Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}). The results from the 2-layered network were obtained from the study, and those from the 4-layered network were attained on the same original dataset with same parameter values (learning rate, epochs etc.).
     
@@ -256,9 +260,61 @@
     After obtaining the set of weights $\matr{w_1}$ and $\matr{w_2}$ optimized using different seeds, we tested to find the best rewards (with the lowest loss - Equation \ref{eq:pricing_problem}) with random $\vect{r}$ initiation. To average the results, the model was run several times on the same set of weights, using different set of weights (obtained from running the Identification Problem with different seeds) each time. Specifically, we ran the Pricing Problem's model 5 times (each with different seeds) for each set of weights, which were itself 5 in number.
     
     \subsubsection{Testing GPU Speedup on the Random Dataset}
-    After generating random datasets of different sizes ($J = 11, 55, 116$ - Section \ref{sec:Minimizing Loss for the Identification Problem}, we ran our 3-layered model on each dataset size with different seeds with both GPU and CPU ``set''.
+    After generating random datasets of different sizes ($J = 11, 55, 116$ - Section \ref{sec:Minimizing Loss for the Identification Problem}), we ran our 3-layered model on each dataset size with different seeds with both GPU and CPU ``set''.
     
     \section{Results} \label{sec:Results}
+    \subsection{Identification Problem's Results}
+    Minimizing the loss function in the Identification Problem (Section \ref{sec:Identification Problem}) on the original dataset for 10000 epochs took an average of 1260.62 seconds with the GPU ``set''.
+    \begin{itemize}
+        \item The average loss values at the end of 10000 epochs were 0.04 on the training set and 0.14 on the test set.
+        \item The average loss values for the 4-layered model (for comparison) with same experiment specifications were 0.14 on the training set and 0.49 on the test set.
+    \end{itemize}
+    \begin{wrapfigure}{r}{.5\textwidth}
+        \centering
+        \begin{tikzpicture}
+        \begin{axis}[
+        ybar,
+        width=.5\textwidth,
+        enlarge x limits=0.15,
+        legend style={at={(0.5,-0.15)},
+            anchor=north,legend columns=-1},
+        ylabel={Loss Value},
+        symbolic x coords={2-layer,3-layer,4-layer, Historical},
+        xtick=data,
+        nodes near coords,
+        nodes near coords align={vertical},
+        ]
+        \addplot coordinates {(2-layer,0.26) (3-layer,0.14) (4-layer,0.49) (Historical, 0.36)};
+        \addplot coordinates {(3-layer,0.04) (4-layer,0.14)};
+        \legend{Test Set,Training Set}
+        \end{axis}
+        \end{tikzpicture}
+        \caption{Comparison of Loss Values from different models of the Identification Problem}
+        \label{fig:Comparison of Loss Values from different models of the Identification Problem}
+    \end{wrapfigure}
+
+    As depicted in Figure \ref{fig:Comparison of Loss Values from different models of the Identification Problem}, our 3-layered neural network outperformed the previous 2-layered model by 0.12 units (12\% more closer to Ground Truth \cite[Table 1]{Xue2016Avi2}), and also produced much better results (35\% more closer to Ground Truth) than the 4-layered model. \\
+    
+    Although there remained a 10\% difference (0.10 loss units) in the values of training and testing set, the 3-layered model was not starkly overfitting as the $10\pm2\%$ difference persisted for the many epochs, instead of increasing and tuning more to the training set. This result is shown in Figure \ref{fig:Train & Test Loss Values' Plots of Different Models} with plots of loss values at each epoch for the 3- and the 4-layered network.
+    \begin{figure}[h]
+        \centering
+        \begin{subfigure}{.49\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{weights_train_test_loss_plot}
+            \caption{Plot for 3-layered Model}
+            \label{fig:Plot for 3-layered Model}
+        \end{subfigure}
+        \begin{subfigure}{.49\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{weights_train_test_loss_plot}
+            \caption{Plot for 4-layered Model}
+            \label{fig:Plot for 4-layered Model}
+        \end{subfigure}
+        \caption{Train \& Test Loss Values' Plots for One of the Runs of Different Models}
+        \label{fig:Train & Test Loss Values' Plots of Different Models}
+    \end{figure}
+    
+    \subsection{Pricing Problem's Results}
     \section{Conclusion} \label{sec:Conclusion}
     
     \blindtext

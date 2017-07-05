@@ -1,0 +1,54 @@
+\begin{appendices}
+    \section{Implementation} \label{sec:Implementation}
+    The code can be found here[]. \\
+    Both the Identification and the Pricing Problem were programmed in Python 2.7 using NumPy 1.12.1, SciPy 0.19.1 and PyTorch 0.1.12 modules [web cites]. [Results from Python plotted in Matplotlib 2.0.2] With some code optimizations, the input dataset $\matr{F}$ was built using NumPy's \texttt{ndarray} and PyTorch's \texttt{tensor} functions. Since PyTorch offers NumPy-like code base but with dedicated neural network functions and submodules, PyTorch's \texttt{relu} and \texttt{softmax} functions were used along with other matrix operations.\\
+    
+    Although we display the final results in Section \ref{sec:Results}, several algorithms were used for \textsc{Gradient-Descent}($\cdot$) including but not limited to Stochastic Gradient Descent (SGD) [], Adam's Algorithm [] and RMSProp [] (PyTorch lets you choose the corresponding function) and Adam's algorithm was found to work best with the models. Consequently, all experiments were done using Adam's algorithm.
+    
+    \subsection{Specific Implementation Details for the Pricing Problem}
+    Among all the code optimizations in both models, some in that for the Pricing Problem are worth discussing, as they drastically differ from Algorithm \ref{alg:Solving the Pricing Problem} or are intricate. Most optimizations relevant to the Identification Problem are trivial and relate directly to those for the Pricing Problem. Therefore, only those in the Pricing Problem model are discussed.
+    
+    \subsubsection{Building the Dataset $\matr{F}$}
+    Notice that we build the dataset $\matr{F}$ and batch-multiply it with $\matr{w_1}$ on each iteration/epoch (lines 2-3 of Algorithm \ref{alg:Solving the Pricing Problem}). Doing these steps are repetitive as most elements of $\matr{F}$, distances $\matr{D}$ and environmental feature vector $\vect{f}$, do not change unlike rewards $\vect{r}$. Moreover since $\matr{w_1}$ is fixed, Algorithm \ref{alg:Solving the Pricing Problem} would repetitively multiply the $\vect{f}$ and $\matr{D}$ components of $\matr{F}$ with $\matr{w_1}$. To avoid these unnecessary computations, we preprocessed most of $\matr{F}$ by batch-multiplying with $\matr{w_1}$ and only multiplied $\vect{r}$ with the corresponding elements of $\matr{w_1}$. Figure \ref{fig:Splitting and Batch Multiplying F and w1} describes the process graphically.\\
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\linewidth]{split_and_batch_multiply}
+        \caption{Splitting and Batch Multiplying\textsuperscript{\ref{Batch-Multiply}} $\matr{F}$ \& $\matr{w_1}$}
+        \label{fig:Splitting and Batch Multiplying F and w1}
+    \end{figure}    
+    Although this preprocessing might seem applicable for the model in Identification Problem too, it does not apply fully. Since the weights $\matr{w_1}$ are updated on each iteration/epoch, we cannot multiply them with parts of $\matr{F}$ beforehand (Algorithm \ref{alg:Algorithm for the Identification Problem per iteration}). However, we can combine $\matr{D}$ and $\vect{f}$ in the preprocessing stage and simply append $\vect{r}[t]$ on each iteration, saving computation time.
+    
+    \subsubsection{Modeling the Linear Programming Problem in the Standard Format}
+    The \texttt{scipy.optimize} module's \texttt{linprog} function requires that the arguments are in standard Linear Programming format (Footnote \ref{foot:lp standard format} in Section \ref{sec:Optimizing and Constraining Rewards}). As discussed in Section \ref{sec:Optimizing and Constraining Rewards}, Equation \ref{eq:lp_code_constrain_rewards} resembles the standard format more closely than \ref{eq:lp_math_constrain_rewards}, but it may not be clear how so.\\
+    
+    Considering $\vect{u}$ and $\vect{r'}$ as variables $\vect{x}$, Equation \ref{eq:lp_code_constrain_rewards} translates into Equation \ref{eq:lp_matrix_rewards} ($J$ is the number of locations).
+    \begin{equation} \label{eq:lp_matrix_rewards}
+    \begin{aligned}
+    & \text{minimize}
+    & & \begin{bmatrix}
+    \vect{0_J}\\
+    \vect{1_J}\\
+    \end{bmatrix}^T \cdot
+    \begin{bmatrix}
+    \vect{r'}\\
+    \vect{u}
+    \end{bmatrix}\\ \\
+    & \text{subject to}
+    & & \begin{bmatrix}
+    I_J & -I_J\\
+    -I_J & -I_J\\
+    \vect{1}^T_J & \vect{0}^T_J\\
+    \end{bmatrix} \cdot
+    \begin{bmatrix}
+    \vect{r'}\\
+    \vect{u}\\
+    \end{bmatrix} \leq
+    \begin{bmatrix}
+    \vect{r}\\
+    -\vect{r}\\
+    \mathcal{R}\\
+    \end{bmatrix}\\
+    &&& r'_i, u_i \geq 0
+    \end{aligned}
+    \end{equation}
+\end{appendices}

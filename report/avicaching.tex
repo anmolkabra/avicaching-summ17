@@ -18,6 +18,7 @@
 \usepackage{wrapfig}
 \usepackage{multicol}
 \usepackage{subcaption}
+\usepackage{nomencl}
 \usepackage[titletoc, page]{appendix}
 \hypersetup{
     colorlinks=true,
@@ -31,17 +32,47 @@
 %\setlength{\parskip}{1.5em}
 \graphicspath{ {images/} }
 
+% nomenclature specs
+\makenomenclature
+\renewcommand{\nomname}{List of Functions, Symbols \& Terms}
+%% This code creates the groups
+% -----------------------------------------
+\usepackage{etoolbox}
+\renewcommand{\nomgroup}[1]{%
+    \item[\bfseries
+    \ifstrequal{#1}{T}{Terms}{%
+        \ifstrequal{#1}{S}{Symbols}{%
+            \ifstrequal{#1}{F}{Functions}{}}%
+    }]}
+% -----------------------------------------
+
 \newcommand{\vect}[1]{\mathbf{#1}}  % vector
 \newcommand{\matr}[1]{\mathbf{#1}}  % matrix
 \newcommand{\tens}[1]{\mathbf{#1}}  % tensor
 \newcommand{\mean}[1]{\overline{#1}}    % mean overline
 
 \begin{document}
+    % nomenclature
+    \mbox{}
+    % symbols
+    \nomenclature[S]{$\matr{M}$; $\matr{m}$}{Matrix or vector depending on the context}
+    \nomenclature[S]{$J$}{Number of locations in the dataset}
+    \nomenclature[S]{$T$}{Number of time units for which data is available}
+    
+    % functions
+    \nomenclature[F]{softmax($\cdot$)}{Defined as softmax($z_i$) = $\frac{\exp(z_i)}{\sum_{i} \exp(z_i)}$}
+    \nomenclature[F]{reLU($\cdot$)}{Defined as reLU($z$) = max(0, $z$)}
+    \nomenclature[F]{batch-multiply($\cdot$)}{Operates on $m \times n \times p$ and $m \times p \times q$ tensors to give a $m \times n \times q$ tensor.}
+    \printnomenclature[1.5in]
+    \cleardoublepage
+    
     \tableofcontents
     \listoftables
     \listoffigures
+    
+    % main body
     \section{Introduction} \label{sec:Introduction}
-    Optimizing predictive models on datasets that are obtained from citizen-science projects can be computationally expensive as these datasets grow in size with time. Consequently, models based on multiple-layered neural networks, Integer Programming and other optimization routines can prove increasingly difficult as the number of parameters increase, despite using the faster Central Processing Units (CPUs) in the market. Incidentally, it becomes difficult for citizen-science projects to scale if the organizers use CPUs to run optimization models. However, Graphical Processing Units (GPUs), which offer multiple cores to parallelize computation, can outperform CPUs in computing such predictive models if these models heavily rely on large-scale matrix multiplications. By using GPUs over CPUs to accelerate computation on a citizen-science project, the model could achieve better optimization in less time, enabling the project to scale.\\
+    Optimizing predictive models on datasets that are obtained from citizen-science projects can be computationally expensive as these datasets grow in size with time. Consequently, models based on multiple-layered neural networks, Integer Programming and other optimization routines can prove increasingly difficult as the number of parameters increase, despite using the faster Central Processing Units (CPUs) \nomenclature[T]{CPU}{Central Processing Unit} in the market. Incidentally, it becomes difficult for citizen-science projects to scale if the organizers use CPUs to run optimization models. However, Graphical Processing Units \nomenclature[T]{GPU}{Graphical Processing Unit}(GPUs), which offer multiple cores to parallelize computation, can outperform CPUs in computing such predictive models if these models heavily rely on large-scale matrix multiplications. By using GPUs over CPUs to accelerate computation on a citizen-science project, the model could achieve better optimization in less time, enabling the project to scale.\\
     
     Part of the eBird project, which aims to ``maximize the utility and accessibility of the vast numbers of bird observations made each year by recreational and professional bird watchers'', Avicaching is a incentive-driven game trying to homogenize the spatial distribution of citizens' (agents') observations [cite website]. Since the dataset of agents' observations in eBird is geographically heterogeneous (concentrated in some places like cities and sparse in others), Avicaching homogenizes the observation set by rewarding agents who visit under-sampled locations \cite{Xue2016Avi1}. To accomplish this task of specifying rewards at different locations based on the historical records of observations, Avicaching would learn the change in agents' behavior when a certain sample of rewards were applied to the set of locations, and then distribute a newer set of rewards across the locations based on those learned parameters \cite{Xue2016Avi2}. This requirement naturally translates into a predictive optimization problem, which is implemented using multiple-layered neural networks and linear programming.
 
@@ -63,7 +94,7 @@
     p_{u, v} = \frac{\exp(\matr{w_2} \cdot \text{reLU} (\matr{w_1} \cdot [d_{u, v}, \vect{f_{u}}, r_{u}]))}{\sum_{u'} \exp(\matr{w_2} \cdot \text{reLU} (\matr{w_1} \cdot [d_{u', v}, \vect{f_{u'}}, r_{u'}]))} = \frac{\exp(\Gamma_{u, v})}{\sum_{u'}\exp(\Gamma_{u', v})} = \text{softmax}(\Gamma_{u, v})
     \end{equation}
     In the expression for $p_{u,v}$ (Equation \ref{eq:puv_equation}), softmax$(\cdot)$ is the function: softmax$(z_i) = \frac{\exp(z_i)}{\sum_{i}\exp(z_i)}$ and the reLU$(\cdot)$ function is a ``rectified Linear Unit'' defined as: reLU$(z) = \text{max}(0, z)$.\\
-    To optimize the loss value $Z_I(\matr{w_1}, \matr{w_2})$ (Equation \ref{eq:iden_problem}), the neural network learns the set of weights through multiple iterations of backpropagating the loss using gradient descent. Furthermore, the program processes the dataset before feeding to the network to avoid unnecessary sub-iterations and promote batch operations on matrices. 
+    To optimize the loss value $Z_I(\matr{w_1}, \matr{w_2})$ (Equation \ref{eq:iden_problem}), the neural network learns the set of weights through multiple epochs \nomenclature[T]{Epoch}{One training/testing period; iteration}of backpropagating the loss using gradient descent. Furthermore, the program processes the dataset before feeding to the network to avoid unnecessary sub-epochs and promote batch operations on matrices. 
     
     \subsubsection{Structure of Input Dataset for Identifying Weights} \label{sec:Structure of Input Dataset for Identifying Weights}
     \begin{figure}[H]
@@ -116,9 +147,9 @@
         \caption{Neural network designed for the Identification Problem}
         \label{fig:Neural network designed for the Identification Problem}
     \end{figure}
-    It is important to clarify that the network in Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}, which takes in $\matr{F}[v]$ as shown, is a slice of the original network, which takes in the complete tensor $\matr{F}$ and computes the complete result $\matr{P}^{T}$  per iteration of $t$. In other words, the input and the hidden layers are 3-dimensional, and the output layer is 2-dimensional. Since it is difficult to visualize the complete network on paper, slices of the network are depicted in Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}. Algorithm \ref{alg:Algorithm for the Identification Problem per iteration} details the steps for learning the parameters $\matr{w_1}$ and $\matr{w_2}$ based on Equations \ref{eq:iden_problem} \& \ref{eq:puv_equation}.\\
+    It is important to clarify that the network in Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}, which takes in $\matr{F}[v]$ as shown, is a slice of the original network, which takes in the complete tensor $\matr{F}$ and computes the complete result $\matr{P}^{T}$  per iteration of $t$. In other words, the input and the hidden layers are 3-dimensional, and the output layer is 2-dimensional. Since it is difficult to visualize the complete network on paper, slices of the network are depicted in Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}. Algorithm \ref{alg:Algorithm for the Identification Problem per epoch} details the steps for learning the parameters $\matr{w_1}$ and $\matr{w_2}$ based on Equations \ref{eq:iden_problem} \& \ref{eq:puv_equation}.\\
     \begin{algorithm}
-        \caption{Algorithm for the Identification Problem per iteration} \label{alg:Algorithm for the Identification Problem per iteration}
+        \caption{Algorithm for the Identification Problem per epoch} \label{alg:Algorithm for the Identification Problem per epoch}
         \begin{algorithmic}[1]
             \Require $\matr{w_1}, \matr{w_2}, T$
             \Function{Identify-Weights}{$\matr{x}, \matr{y}, \matr{r}, \matr{D}, \matr{f}, \omega$}
@@ -135,10 +166,6 @@
             \EndFunction
         \end{algorithmic}
     \end{algorithm}
-
-    [In lines 4 and 5 of Algorithm \ref{alg:Algorithm for the Identification Problem per iteration}, \textsc{Batch-Multiply}($\cdot$) operates on $m \times n \times p$ and $m \times q \times r$ tensors to give a $m \times n \times r$ tensor. 
-    \phantomsection
-    \label{Batch-Multiply}]
     
     \subsection{Pricing Problem} \label{sec:Pricing Problem}
     After learning the set of weights $\matr{w_1}$ and $\matr{w_2}$ highlighting the change in agents' behavior to collect observations, the Pricing Problem aims to redistribute rewards to the all locations such that the predicted behavior of agents influenced by the new set of rewards is homogeneous. Thus, given a budget of rewards $\mathcal{R}$, this optimization problem can be expressed as:
@@ -162,7 +189,7 @@
     The observation density datasets, $\matr{x}$ and $\matr{y}$, are also aggregated for all agents such that they give information in terms of locations $u$ only. This is also why rewards $\vect{r}$ does not depend on $t$ - we want a generalized set of rewards for all time $t$ per location $u$. Therefore, the algorithm for constructing $\matr{F}$ (Section \ref{sec:Structure of Input Dataset for Identifying Weights}) is same as Algorithm \ref{alg:Constructing the Input Dataset} but with a change - $\vect{r_t}$ replaced by $\vect{r}$.
     
     \subsubsection{Optimizing \& Constraining Rewards} \label{sec:Optimizing and Constraining Rewards}
-    The algorithm for finding $\matr{P}$ is very similar to Phase 1 of Algorithm \ref{alg:Algorithm for the Identification Problem per iteration} but without any iterations of $t$, as $\vect{x}$ is a vector rather than a matrix. Also, since the program would predict $\vect{y}$, it does not need labels $\vect{y}$ as a dataset.\\
+    The algorithm for finding $\matr{P}$ is very similar to Phase 1 of Algorithm \ref{alg:Algorithm for the Identification Problem per epoch} but without any epochs of $t$, as $\vect{x}$ is a vector rather than a matrix. Also, since the program would predict $\vect{y}$, it does not need labels $\vect{y}$ as a dataset.\\
     
     \begin{algorithm}
         \caption{Solving the Pricing Problem} \label{alg:Solving the Pricing Problem}
@@ -206,7 +233,30 @@
         \end{equation}
     \end{multicols}
 
-    \section{Experiments} \label{sec:Experiments}
+    \section{Experiment Specifications} \label{sec:Experiment Specifications}
+    To test both our models, we conducted several tests for optimization and GPU speedup over CPU. After initializing all parameters randomly and reading data from files, the models were run for 1000 to 10000 epochs depending on the complexity of the model and any potential benefits emerging with more epochs. \\
+    
+    A Dell Precision Tower 3620 with Intel Core i7-7700K Processor, 16GB RAM and NVIDIA Quadro P4000 GPU with 1792 CUDA Cores was used for all experiments, which were run on original datasets for optimization tests and randomly generated datasets for GPU speedup tests. We believe that speedup tests on original datasets would give similar results, though we used randomly generated datasets because it was easier to scale the sizes of random data and test on a variety of dataset sizes.\\
+    
+    Note that operations in the scripts were distributed between CPU and GPU when GPU is mentioned as ``set'', while the operations were executed only on the CPU when the ``CPU'' is mentioned as set. Since GPUs are inferior than CPUs at handling most operations other than simple arithmetic matrix ones, we used - and recommend using - both the CPU and the GPU in the former case (GPU ``set'') to handle operations they are superior at. However, since the models in Sections \ref{sec:Identification Problem} and \ref{sec:Pricing Problem} (not the full scripts) are primarily arithmetic operations on matrices and tensors, it is clear that they were executed on the GPU when it was ``set'' and on the CPU when the CPU was ``set''.
+    
+    On the algorithm side, we used Adam's algorithm for \textsc{Gradient-Descent}($\cdot$), after testing performances of several algorithms including but not limited to Stochastic Gradient Descent (SGD) [], Adam's Algorithm [] and RMSProp [] (PyTorch lets you choose the corresponding function). Since Adam's algorithm was found to work best with both models over all test runs, all experiments were done using Adam's algorithm.
+    
+    \subsection{Running the Identification Problem's Model}
+    \subsubsection{Optimizing the Original Dataset}
+    The 3-layered neural network was run for 10000 epochs on the original dataset with learning rate = 0.01. Since we were aiming for optimization, we ran multiple tests (5 different seeds) of the model only with the GPU ``set''.\\
+    
+    To compare this model's optimization results with other model structures, the previously studied 2-layered network \cite{Xue2016Avi2} and a 4-layered neural network were used. The 4-layered network had another hidden layer with reLU, equivalent to the hidden layer in the current 3-layered network (Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}). The results from the 2-layered network were obtained from the study, and those from the 4-layered network were attained on the same original dataset with same parameter values (learning rate, epochs etc.).
+    
+    \subsubsection{Testing GPU Speedup on the Random Dataset}
+    After generating random datasets of different sizes ($T = 17, 85, 173$ - Section \ref{sec:Minimizing Loss for the Identification Problem}, we ran our 3-layered model on each dataset size with different seeds with both GPU and CPU ``set''.
+    
+    \subsection{Running the Pricing Problem's Model}
+    \subsubsection{Optimizing the Original Dataset}
+    After obtaining the set of weights $\matr{w_1}$ and $\matr{w_2}$ optimized using different seeds, we tested to find the best rewards (with the lowest loss - Equation \ref{eq:pricing_problem}) with random $\vect{r}$ initiation. To average the results, the model was run several times on the same set of weights, using different set of weights (obtained from running the Identification Problem with different seeds) each time. Specifically, we ran the Pricing Problem's model 5 times (each with different seeds) for each set of weights, which were itself 5 in number.
+    
+    \subsubsection{Testing GPU Speedup on the Random Dataset}
+    After generating random datasets of different sizes ($J = 11, 55, 116$ - Section \ref{sec:Minimizing Loss for the Identification Problem}, we ran our 3-layered model on each dataset size with different seeds with both GPU and CPU ``set''.
     
     \section{Results} \label{sec:Results}
     \section{Conclusion} \label{sec:Conclusion}

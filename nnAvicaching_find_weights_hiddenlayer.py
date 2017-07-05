@@ -545,8 +545,8 @@ if __name__ == "__main__":
 
         # save w3
         w3 = net.w3.data.view(-1, numFeatures).cpu().numpy()
-        f.write('# w2 shape: {0}\n'.format(w2.shape))
-        np.savetxt(f, w2, fmt="%.15f", delimiter=" ")
+        f.write('# w3 shape: {0}\n'.format(w3.shape))
+        np.savetxt(f, w3, fmt="%.15f", delimiter=" ")
     if not args.no_plots:
         save_plot("./stats/find_weights/plots/" + fname + ".png", epoch_data, 
             [train_time_loss, test_time_loss], "epoch", "loss", log_name)

@@ -111,16 +111,15 @@
     \subsection{Identification Problem} \label{sec:Identification Problem}
     As discussed in Section \ref{sec:Introduction}, the model should learn parameters that caused the change in agents' behavior when a certain set of rewards was applied to locations in the experiment region. Specifically, given datasets $\vect{y_t}$ and $\vect{x_t}$ of agents' visit densities with and without the rewards $\vect{r_t}$, we want to find weights $\matr{w_1}$ and $\matr{w_2}$ that caused the change from $\vect{x_t}$ to $\vect{y_t}$, factoring in possible influence from environmental factors $\matr{f}$ and distances between locations $\matr{D}$. Although the original model proposed to learn a single set of weights $\matr{w}$ \cite{Xue2016Avi2}, this proposed model considers two sets of weights $\matr{w_1}$ and $\matr{w_2}$ as it may theoretically result into higher accuracy and lower loss. Mathematically, the model can be formulated as:
     \begin{equation} \label{eq:iden_problem}
-    \begin{aligned}
-    & \underset{\matr{w_1}, \matr{w_2}}{\text{minimize}}
-    & & Z_I(\matr{w_1}, \matr{w_2}) = \sum_{t} (\omega(\vect{y_t} - \matr{P}(\matr{f}, \vect{r_t}; \matr{w_1}, \matr{w_2})\vect{x_t}))^{2}
-    \end{aligned}
+        \begin{aligned}
+            & \underset{\matr{w_1}, \matr{w_2}}{\text{minimize}}
+            & & Z_I(\matr{w_1}, \matr{w_2}) = \sum_{t} (\omega(\vect{y_t} - \matr{P}(\matr{f}, \vect{r_t}; \matr{w_1}, \matr{w_2})\vect{x_t}))^{2}
+        \end{aligned}
     \end{equation}
     where $\omega$ is a set of weights at time $t$ capturing penalties relative to the importance of homogenizing at different locations and elements $p_{u, v}$ of $\matr{P}$ are given as:
     \begin{equation} \label{eq:puv_equation}
     p_{u, v} = \frac{\exp(\matr{w_2} \cdot \text{reLU} (\matr{w_1} \cdot [d_{u, v}, \vect{f_{u}}, r_{u}]))}{\sum_{u'} \exp(\matr{w_2} \cdot \text{reLU} (\matr{w_1} \cdot [d_{u', v}, \vect{f_{u'}}, r_{u'}]))} = \frac{\exp(\Gamma_{u, v})}{\sum_{u'}\exp(\Gamma_{u', v})} = \text{softmax}(\Gamma_{u, v})
     \end{equation}
-    
     To optimize the loss value $Z_I(\matr{w_1}, \matr{w_2})$ (Equation \ref{eq:iden_problem}), the neural network learns the set of weights through multiple epochs of backpropagating the loss using gradient descent. Furthermore, the program processes the dataset before feeding to the network to avoid unnecessary sub-epochs and promote batch operations on matrices. 
     
     \subsubsection{Structure of Input Dataset for Identifying Weights} \label{sec:Structure of Input Dataset for Identifying Weights}
@@ -157,7 +156,6 @@
             \EndFunction
         \end{algorithmic}
     \end{algorithm}
-       
     \subsubsection{Minimizing Loss for the Identification Problem} \label{sec:Minimizing Loss for the Identification Problem}
     As shown in Figure \ref{fig:Neural network designed for the Identification Problem}, the neural network is made of 3 fully connected layers - the input layer, the hidden layer with rectified Linear Units (reLU), and the output layer generating the results using the softmax$(\cdot)$ function. The network can also be visualized as a collection of 1-dimensional layers (Figure \ref{fig:Side view of the network}), with the softmax$(\cdot)$ calculated on the collection's output.
     \begin{figure}[!htbp]
@@ -197,28 +195,26 @@
     \subsection{Pricing Problem} \label{sec:Pricing Problem}
     After learning the set of weights $\matr{w_1}$ and $\matr{w_2}$ highlighting the change in agents' behavior to collect observations, the Pricing Problem aims to redistribute rewards to the all locations such that the predicted behavior of agents influenced by the new set of rewards is homogeneous. Thus, given a budget of rewards $\mathcal{R}$, this optimization problem can be expressed as:
     \begin{equation} \label{eq:pricing_problem}
-    \begin{aligned}
-    & \underset{\vect{r}}{\text{minimize}}
-    & & Z_P(\vect{r}) = \frac{1}{n}\lVert \vect{y} - \mean{\vect{y}} \rVert\\
-    & \text{subject to}
-    & & \vect{y} = \matr{P}(\matr{f}, \vect{r}; \matr{w_1}, \matr{w_2}) \, \vect{x}\\
-    &&& \sum_{i} r_i \leq \mathcal{R}\\
-    &&& r_i \geq 0
-    \end{aligned}
+        \begin{aligned}
+            & \underset{\vect{r}}{\text{minimize}}
+            & & Z_P(\vect{r}) = \frac{1}{n}\lVert \vect{y} - \mean{\vect{y}} \rVert\\
+            & \text{subject to}
+            & & \vect{y} = \matr{P}(\matr{f}, \vect{r}; \matr{w_1}, \matr{w_2}) \, \vect{x}\\
+            &&& \sum_{i} r_i \leq \mathcal{R}\\
+            &&& r_i \geq 0
+        \end{aligned}
     \end{equation}
     where elements of $\matr{P}$ are defined as in Equation \ref{eq:puv_equation}.
     
     To allocate the rewards $\vect{r}$ optimally, the calculations for the pricing problem are akin to that for the Identification Problem (Section \ref{sec:Identification Problem}). However, since only 1 set of rewards need to be optimized, we use an altered 2-layer network instead of the 3-layer network used to identify the weights. While Equation \ref{eq:pricing_problem} looks like a typical Linear Programming (LP) problem, only a part of the formulation uses LP to constrain the rewards. The more computationally expensive part (calculation for $\matr{P}$ on a CPU) is modeled as a 2-layer network that minimizes the loss function $Z_P(\vect{r})$ using gradient descent. Although this use of a neural network may seem similar to that of the Identification Problem, there are major changes in the structure of the network used here. These alterations for the Pricing Problem and differences from the Identification Problem are discussed further in the following sections.
     
     \subsubsection{Input Dataset for Finding Rewards}
-    
     Since it is the set of rewards $\vect{r}$ that need to be optimized, they must serve as the ``weights'' of the network (note that ``weights'' refer to the edges of this network and not to the set of calculated weights $\matr{w_1}$ and $\matr{w_2}$). Therefore, the rewards $\vect{r}$ are no longer fed into the network but are its characteristic. Instead, the calculated weights $\matr{w_1}$ are fed into the network, and are ``weighted'' by the rewards.
     
     The observation density datasets, $\matr{x}$ and $\matr{y}$, are also aggregated for all agents such that they give information in terms of locations $u$ only. This is also why rewards $\vect{r}$ does not depend on $t$ - we want a generalized set of rewards for all time $t$ per location $u$. Therefore, the algorithm for constructing $\matr{F}$ (Section \ref{sec:Structure of Input Dataset for Identifying Weights}) is same as Algorithm \ref{alg:Constructing the Input Dataset} but with a change - $\vect{r_t}$ replaced by $\vect{r}$.
     
     \subsubsection{Optimizing \& Constraining Rewards} \label{sec:Optimizing and Constraining Rewards}
     The algorithm for finding $\matr{P}$ is very similar to Phase 1 of Algorithm \ref{alg:Algorithm for the Identification Problem per epoch} but without any epochs of $t$, as $\vect{x}$ is a vector rather than a matrix. Also, since the program would predict $\vect{y}$, it does not need labels $\vect{y}$ as a dataset.
-    
     \begin{algorithm}
         \caption{Solving the Pricing Problem} \label{alg:Solving the Pricing Problem}
         \begin{algorithmic}[1]
@@ -240,24 +236,24 @@
     After updating the rewards, the program constrains them using LP($\cdot$) such that $\sum_{i}r_i \leq \mathcal{R}$ and $r_i \geq 0$. To do so, the LP($\cdot$) finds another set of rewards $\vect{r'}$ such that the absolute difference between new \cite{foo2010} and old rewards ($\sum_{i}|r'_i - r_i|$) is minimum. The mathematical formulation is given in Equation \ref{eq:lp_math_constrain_rewards}, which was implemented using SciPy's Optimize Module \cite{SCPOptimizeDocs}. Since the module supports a standard format for doing linear programming, Equation \ref{eq:lp_code_constrain_rewards} (after rearranging constraints and building $\matr{A}, \vect{b}$ and $\vect{c}$) is used, which is mathematically equivalent to Equation \ref{eq:lp_math_constrain_rewards}.
     \begin{multicols}{2}
         \begin{equation} \label{eq:lp_math_constrain_rewards}
-        \begin{aligned}
-            & \underset{\vect{r'}}{\text{minimize}}
-            & & \sum_{i}|r'_i - r_i|\\ \\
-            & \text{subject to}
-            & & \sum_{i}r'_i \leq \mathcal{R}\\
-            &&& r_i \geq 0
-        \end{aligned}
+            \begin{aligned}
+                & \underset{\vect{r'}}{\text{minimize}}
+                & & \sum_{i}|r'_i - r_i|\\ \\
+                & \text{subject to}
+                & & \sum_{i}r'_i \leq \mathcal{R}\\
+                &&& r_i \geq 0
+            \end{aligned}
         \end{equation}\break
         \begin{equation} \label{eq:lp_code_constrain_rewards}
-        \begin{aligned}
-            & \underset{\vect{r'}, \vect{u}}{\text{minimize}}
-            & & \sum_{i} u_i\\
-            & \text{subject to}
-            & & r'_i - r_i \leq u_i\\
-            &&& r_i - r'_i \leq u_i\\
-            &&& \sum_{i} r'_i \leq \mathcal{R}\\
-            &&& r'_i, u_i \geq 0
-        \end{aligned}
+            \begin{aligned}
+                & \underset{\vect{r'}, \vect{u}}{\text{minimize}}
+                & & \sum_{i} u_i\\
+                & \text{subject to}
+                & & r'_i - r_i \leq u_i\\
+                &&& r_i - r'_i \leq u_i\\
+                &&& \sum_{i} r'_i \leq \mathcal{R}\\
+                &&& r'_i, u_i \geq 0
+            \end{aligned}
         \end{equation}
     \end{multicols}
 
@@ -298,30 +294,29 @@
         \item The average loss values at the end of 10000 epochs were 0.04 on the training set and 0.14 on the test set.
         \item The average loss values for the 4-layered model (for comparison) with same experiment specifications were 0.14 on the training set and 0.49 on the test set.
     \end{itemize}
-
     \begin{figure}[!htbp]
         \centering
         \begin{minipage}{.49\textwidth}
             \centering
             \begin{tikzpicture}
-            \begin{axis}[
-            ybar,
-            width=\textwidth,
-            enlarge x limits=0.15,
-            legend style={at={(0.02,0.98)},
-                anchor=north west,legend columns=1},
-            ylabel={Loss Value},
-            symbolic x coords={2-layer,3-layer,4-layer, Historical},
-            xtick=data,
-            nodes near coords,
-            nodes near coords align={vertical},
-            xlabel={Models},
-            xlabel style={yshift=-.5cm}
-            ]
-            \addplot coordinates {(2-layer,0.26) (3-layer,0.14) (4-layer,0.49) (Historical, 0.36)};
-            \addplot coordinates {(3-layer,0.04) (4-layer,0.14)};
-            \legend{Test Set,Training Set}
-            \end{axis}
+                \begin{axis}[
+                    ybar,
+                    width=\textwidth,
+                    enlarge x limits=0.15,
+                    legend style={at={(0.02,0.98)},
+                        anchor=north west,legend columns=1},
+                    ylabel={Loss Value},
+                    symbolic x coords={2-layer,3-layer,4-layer, Historical},
+                    xtick=data,
+                    nodes near coords,
+                    nodes near coords align={vertical},
+                    xlabel={Models},
+                    xlabel style={yshift=-.5cm}
+                ]
+                \addplot coordinates {(2-layer,0.26) (3-layer,0.14) (4-layer,0.49) (Historical, 0.36)};
+                \addplot coordinates {(3-layer,0.04) (4-layer,0.14)};
+                \legend{Test Set,Training Set}
+                \end{axis}
             \end{tikzpicture}
             \caption[Comparison of Loss Values from Different Models of the Identification Problem]{Comparison of Loss Values from Different Models of the Identification Problem: Loss values for the training set are inevitably lower than that for the test set, which should be the basis for comparison}
             \label{fig:Comparison of Loss Values from Different Models of the Identification Problem}
@@ -333,7 +328,6 @@
             \label{fig:Predicted Probabilities of Agents Visiting Each Location Plotted on a Map}
         \end{minipage}
     \end{figure}
-
     As depicted in Figure \ref{fig:Comparison of Loss Values from Different Models of the Identification Problem}, our 3-layered neural network outperformed the previous 2-layered model by 0.12 units (12\% more closer to Ground Truth \cite[Table 1]{Xue2016Avi2}), and also produced much better results (35\% more closer to Ground Truth) than the 4-layered model.
     
     We also generated the predicted probabilities of the agents visiting each location ($\matr{P} \cdot \matr{x}$) in the Test Set, and plotted it onto a map marked by the locations' latitudes and longitudes. Figure \ref{fig:Predicted Probabilities of Agents Visiting Each Location Plotted on a Map} shows such a plot generated by the 3-layered network, where each dot represents a location.
@@ -359,21 +353,20 @@
 
     \subsubsection{GPU Speedup Results}
     Running on batches of sizes $T = 17, 85, 173$ on a randomly generated dataset, with both GPU and CPU ``set'' separately, we obtained full  execution time (including both training and testing) information. The average results (3 different seeds for each batch) are plotted in Figure \ref{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}, which show promising GPU speedup over CPU figures for any batch size - for every unit increase in batch-size $T$, CPU ``set'' takes $\approx$ 4.66 seconds, while GPU ``set'' takes only $\approx$ 0.74 more seconds (slopes of best-fit trendlines).
-    
     \begin{figure}[!htbp]
         \centering
         \begin{tikzpicture}
             \begin{axis}[
-            width=12cm,
-            height=8cm,
-            xtick=data,
-            xlabel={Batch-Size $T$},
-            ylabel={Time/s},
-            y tick label style={/pgf/number format/1000 sep=},
-            extra y tick style={grid=major, tick label style={xshift=-1cm}},
-            legend style={at={(0.02,.98)},
-                anchor=north west},
-            nodes near coords,
+                width=12cm,
+                height=8cm,
+                xtick=data,
+                xlabel={Batch-Size $T$},
+                ylabel={Time/s},
+                y tick label style={/pgf/number format/1000 sep=},
+                extra y tick style={grid=major, tick label style={xshift=-1cm}},
+                legend style={at={(0.02,.98)},
+                    anchor=north west},
+                nodes near coords,
             ]
             \addplot+ [mark=*,] coordinates {(17,173.57) (85,540.10) (173,901.24)};  % cpu
             \addplot+ [mark=*,] coordinates {(17,9.97) (85,61.02) (173,126.33)};  % gpu
@@ -387,7 +380,6 @@
     \subsection{Pricing Problem's Results} \label{sec:Pricing Problem's Results}
     \subsubsection{Optimization Results}
     After doing tests on the original for loss minimization and comparing with the baseline scores, we found that our model was performing $\approx$ 8 times better than both randomly generated and proportionally distributed rewards. Table \ref{tab:Loss Values Calculated from Different Sets of Rewards} lists the average loss values obtained on each type of reward allocation (model's predicted, random and proportionate).
-    
     \begin{table}[!htbp]
         \centering
         \caption[Loss Values Calculated from Different Sets of Rewards]{Loss Values Calculated from Different Sets of Rewards: The values are small because the loss function $Z_P(\vect{r})$ (Equation \ref{eq:pricing_problem}) is averaged over the number of locations}
@@ -406,33 +398,32 @@
     \subsubsection{GPU Speedup Results}
     After running on different batch-sizes $J = 11, 55, 116$ (the Pricing Problem's model does not iterate over $T$ - Algorithm \ref{alg:Solving the Pricing Problem}), we did not observe profound speedup for the full model. Figure \ref{fig:Finding Rewards - Time Taken by the Full Model} shows the decreasing speedup trend, as the GPU ``set'' configuration started struggling to complete all epochs faster than with CPU ``set''. The GPU ``set'' config. took $\approx$ 1.42 seconds more for unit increase in batch-size $J$, whereas the CPU ``set'' config. took $\approx$ 2.44 seconds more - a speedup of just 1.72 times.
     
-    However, after realizing that the LP problem (Equations \ref{eq:lp_math_constrain_rewards} \& \ref{eq:lp_code_constrain_rewards}) might be influencing these logged times, we recorded running times for both the neural network and the LP separately. As we suspected, the LP \textit{did} impact the runtime more than the neural networks did, and the GPU speedup for the Neural Network was expectedly high with growing batch-sizes - about 12.48 times.
-    
+    However, after realizing that the LP problem (Equations \ref{eq:lp_math_constrain_rewards} \& \ref{eq:lp_code_constrain_rewards}) might be influencing these logged times, we recorded running times for both the neural network and the LP separately. As we suspected, the LP \textit{did} impact the runtime more than the neural networks did, and the GPU speedup for the Neural Network was expectedly high with growing batch-sizes - about 12.48 times (Figure \ref{fig:Finding Rewards - Time taken by the Neural Network}).
     \begin{figure}[!htbp]
         \centering
         \begin{subfigure}{\textwidth}
             \centering
             \begin{tikzpicture}
-            \begin{axis}[
-            width=12cm,
-            height=8cm,
-            xtick=data,
-            xlabel={Batch-Size $J$},
-            ylabel={Time/s},
-            enlargelimits=0.15,
-            y tick label style={/pgf/number format/1000 sep=},
-            extra y tick style={grid=major, tick label style={xshift=-1cm}},
-            legend style={at={(0.02,.98)},
-                anchor=north west},
-            nodes near coords,
-            every node near coord/.append style={yshift=-0.7cm}
-            ]
-            \addplot+ [mark=*,,
-            nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta}
-            ] coordinates {(11,17.38) (55,132.80) (116,274.09)};  % cpu
-            \addplot+ [mark=*,] coordinates {(11,7.84) (55,47.56) (116,156.78)};  % gpu
-            \legend{CPU ``set'',GPU ``set''}
-            \end{axis}
+                \begin{axis}[
+                    width=12cm,
+                    height=8cm,
+                    xtick=data,
+                    xlabel={Batch-Size $J$},
+                    ylabel={Time/s},
+                    enlargelimits=0.15,
+                    y tick label style={/pgf/number format/1000 sep=},
+                    extra y tick style={grid=major, tick label style={xshift=-1cm}},
+                    legend style={at={(0.02,.98)},
+                        anchor=north west},
+                    nodes near coords,
+                    every node near coord/.append style={yshift=-0.7cm}
+                ]
+                \addplot+ [mark=*,,
+                nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta}
+                ] coordinates {(11,17.38) (55,132.80) (116,274.09)};  % cpu
+                \addplot+ [mark=*,] coordinates {(11,7.84) (55,47.56) (116,156.78)};  % gpu
+                \legend{CPU ``set'',GPU ``set''}
+                \end{axis}
             \end{tikzpicture}
             \caption{Time Taken by the Full Model: Unit increase in $J$ leads to 1.42 additional seconds with GPU ``set'', compared to 2.44 seconds with CPU ``set''.}
             \label{fig:Finding Rewards - Time Taken by the Full Model}
@@ -440,58 +431,57 @@
         \begin{subfigure}{.49\textwidth}
             \centering
             \begin{tikzpicture}
-            \begin{axis}[
-            width=\textwidth,
-            height=8cm,
-            xtick=data,
-            enlargelimits=0.15,
-            xlabel={Batch-Size $J$},
-            ylabel={Time/s},
-            y tick label style={/pgf/number format/1000 sep=},
-            extra y tick style={grid=major, tick label style={xshift=-1cm}},
-            legend style={at={(0.02,.98)},
-                anchor=north west},
-            nodes near coords,
-            every node near coord/.append style={yshift=-0.7cm}
-            ]
-            \addplot+ [mark=*,
-            nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta}
-            ] coordinates {(11,11.37) (55,123.04) (116,257.79)};  % cpu
-            \addplot+ [mark=*,] coordinates {(11,6.72) (55,46.12) (116,154.85)};  % gpu
-            \legend{CPU ``set'',GPU ``set''}
-            \end{axis}
+                \begin{axis}[
+                    width=\textwidth,
+                    height=8cm,
+                    xtick=data,
+                    enlargelimits=0.15,
+                    xlabel={Batch-Size $J$},
+                    ylabel={Time/s},
+                    y tick label style={/pgf/number format/1000 sep=},
+                    extra y tick style={grid=major, tick label style={xshift=-1cm}},
+                    legend style={at={(0.02,.98)},
+                        anchor=north west},
+                    nodes near coords,
+                    every node near coord/.append style={yshift=-0.7cm}
+                ]
+                \addplot+ [mark=*,
+                nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta}
+                ] coordinates {(11,11.37) (55,123.04) (116,257.79)};  % cpu
+                \addplot+ [mark=*,] coordinates {(11,6.72) (55,46.12) (116,154.85)};  % gpu
+                \legend{CPU ``set'',GPU ``set''}
+                \end{axis}
             \end{tikzpicture}
-            \caption{Time taken by the LP}
+            \caption[Time taken by the LP]{Time taken by the LP: Unit increase in $J$ increases runtime by 1.41 seconds with GPU ``set''; 2.44 seconds with CPU ``set''}
             \label{fig:Finding Rewards - Time taken by the LP}
-        \end{subfigure}
+        \end{subfigure}\hfill
         \begin{subfigure}{.49\textwidth}
             \centering
             \begin{tikzpicture}
-            \begin{axis}[
-            width=\textwidth,
-            height=8cm,
-            xtick=data,
-            xlabel={Batch-Size $J$},
-            ylabel={Time/s},
-            y tick label style={/pgf/number format/1000 sep=},
-            extra y tick style={grid=major, tick label style={xshift=-1cm}},
-            legend style={at={(0.02,.98)},
-                anchor=north west},
-            nodes near coords,
-            ]
-            \addplot+ [mark=*,] coordinates {(11,6.01) (55,9.77) (116,16.30)};  % cpu
-            \addplot+ [mark=*,] coordinates {(11,1.11) (55,1.44) (116,1.94)};  % gpu
-            \legend{CPU ``set'',GPU ``set''}
-            \end{axis}
+                \begin{axis}[
+                    width=\textwidth,
+                    height=8cm,
+                    xtick=data,
+                    xlabel={Batch-Size $J$},
+                    ylabel={Time/s},
+                    y tick label style={/pgf/number format/1000 sep=},
+                    extra y tick style={grid=major, tick label style={xshift=-1cm}},
+                    legend style={at={(0.02,.98)},
+                        anchor=north west},
+                    nodes near coords,
+                ]
+                \addplot+ [mark=*,] coordinates {(11,6.01) (55,9.77) (116,16.30)};  % cpu
+                \addplot+ [mark=*,] coordinates {(11,1.11) (55,1.44) (116,1.94)};  % gpu
+                \legend{CPU ``set'',GPU ``set''}
+                \end{axis}
             \end{tikzpicture}
-            \caption{Time taken by the Neural Network}
+            \caption[Time taken by the Neural Network]{Time taken by the Neural Network: Unit increase in $J$ increases runtime by 0.0079 seconds with GPU ``set''; 0.0981 seconds with CPU ``set''}
             \label{fig:Finding Rewards - Time taken by the Neural Network}
         \end{subfigure}
-        
+        \vspace*{1em}
         \caption[Finding Rewards - Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately]{Finding Rewards - Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately: Scaling is strongly hampered by the LP solver. With GPU ``set'', while each unit increase in $J$ results in 0.0079 additional seconds for the Neural Network, it takes 1.41 seconds more for the LP.}
         \label{fig:Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPU ``set'' Separately}
     \end{figure}
-    
     Furthermore, although we expected SciPy's Optimize Module \cite{SCPOptimizeDocs} to run on the CPU (Section \ref{sec:Pricing Problem-Testing GPU Speedup on the Random Dataset}), the LP problem ran faster when the GPU was ``set''. We did not anticipate this behavior, and we couldn't pick out a reason for the Optimize Module supposedly doing operations differently. Since our GPU ``set'' and CPU ``set'' configurations were only enforceable on user-created functions and datasets, we do not know why the LP solver delivered different speeds while solving the same problem. If it used the CPU or the GPU, it should have done so in both cases and the runtime would have been equal. While there could be differences in implementation, we cannot affirm or deny any reason behind this quirky behavior. Figure \ref{fig:Finding Rewards - Time taken by the LP} shows the unexpected speedup delivered by SciPy Optimize Module's LP solver.
     
     \section{Conclusion} \label{sec:Conclusion}

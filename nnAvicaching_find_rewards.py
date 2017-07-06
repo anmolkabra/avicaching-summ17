@@ -228,8 +228,8 @@ if __name__ == "__main__":
         rewards = Variable(torchten(ad.normalize(rewards, using_max=False)))
         res = test_rewards(rewards)
         # save results
-        fname = "testing \"" + args.test[args.test.rfind("/") + 1:] + '"'
-        save_log("./stats/find_rewards/" + fname + ".txt", res, weights_file_name)
+        fname = "testing \"" + args.test[args.test.rfind("/") + 1:] + '"' + str(time.time())
+        save_log("./stats/find_rewards/test_rewards_results/" + fname + ".txt", res, weights_file_name)
         sys.exit(0)
     
     net = MyNet()

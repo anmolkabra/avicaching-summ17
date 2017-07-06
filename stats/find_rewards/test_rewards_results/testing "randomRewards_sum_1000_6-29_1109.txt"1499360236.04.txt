@@ -1,0 +1,2 @@
+./stats/find_weights/weights/gpu, origXYR_seed=4, epochs=10000, train= 80%, lr=1.000e-02, time=1259.9575 sec.txt
+time = 0.0103		loss = 0.002193561987951

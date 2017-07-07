@@ -62,6 +62,7 @@ J, T, weights_file_name, totalR = args.locations, args.time, args.weights_file, 
 X, w1_for_r, w2, F_DIST_w1, numFeatures = [], [], [], [], 0
 torchten = torch.FloatTensor
 lp_A, lp_c = [], []
+loss = 0
 
 randXYR_file = "./data/random/randXYR" + str(116) + ".txt"
 randF_file = "./data/random/randF" + str(116) + ".csv"
@@ -120,6 +121,7 @@ class MyNet(nn.Module):
         self.R = nn.Parameter(torchten(normalizedR))
 
     def forward(self, wt1, wt2):
+        # print(self.R.data * 1000)
         repeatedR = self.R.repeat(J, 1).unsqueeze(dim=2)    # shape is J x J x 1
         res = torch.bmm(repeatedR, wt1) + F_DIST_w1     # inp is J x J x numF after
         res = torchfun.relu(res)
@@ -131,59 +133,48 @@ class MyNet(nn.Module):
         # inp += eta_matrix
         return torchfun.softmax(res)
 
-def train(net, optimizer):
-    global w1_for_r, w2, lp_A, lp_c
-    start_train = time.time()
+def go_forward(net):
+    global w1_for_r, w2, loss
+    start_forward_time = time.time()
 
-    # STEP 1
     # feed in data
-    P = net(w1_for_r, w2).t()    # P is now weighted -> softmax
+    P = net(w1_for_r, w2).t()
     # calculate loss
     Y = torch.mv(P, X)
     loss = torch.norm(Y - torch.mean(Y).expand_as(Y)).pow(2) / J
-    # backpropagate
-    optimizer.zero_grad()
-    loss.backward()
-    # update the rewards and constrain them
-    optimizer.step()
-    end_train = time.time() - start_train
+    
+    return time.time() - start_forward_time
 
-    # STEP 2
+def train(net, optimizer):
+    global w1_for_r, w2, lp_A, lp_c, loss
+    start_train = time.time()
+
+    # BACKPROPAGATE
+    start_backprop_time = time.time()
+    
+    optimizer.zero_grad()
+    loss.backward()         # calculate grad
+    optimizer.step()        # update rewards
+    
+    backprop_time = time.time() - start_backprop_time
     r_on_cpu = net.R.data.squeeze().cpu().numpy()   # transfer data for lp
-    start_lp = time.time()
+    start_lp_time = time.time()
+    
+    # CONSTRAIN -- LP
     # 1.0 is the sum constraint of rewards
     # the first J outputs are the new rewards
     net.R.data = torchten(lp.run_lp(lp_A, lp_c, J, r_on_cpu, 1.0).x[:J]).unsqueeze(dim=0)
-    end_lp = time.time() - start_lp
+    
+    lp_time = time.time() - start_lp_time
+
     if args.cuda:
         # transfer data
         net.R.data = net.R.data.cuda()
-
-    # STEP 3
-    test_res = test_rewards(net.R)
-
-    return (end_train + end_lp + test_res[0], test_res[1], net.R.data.sum())
-
-def test_rewards(r):
-    global w1_for_r, w2
-    start_time = time.time()
-
-    # feed in data
-    repeatedR = r.repeat(J, 1).unsqueeze(dim=2)
-    inp = torch.bmm(repeatedR, w1_for_r) + F_DIST_w1
-    inp = torchfun.relu(inp)
-    inp = torch.bmm(inp, w2).view(-1, J)
-    # add eta to inp[u][u]
-    # eta_matrix = Variable(eta * torch.eye(J).type(torchten))
-    # inp += eta_matrix
-    P = torchfun.softmax(inp)
     
-    # calculate loss
-    Y = torch.mv(P, X)
-    loss = torch.norm(Y - torch.mean(Y).expand_as(Y)).pow(2) / J
+    # FORWARD
+    forward_time = go_forward(net)
 
-    end_time = time.time()
-    return (end_time - start_time, loss.data[0])
+    return backprop_time + lp_time + forward_time
 
 # =============================================================================
 # logs and plots
@@ -235,33 +226,38 @@ if __name__ == "__main__":
     
     if args.test:
         rewards = np.loadtxt(args.test, delimiter=" ")[:J]
-        rewards = Variable(torchten(ad.normalize(rewards, using_max=False)))
+        rewards = torchten(ad.normalize(rewards, using_max=False))
         if args.cuda:
             rewards = rewards.cuda()
-        res = test_rewards(rewards)
+        net.R.data = rewards        # substitute manual rewards
+        forward_time = go_forward(net)
         # save results
         fname = "testing \"" + args.test[args.test.rfind("/") + 1:] + '"' + str(time.time())
-        save_log("./stats/find_rewards/test_rewards_results/" + fname + ".txt", res, weights_file_name)
+        save_log("./stats/find_rewards/test_rewards_results/" + fname + ".txt", 
+            (forward_time, loss.data[0]), weights_file_name)
         sys.exit(0)
 
     # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, nesterov=True)
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
     lp_A, lp_c = lp.build_A(J), lp.build_c(J)
 
-    total_time, best_loss = 0.0, float("inf")
-    train_time_loss = []
-    for e in xrange(1, args.epochs + 1):
-        train_res = train(net, optimizer)
-        train_time_loss.append(train_res[0:2])
+    best_loss = float("inf")
+    total_time = go_forward(net)
+    train_time_loss = [ (total_time, loss.data[0]) ]
 
-        if train_res[1] < best_loss:
+    for e in xrange(1, args.epochs + 1):
+        train_t = train(net, optimizer)
+        train_time_loss.append( (train_t, loss.data[0]) )
+
+        if loss.data[0] < best_loss:
             # save the best result uptil now
-            best_loss = train_res[1]
+            best_loss = loss.data[0]
             best_rew = net.R.data.clone()
         
-        total_time += train_res[0]
-        if e % 20 == 0:
-            print("epoch=%5d, loss=%.10f, budget=%.10f" % (e, train_res[1], train_res[2]))
+        total_time += train_t
+        if e % 1 == 0:
+            print("epoch=%5d, loss=%.10f, budget=%.10f" % \
+                (e, loss.data[0], net.R.data.sum()))
 
     # save and plot
     best_rew = best_rew.cpu().numpy() * totalR
@@ -272,7 +268,7 @@ if __name__ == "__main__":
         file_pre = "origXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
     log_name = "lr=%.3e, bestloss=%.6f, time=%.4f sec" % (
         args.lr, best_loss, total_time)
-    epoch_data = np.arange(1, args.epochs + 1)
+    epoch_data = np.arange(0, args.epochs + 1)
     fname = file_pre_gpu + file_pre + log_name
 
     save_plot("./stats/find_rewards/plots/" + fname + ".png", epoch_data, 

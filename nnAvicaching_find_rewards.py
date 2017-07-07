@@ -135,21 +135,20 @@ def train(net, optimizer):
     global w1_for_r, w2, lp_A, lp_c
     start_train = time.time()
 
+    # STEP 1
     # feed in data
     P = net(w1_for_r, w2).t()    # P is now weighted -> softmax
-    
     # calculate loss
     Y = torch.mv(P, X)
     loss = torch.norm(Y - torch.mean(Y).expand_as(Y)).pow(2) / J
-
     # backpropagate
     optimizer.zero_grad()
     loss.backward()
-    
     # update the rewards and constrain them
     optimizer.step()
     end_train = time.time() - start_train
 
+    # STEP 2
     r_on_cpu = net.R.data.squeeze().cpu().numpy()   # transfer data for lp
     start_lp = time.time()
     # 1.0 is the sum constraint of rewards
@@ -160,7 +159,10 @@ def train(net, optimizer):
         # transfer data
         net.R.data = net.R.data.cuda()
 
-    return (end_train + end_lp, loss.data[0], net.R.data.sum())
+    # STEP 3
+    test_res = test_rewards(net.R)
+
+    return (end_train + end_lp + test_res[0], test_res[1], net.R.data.sum())
 
 def test_rewards(r):
     global w1_for_r, w2
@@ -223,15 +225,6 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
 # =============================================================================
 if __name__ == "__main__":
     read_set_data()
-    if args.test:
-        rewards = np.loadtxt(args.test, delimiter=" ")[:J]
-        rewards = Variable(torchten(ad.normalize(rewards, using_max=False)))
-        res = test_rewards(rewards)
-        # save results
-        fname = "testing \"" + args.test[args.test.rfind("/") + 1:] + '"' + str(time.time())
-        save_log("./stats/find_rewards/test_rewards_results/" + fname + ".txt", res, weights_file_name)
-        sys.exit(0)
-    
     net = MyNet()
     if args.cuda:
         net.cuda()
@@ -239,6 +232,18 @@ if __name__ == "__main__":
         file_pre_gpu = "gpu, "
     else:
         file_pre_gpu = "cpu, "
+    
+    if args.test:
+        rewards = np.loadtxt(args.test, delimiter=" ")[:J]
+        rewards = Variable(torchten(ad.normalize(rewards, using_max=False)))
+        if args.cuda:
+            rewards = rewards.cuda()
+        res = test_rewards(rewards)
+        # save results
+        fname = "testing \"" + args.test[args.test.rfind("/") + 1:] + '"' + str(time.time())
+        save_log("./stats/find_rewards/test_rewards_results/" + fname + ".txt", res, weights_file_name)
+        sys.exit(0)
+
     # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, nesterov=True)
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
     lp_A, lp_c = lp.build_A(J), lp.build_c(J)
@@ -252,7 +257,7 @@ if __name__ == "__main__":
         if train_res[1] < best_loss:
             # save the best result uptil now
             best_loss = train_res[1]
-            best_rew = net.R.data
+            best_rew = net.R.data.clone()
         
         total_time += train_res[0]
         if e % 20 == 0:

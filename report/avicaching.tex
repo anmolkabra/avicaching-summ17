@@ -225,23 +225,25 @@
             \State $\matr{O}_2 \gets \text{softmax}(\Call{Batch-Multiply}{\matr{O}_1, \matr{w_2}})$
             \State $\matr{P} \gets \matr{O}_2^T$
             \State $\vect{y} \gets \matr{P} \cdot \vect{x}$
-            \State $loss \gets \lVert \vect{y} - \mean{\vect{y}} \rVert / J$\Comment{$J$ is the number of locations}
+            \State $loss \gets \lVert \vect{y} - \mean{\vect{y}} \rVert / J$
             \State $\Call{Gradient-Descent}{loss, \vect{r}}$\Comment{\textbf{Phase 2: Backpropagate}}
             \State $\vect{r} \gets \Call{Update-Using-Gradients}{\vect{r}}$
             \State $\vect{r} \gets \Call{LP}{\vect{r}, \mathcal{R}}$\Comment{LP($\cdot$) explained below}
+            \State $loss \gets \Call{Phase-1-With-Rewards}{\vect{r}}$\Comment{\textbf{Phase 3: Check Constrained $\vect{r}$}}
             \State \Return $loss$
             \EndFunction
         \end{algorithmic}
     \end{algorithm}
-    After updating the rewards, the program constrains them using LP($\cdot$) such that $\sum_{i}r_i \leq \mathcal{R}$ and $r_i \geq 0$. To do so, the LP($\cdot$) finds another set of rewards $\vect{r'}$ such that the absolute difference between new \cite{foo2010} and old rewards ($\sum_{i}|r'_i - r_i|$) is minimum. The mathematical formulation is given in Equation \ref{eq:lp_math_constrain_rewards}, which was implemented using SciPy's Optimize Module \cite{SCPOptimizeDocs}. Since the module supports a standard format for doing linear programming, Equation \ref{eq:lp_code_constrain_rewards} (after rearranging constraints and building $\matr{A}, \vect{b}$ and $\vect{c}$) is used, which is mathematically equivalent to Equation \ref{eq:lp_math_constrain_rewards}.
+
+    After updating the rewards, the program constrains them using LP($\cdot$) such that $\sum_{i}r_i \leq \mathcal{R}$ and $r_i \geq 0$. To do so, the LP($\cdot$) finds another set of rewards $\vect{r'}$ such that the absolute difference between new and old rewards ($\sum_{i}|r'_i - r_i|$) is minimum. The mathematical formulation is given in Equation \ref{eq:lp_math_constrain_rewards}, which was implemented using SciPy's Optimize Module \cite{SCPOptimizeDocs}. Since the module supports a standard format for doing linear programming, Equation \ref{eq:lp_code_constrain_rewards} (after rearranging constraints and building $\matr{A}, \vect{b}$ and $\vect{c}$) is used, which is mathematically equivalent to Equation \ref{eq:lp_math_constrain_rewards}.
     \begin{multicols}{2}
         \begin{equation} \label{eq:lp_math_constrain_rewards}
-            \begin{aligned}
+            \begin{aligned}\\
                 & \underset{\vect{r'}}{\text{minimize}}
-                & & \sum_{i}|r'_i - r_i|\\ \\
+                & & \sum_{i}|r'_i - r_i|\\
                 & \text{subject to}
                 & & \sum_{i}r'_i \leq \mathcal{R}\\
-                &&& r_i \geq 0
+                &&& r_i \geq 0\\ \\
             \end{aligned}
         \end{equation}\break
         \begin{equation} \label{eq:lp_code_constrain_rewards}
@@ -257,6 +259,8 @@
         \end{equation}
     \end{multicols}
 
+    In Phase 3 of the algorithm, the model calculates the $loss$ value for the new set of rewards $\vect{r}$ obtained after constraining using LP($\cdot$). This Phase is basically equivalent to Phase 1, but with a specified set of rewards. The function then returns this $loss$ value to the main program.
+    
     \section{Experiment Specifications} \label{sec:Experiment Specifications}
     To test both our models, we conducted several tests for optimization and GPU speedup over CPU. After initializing all parameters randomly and reading data from files, the models were run for 1000 to 10000 epochs depending on the complexity of the model and any potential benefits emerging with more epochs.
     
@@ -264,7 +268,7 @@
     
     Note that operations in the scripts were distributed between CPU and GPU when GPU is mentioned as ``set'', while the operations were executed only on the CPU when the ``CPU'' is mentioned as set. Since GPUs are inferior than CPUs at handling most operations other than simple arithmetic matrix ones, we used - and recommend using - both the CPU and the GPU in the former case (GPU ``set'') to handle operations they are superior at. However, since the models in Sections \ref{sec:Identification Problem} and \ref{sec:Pricing Problem} (not the full scripts) are primarily arithmetic operations on matrices and tensors, it is clear that they were executed on the GPU when it was ``set'' and on the CPU when the CPU was ``set''.
     
-    On the algorithm side, we used Adam's algorithm for \textsc{Gradient-Descent}($\cdot$), after testing performances of several algorithms including but not limited to Stochastic Gradient Descent (SGD) [], Adam's Algorithm [] and RMSProp [] (PyTorch lets you choose the corresponding function). Since Adam's algorithm was found to work best with both models over all test runs, all experiments were done using Adam's algorithm.
+    On the algorithm side, we used Adam's algorithm for \textsc{Gradient-Descent}($\cdot$), after testing performances of several algorithms including but not limited to Stochastic Gradient Descent (SGD) \cite{SGD}, Adam's Algorithm \cite{Adam} and Adagrad \cite{Adagrad} (PyTorch lets you choose the corresponding function). Since Adam's algorithm was found to work best with both models over all test runs, all experiments were done using Adam's algorithm.
     
     \subsection{Running the Identification Problem's Model} \label{sec:Running the Identification Problem's Model}
     \subsubsection{Optimizing the Original Dataset} \label{sec:Identification Problem-Optimizing the Original Dataset}
@@ -328,7 +332,7 @@
             \label{fig:Predicted Probabilities of Agents Visiting Each Location Plotted on a Map}
         \end{minipage}
     \end{figure}
-    As depicted in Figure \ref{fig:Comparison of Loss Values from Different Models of the Identification Problem}, our 3-layered neural network outperformed the previous 2-layered model by 0.12 units (12\% more closer to Ground Truth \cite[Table 1]{Xue2016Avi2}), and also produced much better results (35\% more closer to Ground Truth) than the 4-layered model.
+    As depicted in Figure \ref{fig:Comparison of Loss Values from Different Models of the Identification Problem}, our 3-layered neural network outperformed the previous 2-layered model by 0.12 units (12\% more closer to Ground Truth - $\matr{y}$) \cite[Table 1]{Xue2016Avi2}, and also produced much better results (35\% more closer to Ground Truth) than the 4-layered model.
     
     We also generated the predicted probabilities of the agents visiting each location ($\matr{P} \cdot \matr{x}$) in the Test Set, and plotted it onto a map marked by the locations' latitudes and longitudes. Figure \ref{fig:Predicted Probabilities of Agents Visiting Each Location Plotted on a Map} shows such a plot generated by the 3-layered network, where each dot represents a location.
     
@@ -347,7 +351,7 @@
             \caption{Plot for 4-layered Model}
             \label{fig:Plot for 4-layered Model}
         \end{subfigure}
-        \caption[Train \& Test Loss Values' Plots for One of the Runs of Different Models]{Train \& Test Loss Values' Plots for One of the Runs of Different Models: Both networks learn the set of weights quickly, as displayed in the steep descent in loss values before $\approx$ 1000 epochs. This quick learning is due to the choice of \textsc{Gradient-Descent}($\cdot$) function - Adam's algorithm []. Other algorithms like SGD [] and RMSProp [] learn relatively slowly.}
+        \caption[Train \& Test Loss Values' Plots for One of the Runs of Different Models]{Train \& Test Loss Values' Plots for One of the Runs of Different Models: Both networks learn the set of weights quickly, as displayed in the steep descent in loss values before $\approx$ 1000 epochs. This quick learning is due to the choice of \textsc{Gradient-Descent}($\cdot$) function - Adam's algorithm \cite{Adam}. Other algorithms like SGD \cite{SGD} and Adagrad \cite{Adagrad} learn relatively slowly.}
         \label{fig:Train & Test Loss Values' Plots of Different Models}
     \end{figure}
 
@@ -452,9 +456,9 @@
                 \legend{CPU ``set'',GPU ``set''}
                 \end{axis}
             \end{tikzpicture}
-            \caption[Time taken by the LP]{Time taken by the LP: Unit increase in $J$ increases runtime by 1.41 seconds with GPU ``set''; 2.44 seconds with CPU ``set''}
+            \caption[Time taken by the LP]{Time taken by the LP: Unit increase in $J$ increases runtime by 1.41 seconds with GPU ``set''; 2.35 seconds with CPU ``set''}
             \label{fig:Finding Rewards - Time taken by the LP}
-        \end{subfigure}\hfill
+        \end{subfigure}\hspace*{1em}
         \begin{subfigure}{.49\textwidth}
             \centering
             \begin{tikzpicture}
@@ -482,9 +486,22 @@
         \caption[Finding Rewards - Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately]{Finding Rewards - Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately: Scaling is strongly hampered by the LP solver. With GPU ``set'', while each unit increase in $J$ results in 0.0079 additional seconds for the Neural Network, it takes 1.41 seconds more for the LP.}
         \label{fig:Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPU ``set'' Separately}
     \end{figure}
-    Furthermore, although we expected SciPy's Optimize Module \cite{SCPOptimizeDocs} to run on the CPU (Section \ref{sec:Pricing Problem-Testing GPU Speedup on the Random Dataset}), the LP problem ran faster when the GPU was ``set''. We did not anticipate this behavior, and we couldn't pick out a reason for the Optimize Module supposedly doing operations differently. Since our GPU ``set'' and CPU ``set'' configurations were only enforceable on user-created functions and datasets, we do not know why the LP solver delivered different speeds while solving the same problem. If it used the CPU or the GPU, it should have done so in both cases and the runtime would have been equal. While there could be differences in implementation, we cannot affirm or deny any reason behind this quirky behavior. Figure \ref{fig:Finding Rewards - Time taken by the LP} shows the unexpected speedup delivered by SciPy Optimize Module's LP solver.
+
+    Furthermore, although we expected SciPy's Optimize Module \cite{SCPOptimizeDocs} to run on the CPU (Section \ref{sec:Pricing Problem-Testing GPU Speedup on the Random Dataset}), the LP problem ran faster when the GPU was ``set''. We did not anticipate this behavior, and we couldn't pick out a reason for the Optimize Module supposedly doing operations differently. Since our GPU ``set'' and CPU ``set'' configurations were only enforceable on user-created functions and datasets, we do not know why the LP solver delivered different speeds while solving the same problem. If it used the CPU or the GPU, it should have done so in both cases and the runtime would have been equal. While there could be differences in implementation, we cannot affirm or deny any reason behind this quirky behavior. Figure \ref{fig:Finding Rewards - Time taken by the LP} shows the unexpected speedup of $\frac{2.35}{1.41} \approx 1.66$x delivered by SciPy Optimize Module's LP solver.
     
     \section{Conclusion} \label{sec:Conclusion}
+    Our models for the Identification and the Pricing Problem outperformed previously studied ones and other baseline comparisons. For the Identification Problem, the average loss value was 12\% lower than the previous 2-layered model, and 35\% better than the 4-layered model, giving us better results than any other model. While we did not test deeper networks, we believe that using more hidden layers will only aggravate overfitting and won't provide better results - as is the case with the 4-layered network. The Pricing Problem's model also delivered better results than other baseline comparisons for reward distribution, though the difference was not drastically large.
+    
+    On the other hand, we can definitively conclude that these models ran faster on the GPU than the CPU, mainly because they were based on tensors and matrices. With an approximate speedup of 6.25 for unit increase in batch-size $T$ for the Identification Problem, we can scale to large datasets more efficiently on the GPU than the CPU. Although the Pricing Problem's model only delivered a speedup of ----- (with the LP problem heavily impacting the runtime), the 2-layered network for finding rewards gave a speedup of -----. This shows that neural network are inherently quick to optimize on a GPU. One can further use a GPU-accelerated LP solver or model the LP in the network itself (if possible) to get faster results.
+    
+    Figure \ref{fig:Plot for 3-layered Model} shows how the choice of Adam's algorithm \cite{Adam} for \textsc{Gradient-Descent}($\cdot$) helps the model to learn quickly. However, we also witness long periods of saturation after few epochs. This was the case for several other algorithms (SGD \cite{SGD} and Adagrad \cite{Adagrad}), but with different paces of learning. Since the organizers would want to further optimize the set of weights even, research could be done on avoiding the long, unchanging saturation phase. This may involve using other techniques for \textsc{Gradient-Descent}($\cdot$) (Algorithm \ref{alg:Algorithm for the Identification Problem per epoch}) and/or altering the loss function $Z_P(\matr{w_1}, \matr{w_2})$ (Equation \ref{eq:iden_problem}).
+    
+    One may also notice compelling arguments reflected by the results. Although these models are an \textit{upgrade} to the previous models, they deliver exciting inferences:
+    \begin{itemize}
+        \item One interesting observation in Table \ref{tab:Loss Values Calculated from Different Sets of Rewards} is that the Loss Value from the Proportional Distribution (0.161\%) and Random Initialization (0.160\%) are very close, highlighting that the set of weights obtained from the Identification Problem are dependent on other factors ($\matr{f}, \matr{D}$) as well and not just rewards. In other words, incentivizing under-sampled locations more is as good as random distribution of rewards - as agents don't get more heavily influenced by rewards than any other factor to visit locations.\\
+        Moreover, by looking at the model's generated rewards, one can infer that the model chooses to place large rewards in 
+    \end{itemize}
+    
     
     \blindtext
     \bibliographystyle{IEEEtran}

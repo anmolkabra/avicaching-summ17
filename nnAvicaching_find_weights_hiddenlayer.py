@@ -11,6 +11,7 @@ import avicaching_data as ad
 # import torch packages
 import torch, torch.nn as nn, torch.nn.functional as torchfun, torch.optim as optim
 from torch.autograd import Variable
+matplotlib.rcParams.update({'font.size': 14})
 
 # =============================================================================
 # training specs
@@ -524,7 +525,7 @@ if __name__ == "__main__":
         args.train_percent * 100, args.lr, total_time)
     
     epoch_data = np.arange(1, args.epochs + 1)
-    fname = file_pre_gpu + file_pre + log_name
+    fname = "4layer_" + file_pre_gpu + file_pre + log_name
     # save amd plot data
     save_log("./stats/find_weights/logs/" + fname + ".txt", epoch_data, 
         [train_time_loss, test_time_loss], log_name)

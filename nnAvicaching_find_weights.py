@@ -11,6 +11,7 @@ import avicaching_data as ad
 # import torch packages
 import torch, torch.nn as nn, torch.nn.functional as torchfun, torch.optim as optim
 from torch.autograd import Variable
+matplotlib.rcParams.update({'font.size': 14})
 
 # =============================================================================
 # training specs

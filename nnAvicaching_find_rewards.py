@@ -10,6 +10,7 @@ except KeyError as e:
     # working without X/GUI environment
     matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+matplotlib.rcParams.update({'font.size': 14})
 
 # =============================================================================
 # options
@@ -174,7 +175,7 @@ def train(net, optimizer):
     # FORWARD
     forward_time = go_forward(net)
 
-    return backprop_time + lp_time + forward_time
+    return (backprop_time + lp_time + forward_time, lp_time)
 
 # =============================================================================
 # logs and plots
@@ -193,12 +194,9 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
     """
     Saves and shows the loss plot of train and test periods
     """
-    # get the losses from data
-    train_losses = [i for j in y for i in j][1::2]
-    
     # plot details
     loss_fig = plt.figure(1)
-    train_label, = plt.plot(x, train_losses, "r-", label="Train Loss") 
+    train_label, = plt.plot(x, y, "r-", label="Train Loss") 
     plt.ylabel(ylabel)
     plt.grid(True, which="major", axis="both", color="k", ls="dotted", lw="1.0")
     plt.grid(True, which="minor", axis="y", color="k", ls="dotted", lw="0.5")
@@ -241,21 +239,22 @@ if __name__ == "__main__":
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
     lp_A, lp_c = lp.build_A(J), lp.build_c(J)
 
-    best_loss = float("inf")
+    best_loss, total_lp_time = float("inf"), 0
     total_time = go_forward(net)
-    train_time_loss = [ (total_time, loss.data[0]) ]
+    train_loss = [ loss.data[0] ]
 
     for e in xrange(1, args.epochs + 1):
         train_t = train(net, optimizer)
-        train_time_loss.append( (train_t, loss.data[0]) )
+        train_loss.append(loss.data[0])
 
         if loss.data[0] < best_loss:
             # save the best result uptil now
             best_loss = loss.data[0]
             best_rew = net.R.data.clone()
         
-        total_time += train_t
-        if e % 1 == 0:
+        total_time += train_t[0]
+        total_lp_time += train_t[1]
+        if e % 20 == 0:
             print("epoch=%5d, loss=%.10f, budget=%.10f" % \
                 (e, loss.data[0], net.R.data.sum()))
 
@@ -266,13 +265,13 @@ if __name__ == "__main__":
         file_pre = "randXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
     else:
         file_pre = "origXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
-    log_name = "lr=%.3e, bestloss=%.6f, time=%.4f sec" % (
-        args.lr, best_loss, total_time)
+    log_name = "lr=%.3e, bestloss=%.6f, time=%.4f sec, lp_time=%.4f sec" % (
+        args.lr, best_loss, total_time, total_lp_time)
     epoch_data = np.arange(0, args.epochs + 1)
     fname = file_pre_gpu + file_pre + log_name
 
     save_plot("./stats/find_rewards/plots/" + fname + ".png", epoch_data, 
-        train_time_loss, "epoch", "loss", log_name)
+        train_loss, "epoch", "loss", log_name)
     save_log("./stats/find_rewards/logs/" + fname + ".txt", (total_time, best_loss),
         weights_file_name, best_rew)
 

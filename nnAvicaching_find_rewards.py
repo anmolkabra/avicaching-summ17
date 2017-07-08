@@ -16,8 +16,8 @@ matplotlib.rcParams.update({'font.size': 14})
 # options
 # =============================================================================
 parser = argparse.ArgumentParser(description="NN Avicaching model for finding rewards")
-parser.add_argument("--lr", type=float, default=0.01, metavar="LR",
-    help="inputs learning rate of the network (default=0.01)")
+parser.add_argument("--lr", type=float, default=0.001, metavar="LR",
+    help="inputs learning rate of the network (default=0.001)")
 parser.add_argument("--momentum", type=float, default=1.0, metavar="M",
     help="inputs SGD momentum (default=1.0)")
 parser.add_argument("--no-cuda", action="store_true", default=False,
@@ -245,18 +245,19 @@ if __name__ == "__main__":
 
     for e in xrange(1, args.epochs + 1):
         train_t = train(net, optimizer)
-        train_loss.append(loss.data[0])
+        curr_loss = loss.data[0]
+        train_loss.append(curr_loss)
 
-        if loss.data[0] < best_loss:
+        if curr_loss < best_loss:
             # save the best result uptil now
-            best_loss = loss.data[0]
+            best_loss = curr_loss
             best_rew = net.R.data.clone()
         
         total_time += train_t[0]
         total_lp_time += train_t[1]
         if e % 20 == 0:
             print("epoch=%5d, loss=%.10f, budget=%.10f" % \
-                (e, loss.data[0], net.R.data.sum()))
+                (e, curr_loss, net.R.data.sum()))
 
     # save and plot
     best_rew = best_rew.cpu().numpy() * totalR

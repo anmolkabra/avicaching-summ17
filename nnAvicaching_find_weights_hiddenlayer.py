@@ -11,13 +11,14 @@ import avicaching_data as ad
 # import torch packages
 import torch, torch.nn as nn, torch.nn.functional as torchfun, torch.optim as optim
 from torch.autograd import Variable
+matplotlib.rcParams.update({'font.size': 14})
 
 # =============================================================================
 # training specs
 # =============================================================================
 parser = argparse.ArgumentParser(description="NN Avicaching model for finding weights")
-parser.add_argument("--lr", type=float, default=0.01, metavar="LR",
-    help="inputs learning rate of the network (default=0.01)")
+parser.add_argument("--lr", type=float, default=0.001, metavar="LR",
+    help="inputs learning rate of the network (default=0.001)")
 parser.add_argument("--no-cuda", action="store_true", default=False,
     help="disables CUDA training")
 parser.add_argument("--epochs", type=int, default=10, metavar="E",
@@ -524,7 +525,7 @@ if __name__ == "__main__":
         args.train_percent * 100, args.lr, total_time)
     
     epoch_data = np.arange(1, args.epochs + 1)
-    fname = file_pre_gpu + file_pre + log_name
+    fname = "4layer_" + file_pre_gpu + file_pre + log_name
     # save amd plot data
     save_log("./stats/find_weights/logs/" + fname + ".txt", epoch_data, 
         [train_time_loss, test_time_loss], log_name)

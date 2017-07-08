@@ -11,13 +11,14 @@ import avicaching_data as ad
 # import torch packages
 import torch, torch.nn as nn, torch.nn.functional as torchfun, torch.optim as optim
 from torch.autograd import Variable
+matplotlib.rcParams.update({'font.size': 14})
 
 # =============================================================================
 # training specs
 # =============================================================================
 parser = argparse.ArgumentParser(description="NN Avicaching model for finding weights")
-parser.add_argument("--lr", type=float, default=0.01, metavar="LR",
-    help="inputs learning rate of the network (default=0.01)")
+parser.add_argument("--lr", type=float, default=0.001, metavar="LR",
+    help="inputs learning rate of the network (default=0.001)")
 parser.add_argument("--no-cuda", action="store_true", default=False,
     help="disables CUDA training")
 parser.add_argument("--epochs", type=int, default=10, metavar="E",

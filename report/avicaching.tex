@@ -89,7 +89,10 @@
     \nomenclature[T]{GPU ``set''}{\textit{Only Matrix/Tensor} operations done on the GPU, rest on the CPU}
     \nomenclature[T]{LP}{Linear Programming}
     \nomenclature[T]{LP Standard Format}{Arrangement of objective function and constraints operated on by library LP solvers - minimize [$\vect{c}^T \cdot \vect{x}$]; subject to [$\matr{A} \cdot \vect{x} \leq \vect{b}, \, x_i \geq 0$]}
+    \nomenclature[T]{Tensor}{Multi-dimensional (usually more than 2 dimensions) array}
+    \nomenclature[T]{CUDA}{NVIDIA's parallel computing API for its GPUs; stands for Compute Unified Device Architecture}
     \printnomenclature[1.5in]
+    
     \cleardoublepage
     
     \tableofcontents
@@ -100,9 +103,25 @@
     \section{Introduction} \label{sec:Introduction}
     Optimizing predictive models on datasets that are obtained from citizen-science projects can be computationally expensive as these datasets grow in size with time. Consequently, models based on multiple-layered neural networks, Integer Programming and other optimization routines can prove increasingly difficult as the number of parameters increase, despite using the faster Central Processing Units (CPUs) in the market. Incidentally, it becomes difficult for citizen-science projects to scale if the organizers use CPUs to run optimization models. However, Graphical Processing Units (GPUs), which offer multiple cores to parallelize computation, can outperform CPUs in computing such predictive models if these models heavily rely on large-scale matrix multiplications. By using GPUs over CPUs to accelerate computation on a citizen-science project, the model could achieve better optimization in less time, enabling the project to scale.
     
-    Part of the eBird project, which aims to ``maximize the utility and accessibility of the vast numbers of bird observations made each year by recreational and professional bird watchers'', Avicaching is a incentive-driven game trying to homogenize the spatial distribution of citizens' (agents') observations [cite website]. Since the dataset of agents' observations in eBird is geographically heterogeneous (concentrated in some places like cities and sparse in others), Avicaching homogenizes the observation set by rewarding agents who visit under-sampled locations \cite{Xue2016Avi1}. To accomplish this task of specifying rewards at different locations based on the historical records of observations, Avicaching would learn the change in agents' behavior when a certain sample of rewards were applied to the set of locations, and then distribute a newer set of rewards across the locations based on those learned parameters \cite{Xue2016Avi2}. This requirement naturally translates into a predictive optimization problem, which is implemented using multiple-layered neural networks and linear programming.
-
-    \subsection{Computation Using GPUs} \label{sec:comp_using_GPUs}
+    Part of the eBird project, which aims to ``maximize the utility and accessibility of the vast numbers of bird observations made each year by recreational and professional bird watchers'', Avicaching is a incentive-driven game trying to homogenize the spatial distribution of citizens' (agents') observations [cite website]. Since the dataset of agents' observations in eBird is geographically heterogeneous (concentrated in some places like cities and sparse in others), Avicaching homogenizes the observation set by rewarding agents who visit under-sampled locations \cite{Xue2016Avi1}. For the organizers, a more homogeneous observation dataset can enable \textit{better} mapping and generate more confidence in the dependent models' validity. 
+    
+    To accomplish this task of specifying rewards at different locations based on the historical records of observations, Avicaching would learn the change in agents' behavior when a certain sample of rewards were applied to the set of locations, and then distribute a newer set of rewards across the locations based on those learned parameters \cite{Xue2016Avi2}. This requirement naturally translates into a predictive optimization problem, which is implemented using multiple-layered neural networks and linear programming.
+    
+    \subsection{Important Questions}
+    Although the previously devised solutions to Avicaching were conceptually effective \cite{Xue2016Avi1}\cite{Xue2016Avi2}, using CPUs to solve Mixed Integer Programming and shallow neural networks made them impractical to scale. While wider applicability would have increased homogeneity in the observation set, Mixed Integer Programming formulations made it hard for Avicaching to scale and influence a larger segment of eBird. Solving the problems faster would have also allowed organizers to find better results (more optimized). These concerns, which form the pivot for our research, are concisely described in next sections.
+    
+    \subsubsection{Solving Faster} \label{sec:Important Questions - Solving Faster}
+    We were interested in using GPUs to run our models, with their growing capability to accelerate problems in Artificial Intelligence and Machine Learning - more specifically, large matrix and tensor operations. Newer generation NVIDIA GPUs equipped with thousands of CUDA cores can empower Avicaching's organizers to scale the game, if it is based on extensive simple arithmetic operations on tensors and matrices, rather than logical steps (why? - reasoned in Section \ref{sec:Computation Using GPUs}). Since even the faster CPUs (in the range of Intel Core i7 chipsets and faster) are sequential in processing and do not provide as comparable parallel processing as GPUs do, we can solve the problem much faster. \textbf{But how much faster?}
+    
+    \subsubsection{Better Results} \label{sec:Important Questions - Better Results}
+    The previous model for learning the parameters in agents' change of behavior on a fixed set of rewards delivered predictions that differed 26\% from Ground Truth \cite[// todo]{Xue2016Avi2}, which was used to distribute a new set of rewards on a budget. If we could get closer to the Ground Truth, i.e., learn the parameters for the change better, we could distribute a new set of rewards based on better learning and prediction. Since the organizers need the \textit{best} distribution of rewards (key aspect in testing the model), we would need a set of learned parameters that give lesser difference from the Ground Truth (in terms of Normalized Mean Squared Error \cite[// todo]{Xue2016Avi2}). In a gist, \textbf{can we learn the parameters better}, and \textbf{what is the best allocation of rewards?}
+    
+    \subsubsection{Adjusting the Model's Features} \label{sec:Important Questions - Adjusting the Model's Features}
+    Once our model starts delivering better results than the previously devised models, one thinks if one can change some characteristics of the model (known as hyper-parameters such as learning rate) to get even better results (though one could also build a better model too). While a goal of ``getting better results'' may seem like an unending strife (any one can never get satisfied), there is a trade-off with practicality as these adjustments take time and computation power to test - and we don't have unlimited resources. Therefore, we ask if one could \textbf{reasonably adjust hyper-parameters to improve performance and optimization.} By ``reasonable adjustments'' we mean changes that improve performance by more than 5 times using comparable resources.
+    
+    \subsection{Computation Using GPUs} \label{sec:Computation Using GPUs}
+    // todo
+    
     \blindtext
     
     \section{Problem Formulation} \label{sec:Problem Formulation}

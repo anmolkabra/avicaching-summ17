@@ -147,7 +147,7 @@ def go_forward(net):
     return time.time() - start_forward_time
 
 def train(net, optimizer):
-    global w1_for_r, w2, lp_A, lp_c, loss
+    global lp_A, lp_c, loss
     start_train = time.time()
 
     # BACKPROPAGATE

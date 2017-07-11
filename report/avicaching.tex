@@ -490,7 +490,7 @@
 %        \end{tikzpicture}
 %    \end{figure}
 
-    Compared to other proportional reward distribution (loss values calculated using set-2 of weights), our model optimized the rewards such that the loss value was $\approx$ \textbf{3 times} lower. We should also clarify that we compared the best loss values, as the organizer expects to find a distribution that is as optimal as possible. Table \ref{tab:Loss Values Calculated from Different Sets of Rewards} lists the best loss values obtained on each type of reward allocation (model's predicted, random and proportionate).
+    Compared to other proportional reward distribution (loss values calculated using set-2 of weights), our model optimized the rewards such that the loss value was $\approx$ \textbf{3 times} lower. We should also clarify that we compare the best loss values, as the organizer expects to find a distribution that is as optimal as possible. Table \ref{tab:Loss Values Calculated from Different Sets of Rewards} lists the best loss values obtained on each type of reward allocation (model's predicted, random and proportional - Section \ref{sec:Pricing Problem-Optimizing the Original Dataset}).
     \begin{table}[!htbp]
         \centering
         \caption[Loss Values Calculated from Different Sets of Rewards]{Loss Values Calculated from Different Sets of Rewards: The values are small because the loss function $Z_P(\vect{r})$ (Equation \ref{eq:pricing_problem}) is averaged over the number of locations}
@@ -507,9 +507,9 @@
     \end{table}
     
     \subsubsection{GPU Speedup Results} \label{sec:PriProbRes - GPU}
-    After running on different batch-sizes $J = 11, 55, 116$ (the Pricing Problem's model does not iterate over $T$ - Algorithm \ref{alg:Solving the Pricing Problem}), we did not observe profound speedup for the full model. Figure \ref{fig:Finding Rewards - Time Taken by the Full Model} shows the decreasing speedup trend, as the GPU ``set'' configuration started struggling to complete all epochs faster than with CPU ``set''. The GPU ``set'' config. took $\approx$ 1.42 seconds more for unit increase in batch-size $J$, whereas the CPU ``set'' config. took $\approx$ 2.44 seconds more - a speedup of just 1.72 times.
+    After running on different batch-sizes $J = 11, 55, 116$ (the Pricing Problem's model does not iterate over $T$ - Algorithm \ref{alg:Solving the Pricing Problem}), we did not observe radical speedup for the full model. Figure \ref{fig:Finding Rewards - Time Taken by the Full Model} shows the decreasing speedup trend, as the GPU ``set'' configuration started struggling to complete all epochs faster than with CPU ``set''. The GPU ``set'' config. took $\approx$ 1.42 seconds more for unit increase in batch-size $J$, whereas the CPU ``set'' config. took $\approx$ 2.44 seconds more - a speedup of just 1.72 times.
     
-    However, after realizing that the LP problem (Equations \ref{eq:lp_math_constrain_rewards} \& \ref{eq:lp_code_constrain_rewards}) might be influencing these logged times, we recorded running times for both the neural network and the LP separately. As we suspected, the LP \textit{did} impact the runtime more than the neural networks did, and the GPU speedup for the Neural Network was expectedly high with growing batch-sizes - about 12.48 times (Figure \ref{fig:Finding Rewards - Time taken by the Neural Network}).
+    However, after realizing that the LP problem (Equations \ref{eq:lp_math_constrain_rewards} \& \ref{eq:lp_code_constrain_rewards}) might be influencing the runtimes, we recorded execution times for both the neural network and the LP separately. As we suspected, the LP \textit{did} impact the runtime more than the neural networks did, and the GPU speedup for the Neural Network was expectedly high with growing batch-sizes - about 12.48 times (Figure \ref{fig:Finding Rewards - Time taken by the Neural Network}).
     \begin{figure}[!htbp]
         \centering
         \begin{subfigure}{\textwidth}
@@ -531,12 +531,20 @@
                 ]
                 \addplot+ [mark=*,,
                 nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta}
-                ] coordinates {(11,13.69) (55,78.93) (116,289.96)};  % cpu
-                \addplot+ [mark=*,] coordinates {(11,8.03) (55,49.07) (116,158.02)};  % gpu
+                ] coordinates {
+                    (11,14.21)
+                    (55,80.07)
+                    (116,310.77)
+                };  % cpu
+                \addplot+ [mark=*,] coordinates {
+                    (11,8.13)
+                    (55,48.50)
+                    (116,163.11)
+                };  % gpu
                 \legend{CPU ``set'',GPU ``set''}
                 \end{axis}
             \end{tikzpicture}
-            \caption{Time Taken by the Full Model: Unit increase in $J$ leads to 1.42 additional seconds with GPU ``set'', compared to 2.44 seconds with CPU ``set''.}
+            \caption{Time Taken by the Full Model: Unit increase in $J$ leads to 1.50 additional seconds with GPU ``set'', compared to 2.88 seconds with CPU ``set''.}
             \label{fig:Finding Rewards - Time Taken by the Full Model}
         \end{subfigure}\vspace*{1em}
         \begin{subfigure}{.49\textwidth}
@@ -558,12 +566,20 @@
                 ]
                 \addplot+ [mark=*,
                 nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta}
-                ] coordinates {(11,12.47) (55,76.31) (116,280.64)};  % cpu
-                \addplot+ [mark=*,] coordinates {(11,6.60) (55,47.01) (116,155.04)};  % gpu
+                ] coordinates {
+                    (11,12.96)
+                    (55,77.48)
+                    (116,300.88)
+                };  % cpu
+                \addplot+ [mark=*,] coordinates {
+                    (11,6.70)
+                    (55,46.44)
+                    (116,160.12)
+                };  % gpu
                 \legend{CPU ``set'',GPU ``set''}
                 \end{axis}
             \end{tikzpicture}
-            \caption[Time taken by the LP]{Time taken by the LP: Unit increase in $J$ increases runtime by 1.41 seconds with GPU ``set''; 2.35 seconds with CPU ``set''}
+            \caption[Time taken by the LP]{Time taken by the LP: Unit increase in $J$ increases runtime by 1.49 seconds with GPU ``set''; 2.80 seconds with CPU ``set''}
             \label{fig:Finding Rewards - Time taken by the LP}
         \end{subfigure}\hspace*{1em}
         \begin{subfigure}{.49\textwidth}
@@ -581,12 +597,20 @@
                         anchor=north west},
                     nodes near coords,
                 ]
-                \addplot+ [mark=*,] coordinates {(11,1.22) (55,2.62) (116,9.33)};  % cpu
-                \addplot+ [mark=*,] coordinates {(11,1.43) (55,2.06) (116,2.97)};  % gpu
+                \addplot+ [mark=*,] coordinates {
+                    (11,1.25) 
+                    (55,2.58) 
+                    (116,9.89)
+                };  % cpu
+                \addplot+ [mark=*,] coordinates {
+                    (11,1.43) 
+                    (55,2.05) 
+                    (116,2.98)
+                };  % gpu
                 \legend{CPU ``set'',GPU ``set''}
                 \end{axis}
             \end{tikzpicture}
-            \caption[Time taken by the Neural Network]{Time taken by the Neural Network: Unit increase in $J$ increases runtime by 0.0079 seconds with GPU ``set''; 0.0981 seconds with CPU ``set''}
+            \caption[Time taken by the Neural Network]{Time taken by the Neural Network: Unit increase in $J$ increases runtime by 0.0148 seconds with GPU ``set''; 0.0846 seconds with CPU ``set''}
             \label{fig:Finding Rewards - Time taken by the Neural Network}
         \end{subfigure}
         \vspace*{1em}

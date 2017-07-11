@@ -337,11 +337,11 @@
     \subsubsection{Optimization Results} \label{sec:IdProbRes - Optimization}
     Running the 3-layered network with the GPU ``set'' with different learning rates on different seeds (to calculate average performance of each learning rate) for 10000 epochs hinted at the model performing the best with learning rate = $10^{-3}$. 
     
-    We observed that higher learning rates ($>10^{-2}$) could only decrease the loss function ($Z_I$ - Equation \ref{eq:iden_problem}) to a limit, after each the updates in the weights caused the loss function to oscillate and increase. This phenomena is exemplified in Figure [], which are plots of different models with the same seed but different learning rates. On the other side of $10^{-3}$, lower learning rates took too long to train. Runtime for the model on 10000 epochs was an average 1232.56 seconds (20 runs = 5 seeds $\times$ 4 learning rates), and models with learning rates $< 10^{-3}$ did not perform better than those with learning rate = $10^{-3}$ on \textit{any} run. Although the decrease in test losses were constant for learning rates $< 10^{-3}$, we feel that they may be computationally expensive and temporally inconvenient to train.
+    We observed that higher learning rates ($>10^{-2}$) could only decrease the loss function ($Z_I$ - Equation \ref{eq:iden_problem}) to a limit, after each the updates in the weights caused the loss function to oscillate and increase. This phenomena is exemplified in Figure \ref{fig:Test Loss Plots of Different Learning Rates to Find Weights}, which are plots of different models with the same seed but different learning rates. On the other side of $10^{-3}$, lower learning rates took too long to train. Runtime for the model on 10000 epochs was an average 1232.56 seconds (20 runs = 5 seeds $\times$ 4 learning rates), and models with learning rates $< 10^{-3}$ did not perform better than those with learning rate = $10^{-3}$ on \textit{any} run. Although the decrease in test losses were constant for learning rates $< 10^{-3}$, we feel that they may be computationally expensive and temporally inconvenient to train.
     \begin{table}[!htbp]
         \centering
-        \caption[Loss Values Calculated from Different Sets of Rewards]{Loss Values Calculated from Different Sets of Rewards: The values are small because the loss function $Z_P(\vect{r})$ (Equation \ref{eq:pricing_problem}) is averaged over the number of locations}
-        \label{tab:Loss Values For Different Learning Rates}
+        \caption[Loss Values Calculated for Different Models for Identification Problem]{Loss Values Calculated for Different Models for Identification Problem: For both the 3- and the 4-layered models, learning rate = $10^{-3}$ outperformed other learning rates. Consequently, that learning rate is used in comparison with other models in Figure \ref{fig:Comparison of Loss Values from Different Models of the Identification Problem}.}
+        \label{tab:Loss Values Calculated for Different Models for Identification Problem}
         \begin{tabular}{c | c | c}
             \hline
             \multirow{2}{*}{\textbf{Learning Rate}} & \multicolumn{2}{c}{\textbf{Average Test Loss Values}} \\
@@ -355,12 +355,12 @@
         \end{tabular}
     \end{table}
     
-    Table [] gives the average \textit{end} test loss results. Observing that the average test loss values of learning rate = $10^{-3}$ is the lowest, we compare its results with the previous study's (2-layered network), historical data \cite[// todo]{Xue2016Avi2}, and a 4-layered network with learning rate = $10^{-3}$ (Section \ref{sec:Identification Problem-Optimizing the Original Dataset}).
+    Table \ref{tab:Loss Values Calculated for Different Models for Identification Problem} gives the average \textit{end} test loss results. Observing that the average test loss values of learning rate = $10^{-3}$ is the lowest, we compare its results with the previous study's 2-layered network, historical data \cite[// todo]{Xue2016Avi2}, and a 4-layered network with learning rate = $10^{-3}$ (Section \ref{sec:Identification Problem-Optimizing the Original Dataset}).
     \begin{figure}[!htbp]
         \centering
         \includegraphics[width=16cm, height=10cm]{test_losses_diff_lr_plot}
-        \caption{sadkfhg}
-        \label{fig:}
+        \caption{Test Loss Plots of Different Learning Rates to Find Weights}
+        \label{fig:Test Loss Plots of Different Learning Rates to Find Weights}
     \end{figure}
     \begin{figure}[!htbp]
         \centering
@@ -413,7 +413,7 @@
         \begin{subfigure}{.49\textwidth}
             \centering
             \includegraphics[width=\textwidth]{weights_train_test_loss_4_plot}
-            \caption{Plot for 4-layered Model}
+            \caption{Plot for 4-layered Model // todo}
             \label{fig:Plot for 4-layered Model}
         \end{subfigure}
         \caption[Train \& Test Loss Values' Plots for One of the Runs of Different Models]{Train \& Test Loss Values' Plots for One of the Runs of Different Models: Both networks learn the set of weights quickly, as displayed in the steep descent in loss values before $\approx$ 1000 epochs. This quick learning is due to the choice of \textsc{Gradient-Descent}($\cdot$) function - Adam's algorithm \cite{Adam}. Other algorithms like SGD \cite{SGD} and Adagrad \cite{Adagrad} learn relatively slowly.}
@@ -421,7 +421,7 @@
     \end{figure}
 
     \subsubsection{GPU Speedup Results} \label{sec:IdProbRes - GPU}
-    Running on batches of sizes $T = 17, 85, 173$ on a randomly generated dataset, with both GPU and CPU ``set'' separately, we obtained full  execution time (including both training and testing) information. The average results (3 different seeds for each batch) are plotted in Figure \ref{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}, which show promising GPU speedup over CPU figures for any batch size - for every unit increase in batch-size $T$, CPU ``set'' takes $\approx$ 4.66 seconds, while GPU ``set'' takes only $\approx$ 0.74 more seconds (slopes of best-fit trendlines).
+    Running on batches of sizes $T = 17, 85, 173$ on a randomly generated dataset, with both GPU and CPU ``set'' separately, we obtained full  execution time (including both training and testing) information. The average results (3 different seeds for each batch) are plotted in Figure \ref{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}, which show promising GPU speedup over CPU figures for any batch size - for every unit increase in batch-size $T$, CPU ``set'' takes $\approx$ 4.64 seconds, while GPU ``set'' takes only $\approx$ 0.74 more seconds (slopes of best-fit lines).
     \begin{figure}[!htbp]
         \centering
         \begin{tikzpicture}
@@ -437,12 +437,20 @@
                     anchor=north west},
                 nodes near coords,
             ]
-            \addplot+ [mark=*,] coordinates {(17,173.57) (85,540.10) (173,901.24)};  % cpu
-            \addplot+ [mark=*,] coordinates {(17,9.97) (85,61.02) (173,126.33)};  % gpu
+            \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
+                (17,173.57) +- (2.91, 2.91)
+                (85,540.10) +- (4.45, 4.45)
+                (173,901.24) +- (3.53, 3.53)
+            };  % cpu
+            \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
+                (17,9.97) +- (0.021, 0.021)
+                (85,61.02) +- (0.085, 0.085)
+                (173,126.33) +- (0.097, 0.097)
+            };  % gpu
             \legend{CPU ``set'',GPU ``set''}
             \end{axis}
         \end{tikzpicture}
-        \caption[Finding Weights - Execution Times of Different Batch-Sizes $T$ with GPU and CPU ``set'' Separately]{Finding Weights - Execution Times of Different Batch-Sizes $T$ with GPU and CPU ``set'' Separately: Scaling on a GPU is more efficient (about $\frac{4.66}{0.74} \approx 6.25$ times) than doing so on a CPU.}
+        \caption[Finding Weights - Execution Times of Different Batch-Sizes $T$ with GPU and CPU ``set'' Separately]{Finding Weights - Execution Times of Different Batch-Sizes $T$ with GPU and CPU ``set'' Separately: Scaling on a GPU is more efficient (about $\frac{4.64}{0.74} \approx$ \textbf{6.22 times}) than doing so on a CPU. Also, the error bars are indiscernible because they are too small ($< 1\%$)}.
         \label{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}
     \end{figure}
 

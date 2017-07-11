@@ -6,3 +6,7 @@ python nnAvicaching_find_rewards.py --test "./stats/find_rewards/randomRewards_s
 python nnAvicaching_find_rewards.py --test "./stats/find_rewards/randomRewards_sum_1000_6-29_1203.txt" --weights-file "./stats/find_weights/weights/orig/gpu, origXYR_seed=2, epochs=10000, train= 80%, lr=1.000e-03, time=1157.1230 sec.txt"
 
 python nnAvicaching_find_rewards.py --test "./stats/find_rewards/randomRewards_sum_1000_7-3_1048.txt" --weights-file "./stats/find_weights/weights/orig/gpu, origXYR_seed=2, epochs=10000, train= 80%, lr=1.000e-03, time=1157.1230 sec.txt"
+
+python nnAvicaching_find_rewards.py --test "./stats/find_rewards/randomRewards_sum_1000_7-11_1609.txt" --weights-file "./stats/find_weights/weights/orig/gpu, origXYR_seed=2, epochs=10000, train= 80%, lr=1.000e-03, time=1157.1230 sec.txt"
+
+python nnAvicaching_find_rewards.py --test "./stats/find_rewards/randomRewards_sum_1000_7-11_1610.txt" --weights-file "./stats/find_weights/weights/orig/gpu, origXYR_seed=2, epochs=10000, train= 80%, lr=1.000e-03, time=1157.1230 sec.txt"

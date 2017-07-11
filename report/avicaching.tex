@@ -462,35 +462,35 @@
 
     \subsection{Pricing Problem's Results} \label{sec:Pricing Problem's Results}
     \subsubsection{Optimization Results} \label{sec:PriProbRes - Optimization}
-    Taking the approach mentioned in Section \ref{sec:Pricing Problem-Optimizing the Original Dataset}, different sets of weights gave consistent loss values (even with differently seeded rewards), which are shown in Figure []. Next, running differently seeded rewards with different learning rates on set-2 of weights, which performed the best, we obtained the lowest loss value of 0.0068\%.
-    \begin{figure}[!htbp]
-        \centering
-        \begin{tikzpicture}
-        \begin{axis}[
-        ybar,
-        width=.6\textwidth,
-        height=7cm,
-        enlarge x limits=0.15,
-        ylabel={Loss Value (in \%)},
-        symbolic x coords={Set-1,Set-2,Set-3,Set-4,Set-5},
-        xtick=data,
-        nodes near coords,
-        nodes near coords align={vertical},
-        xlabel={Models},
-        xlabel style={yshift=-.5cm}
-        ]
-        \addplot+ [error bars/.cd, y dir=both, y explicit] coordinates {
-            (Set-1, 0.0152) +- (0.0001, 0.0001)
-            (Set-2, 0.0079) +- (0.0005, 0.0005)
-            (Set-3, 0.0139) +- (0.0003, 0.0003)
-            (Set-4, 0.0129) +- (0.0002, 0.0002)
-            (Set-5, 0.0155) +- (0.0002, 0.0002)
-        };
-        \end{axis}
-        \end{tikzpicture}
-    \end{figure}
+    Taking the approach mentioned in Section \ref{sec:Pricing Problem-Optimizing the Original Dataset}, different sets of weights gave consistent loss values (even with differently seeded rewards). The best was the set-2 of weights, using which the average loss value for the Pricing Problem hovered around 0.0079\%. Next, running differently seeded rewards with different learning rates on set-2 of weights, which performed the best, we obtained the lowest loss value of 0.0068\%.
+%    \begin{figure}[!htbp]
+%        \centering
+%        \begin{tikzpicture}
+%        \begin{axis}[
+%        ybar,
+%        width=.6\textwidth,
+%        height=7cm,
+%        enlarge x limits=0.15,
+%        ylabel={Loss Value (in \%)},
+%        symbolic x coords={Set-1,Set-2,Set-3,Set-4,Set-5},
+%        xtick=data,
+%        nodes near coords,
+%        nodes near coords align={vertical},
+%        xlabel={Models},
+%        xlabel style={yshift=-.5cm}
+%        ]
+%        \addplot+ [error bars/.cd, y dir=both, y explicit] coordinates {
+%            (Set-1, 0.0152) +- (0.0001, 0.0001)
+%            (Set-2, 0.0079) +- (0.0005, 0.0005)
+%            (Set-3, 0.0139) +- (0.0003, 0.0003)
+%            (Set-4, 0.0129) +- (0.0002, 0.0002)
+%            (Set-5, 0.0155) +- (0.0002, 0.0002)
+%        };
+%        \end{axis}
+%        \end{tikzpicture}
+%    \end{figure}
 
-    Compared to other reward distributions, our model optimized the rewards such that the loss value was $\approx$ \textbf{23 times} lower. We should also clarify that we compared the best loss values, as the organizer expects to find a distribution that is as optimal as possible. Table \ref{tab:Loss Values Calculated from Different Sets of Rewards} lists the best loss values obtained on each type of reward allocation (model's predicted, random and proportionate).
+    Compared to other proportional reward distribution (loss values calculated using set-2 of weights), our model optimized the rewards such that the loss value was $\approx$ \textbf{3 times} lower. We should also clarify that we compared the best loss values, as the organizer expects to find a distribution that is as optimal as possible. Table \ref{tab:Loss Values Calculated from Different Sets of Rewards} lists the best loss values obtained on each type of reward allocation (model's predicted, random and proportionate).
     \begin{table}[!htbp]
         \centering
         \caption[Loss Values Calculated from Different Sets of Rewards]{Loss Values Calculated from Different Sets of Rewards: The values are small because the loss function $Z_P(\vect{r})$ (Equation \ref{eq:pricing_problem}) is averaged over the number of locations}
@@ -500,8 +500,8 @@
             \textbf{Rewards Obtained From} & \textbf{Best Loss Values (In \%)}\\
             \hline
             Model's Prediction & 0.0068\\
-            Random Initialization & 0.1600\\
-            Proportional Distribution & 0.1610\\
+            Random Initialization & 0.0331\\
+            Proportional Distribution & 0.0235\\
             \hline
         \end{tabular}
     \end{table}

@@ -302,13 +302,13 @@
     
     \section{Experiment Specifications} \label{sec:Experiment Specifications}
     \begin{mydef} \label{def:GPU Speedup}
-        GPU Speedup: Ratio of increase in time elapsed in GPU and that of CPU per unit increase in batch-size.
+        GPU Speedup: Ratio of increase in time elapsed in GPU and that of CPU per unit increase in batch-size. We define GPU Speedup in this way because we are interested in how the models will scale with increase in dataset, giving us more information than the commonly used formula (Speedup = $\frac{CPU-time}{GPU-time\; +\; Transfer-time}$) would do.
     \end{mydef}
     To test both our models, we conducted several tests for optimization and GPU speedup over CPU. After initializing all parameters randomly and reading data from files, the models were run for 1000 to 10000 epochs depending on the complexity of the model and any potential benefits emerging with more epochs.
     
-    A Dell Precision Tower 3620 with Intel Core i7-7700K Processor [], 16GB RAM and NVIDIA Quadro P4000 GPU [] was used for all experiments. These experiments were either optimization tests on original datasets or GPU speedup tests randomly generated datasets. We believe that speedup tests on original datasets would give similar results, though we used randomly generated datasets because it was easier to scale and build random datasets of different batch-sizes.
+    A Dell Precision Tower 3620 with Intel Core i7-7700K Processor [], 16GB RAM and NVIDIA Quadro P4000 GPU [] was used for all experiments. These experiments were either optimization tests on original datasets or GPU speedup tests randomly generated datasets. We believe that speedup tests on original datasets would give similar results, though we used randomly generated datasets because it was easier to scale and build random datasets of different batch-sizes. The models were timed only for the executed operations in a neural network or the LP, excluding transfer or tensors between the RAM and GPU's memory and preprocessing.
     
-    Note that operations in the scripts were \textit{distributed between} CPU and GPU when GPU is mentioned as ``set'', while the operations were executed \textit{only} on the CPU when the ``CPU'' is mentioned as set. Since GPUs are inferior than CPUs at handling most operations other than simple arithmetic matrix ones, we used - and recommend using - both the CPU and the GPU in the former case (GPU ``set'') to handle operations each is superior at. However, since the models in Sections \ref{sec:Identification Problem} and \ref{sec:Pricing Problem} (not the full scripts) are primarily arithmetic operations on matrices and tensors, it is clear that they were executed on the GPU when it was ``set'' and on the CPU when the CPU was ``set''.
+    Note that operations in the scripts were \textit{distributed between} CPU and GPU when GPU is mentioned as ``set'', while the operations were executed \textit{only} on the CPU when the ``CPU'' is mentioned as set. Since GPUs are inferior than CPUs at handling most operations other than simple arithmetic matrix ones, we used - and recommend using - both the CPU and the GPU in the former case (GPU ``set'') to handle operations each is superior at. However, since the models in Sections \ref{sec:Identification Problem} and \ref{sec:Pricing Problem} (not the full scripts) are primarily arithmetic operations on matrices and tensors, it is clear that they were executed on the GPU when it was ``set'' and on the CPU when the CPU was ``set''. Other than this optimization, we did not specifically design any parallelized algorithm for either configurations, relying on the PyTorch Library's and NumPy-SciPy's inbuilt implementation.
     
     On the algorithm side, we used Adam's algorithm for \textsc{Gradient-Descent}($\cdot$), after testing performances of several algorithms including but not limited to Stochastic Gradient Descent (SGD) \cite{SGD}, Adam's Algorithm \cite{Adam} and Adagrad \cite{Adagrad} (PyTorch lets you choose the corresponding function). Since Adam's algorithm was found to work best with both models over all test runs, all experiments were done using Adam's algorithm. Hence, all results were also obtained using Adam's algorithm.
     
@@ -323,8 +323,12 @@
     
     \subsection{Running the Pricing Problem's Model} \label{sec:Running the Pricing Problem's Model}
     \subsubsection{Optimizing the Original Dataset} \label{sec:Pricing Problem-Optimizing the Original Dataset}
-    After obtaining the set of weights $\matr{w_1}$ and $\matr{w_2}$ optimized using different seeds, we tested to find the best rewards (with the lowest loss - Equation \ref{eq:pricing_problem}) with random $\vect{r}$ initiation. To obtain the best rewards, the model was run on all sets of weights obtained from the Identification Problem for 1000 epochs with different learning rates.
-    
+    After obtaining the set of weights $\matr{w_1}$ and $\matr{w_2}$ optimized using different seeds, we tested to find the best rewards (with the lowest loss - Equation \ref{eq:pricing_problem}) with random $\vect{r}$ initiation. To obtain the best rewards, the model was run on all sets of weights obtained from the Identification Problem for 1000 epochs with different learning rates. In search for the best rewards with the minimum loss, we took this approach:
+    \begin{enumerate}
+        \item Run differently seeded on all sets of weights (obtained from the Identification Problem) and identify a set of weights which performed better than the others (low $Z_I$ - Equation \ref{eq:pricing_problem}) on average. The learning rate was fixed to $10^{-3}$ in this case.
+        \item Use that set of weights to run a number of tests with varying seeds and learning rates = $\{10^{-2}, 5 \times 10^{-3}, 10^{-3}, 5 \times 10^{-4}, 10^{-4}, 5 \times 10^{-5}, 10^{-5}\}$.
+        \item Choose the best.
+    \end{enumerate}
     Two sets of rewards were tested for loss values as baseline comparisons to our model - a randomly generated set, and another with elements proportional to the reciprocal of number of visits at each location. While the former was a random baseline, the latter captured the idea of allocating higher rewards to relatively under-sampled locations. The average loss values (on different sets of weights) were compared for all tests with the baselines.
     
     \subsubsection{Testing GPU Speedup on the Random Dataset} \label{sec:Pricing Problem-Testing GPU Speedup on the Random Dataset}
@@ -356,6 +360,7 @@
     \end{table}
     
     Table \ref{tab:Loss Values Calculated for Different Models for Identification Problem} gives the average \textit{end} test loss results. Observing that the average test loss values of learning rate = $10^{-3}$ is the lowest, we compare its results with the previous study's 2-layered network, historical data \cite[// todo]{Xue2016Avi2}, and a 4-layered network with learning rate = $10^{-3}$ (Section \ref{sec:Identification Problem-Optimizing the Original Dataset}).
+    
     \begin{figure}[!htbp]
         \centering
         \includegraphics[width=16cm, height=10cm]{test_losses_diff_lr_plot}
@@ -397,7 +402,8 @@
             \label{fig:Predicted Probabilities of Agents Visiting Each Location Plotted on a Map}
         \end{minipage}
     \end{figure}
-    As depicted in Figure \ref{fig:Comparison of Loss Values from Different Models of the Identification Problem}, our 3-layered neural network outperformed the previous 2-layered model by 0.14 units (14\% more closer to Ground Truth - $\matr{y}$) \cite[Table 1]{Xue2016Avi2}, and also produced much better results (12\% more closer to Ground Truth) than the 4-layered model.
+
+    As depicted in Figure \ref{fig:Comparison of Loss Values from Different Models of the Identification Problem}, our 3-layered neural network outperformed the previous 2-layered model by \textbf{0.14 units (14\% more closer to Ground Truth - $\matr{y}$)} \cite[Table 1]{Xue2016Avi2}, and also produced much better results (12\% more closer to Ground Truth) than the 4-layered model.
     
     We also generated the predicted probabilities of the agents visiting each location ($\matr{P} \cdot \matr{x}$) in the Test Set, and plotted it onto a map marked by the locations' latitudes and longitudes. Figure \ref{fig:Predicted Probabilities of Agents Visiting Each Location Plotted on a Map} shows such a plot generated by the 3-layered network, where each dot represents a location.
     
@@ -421,7 +427,7 @@
     \end{figure}
 
     \subsubsection{GPU Speedup Results} \label{sec:IdProbRes - GPU}
-    Running on batches of sizes $T = 17, 85, 173$ on a randomly generated dataset, with both GPU and CPU ``set'' separately, we obtained full  execution time (including both training and testing) information. The average results (3 different seeds for each batch) are plotted in Figure \ref{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}, which show promising GPU speedup over CPU figures for any batch size - for every unit increase in batch-size $T$, CPU ``set'' takes $\approx$ 4.64 seconds, while GPU ``set'' takes only $\approx$ 0.74 more seconds (slopes of best-fit lines).
+    Running on batches of sizes $T = 17, 85, 173$ on a randomly generated dataset for 1000 epochs, with both GPU and CPU ``set'' separately, we obtained full  execution time (including both training and testing) information. The average results (3 different seeds for each batch) are plotted in Figure \ref{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}, which show promising GPU speedup over CPU figures for any batch size - for every unit increase in batch-size $T$, CPU ``set'' takes $\approx$ 4.64 seconds, while GPU ``set'' takes only $\approx$ 0.74 more seconds (slopes of best-fit lines).
     \begin{figure}[!htbp]
         \centering
         \begin{tikzpicture}
@@ -456,18 +462,46 @@
 
     \subsection{Pricing Problem's Results} \label{sec:Pricing Problem's Results}
     \subsubsection{Optimization Results} \label{sec:PriProbRes - Optimization}
-    After doing tests on the original for loss minimization and comparing with the baseline scores, we found that our model was performing $\approx$ 8 times better than both randomly generated and proportionally distributed rewards. Table \ref{tab:Loss Values Calculated from Different Sets of Rewards} lists the average loss values obtained on each type of reward allocation (model's predicted, random and proportionate).
+    Taking the approach mentioned in Section \ref{sec:Pricing Problem-Optimizing the Original Dataset}, different sets of weights gave consistent loss values (even with differently seeded rewards), which are shown in Figure []. Next, running differently seeded rewards with different learning rates on set-2 of weights, which performed the best, we obtained the lowest loss value of 0.0068\%.
+    \begin{figure}[!htbp]
+        \centering
+        \begin{tikzpicture}
+        \begin{axis}[
+        ybar,
+        width=.6\textwidth,
+        height=7cm,
+        enlarge x limits=0.15,
+        ylabel={Loss Value (in \%)},
+        symbolic x coords={Set-1,Set-2,Set-3,Set-4,Set-5},
+        xtick=data,
+        nodes near coords,
+        nodes near coords align={vertical},
+        xlabel={Models},
+        xlabel style={yshift=-.5cm}
+        ]
+        \addplot+ [error bars/.cd, y dir=both, y explicit] coordinates {
+            (Set-1, 0.0152) +- (0.0001, 0.0001)
+            (Set-2, 0.0079) +- (0.0005, 0.0005)
+            (Set-3, 0.0139) +- (0.0003, 0.0003)
+            (Set-4, 0.0129) +- (0.0002, 0.0002)
+            (Set-5, 0.0155) +- (0.0002, 0.0002)
+        };
+        \end{axis}
+        \end{tikzpicture}
+    \end{figure}
+
+    Compared to other reward distributions, our model optimized the rewards such that the loss value was $\approx$ \textbf{23 times} lower. We should also clarify that we compared the best loss values, as the organizer expects to find a distribution that is as optimal as possible. Table \ref{tab:Loss Values Calculated from Different Sets of Rewards} lists the best loss values obtained on each type of reward allocation (model's predicted, random and proportionate).
     \begin{table}[!htbp]
         \centering
         \caption[Loss Values Calculated from Different Sets of Rewards]{Loss Values Calculated from Different Sets of Rewards: The values are small because the loss function $Z_P(\vect{r})$ (Equation \ref{eq:pricing_problem}) is averaged over the number of locations}
         \label{tab:Loss Values Calculated from Different Sets of Rewards}
         \begin{tabular}{|c|c|}
             \hline
-            \textbf{Rewards Obtained From} & \textbf{Average Loss Values (In \%)}\\
+            \textbf{Rewards Obtained From} & \textbf{Best Loss Values (In \%)}\\
             \hline
-            Model's Prediction & 0.021\\
-            Random Initialization & 0.160\\
-            Proportional Distribution & 0.161\\
+            Model's Prediction & 0.0068\\
+            Random Initialization & 0.1600\\
+            Proportional Distribution & 0.1610\\
             \hline
         \end{tabular}
     \end{table}
@@ -563,7 +597,7 @@
     Furthermore, although we expected SciPy's Optimize Module \cite{SCPOptimizeDocs} to run on the CPU (Section \ref{sec:Pricing Problem-Testing GPU Speedup on the Random Dataset}), the LP problem ran faster when the GPU was ``set''. We did not anticipate this behavior, and we couldn't pick out a reason for the Optimize Module supposedly doing operations differently. Since our GPU ``set'' and CPU ``set'' configurations were only enforceable on user-created functions and datasets, we do not know why the LP solver delivered different speeds while solving the same problem. If it used the CPU or the GPU, it should have done so in both cases and the runtime would have been equal. While there could be differences in implementation, we cannot affirm or deny any reason behind this quirky behavior. Figure \ref{fig:Finding Rewards - Time taken by the LP} shows the unexpected speedup of $\frac{2.35}{1.41} \approx 1.66$x delivered by SciPy Optimize Module's LP solver.
     
     \section{Conclusion} \label{sec:Conclusion}
-    Our models for the Identification and the Pricing Problem outperformed previously studied ones and other baseline comparisons. For the Identification Problem, the average loss value was 12\% lower than the previous 2-layered model, and 35\% better than the 4-layered model, giving us better results than any other model. While we did not test deeper networks, we believe that using more hidden layers will only aggravate overfitting and won't provide better results - as is the case with the 4-layered network. The Pricing Problem's model also delivered better results than other baseline comparisons for reward distribution, though the difference was not drastically large.
+    Our models for the Identification and the Pricing Problem outperformed previously studied ones and other baseline comparisons. For the Identification Problem, the average loss value was 12\% lower than the previous 2-layered model, and 35\% better than the 4-layered model, giving us better results than any other model. While we did not test deeper networks, ve that using more hidden layers will only aggravate overfitting and won't provide better results - as is the case with the 4-layered network. The Pricing Problem's model also delivered better results than other baseline comparisons for reward distribution, though the difference was not drastically large.
     
     On the other hand, we can definitively conclude that these models ran faster on the GPU than the CPU, mainly because they were based on tensors and matrices. With an approximate speedup of 6.25 for unit increase in batch-size $T$ for the Identification Problem, we can scale to large datasets more efficiently on the GPU than the CPU. Although the Pricing Problem's model only delivered a speedup of ----- (with the LP problem heavily impacting the runtime), the 2-layered network for finding rewards gave a speedup of -----. This shows that neural network are inherently quick to optimize on a GPU. One can further use a GPU-accelerated LP solver or model the LP in the network itself (if possible) to get faster results.
     

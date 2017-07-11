@@ -29,6 +29,7 @@
 % misc
 \usepackage{nomencl}
 \usepackage[titletoc, page]{appendix}
+\usepackage{multirow}
 
 % caption features
 \usepackage{caption}
@@ -327,18 +328,40 @@
     Two sets of rewards were tested for loss values as baseline comparisons to our model - a randomly generated set, and another with elements proportional to the reciprocal of number of visits at each location. While the former was a random baseline, the latter captured the idea of allocating higher rewards to relatively under-sampled locations. The average loss values (on different sets of weights) were compared for all tests with the baselines.
     
     \subsubsection{Testing GPU Speedup on the Random Dataset} \label{sec:Pricing Problem-Testing GPU Speedup on the Random Dataset}
-    After generating random datasets of different sizes ($J = 11, 55, 116$ - Section \ref{sec:Minimizing Loss for the Identification Problem}), we ran our 3-layered model on each dataset size with different seeds with both GPU and CPU ``set''.
+    After generating random datasets of different sizes ($J = 11, 55, 116$ - Section \ref{sec:Minimizing Loss for the Identification Problem}), we ran the Pricing Problem's model on each dataset size with different seeds with both GPU and CPU ``set''.
     
     Since PyTorch does not provide a GPU-accelerated Simplex LP solver, we relied on SciPy's Optimize Module to solve the that part of the model. Since SciPy's implementation does not utilize the GPU \textit{conspicuously}, we expected the LP problem to be executed on the CPU and thus deliver equal runtimes in both GPU and CPU ``set'' configurations.
     
     \section{Results} \label{sec:Results}
     \subsection{Identification Problem's Results} \label{sec:Identification Problem's Results}
     \subsubsection{Optimization Results} \label{sec:IdProbRes - Optimization}
-    Minimizing the loss function in the Identification Problem (Section \ref{sec:Identification Problem}) on the original dataset for 10000 epochs took an average of 1260.62 seconds with the GPU ``set''.
-    \begin{itemize}
-        \item The average loss values at the end of 10000 epochs were 0.04 on the training set and 0.14 on the test set.
-        \item The average loss values for the 4-layered model (for comparison) with same experiment specifications were 0.14 on the training set and 0.49 on the test set.
-    \end{itemize}
+    Running the 3-layered network with the GPU ``set'' with different learning rates on different seeds (to calculate average performance of each learning rate) for 10000 epochs hinted at the model performing the best with learning rate = $10^{-3}$. 
+    
+    We observed that higher learning rates ($>10^{-2}$) could only decrease the loss function ($Z_I$ - Equation \ref{eq:iden_problem}) to a limit, after each the updates in the weights caused the loss function to oscillate and increase. This phenomena is exemplified in Figure [], which are plots of different models with the same seed but different learning rates. On the other side of $10^{-3}$, lower learning rates took too long to train. Runtime for the model on 10000 epochs was an average 1232.56 seconds (20 runs = 5 seeds $\times$ 4 learning rates), and models with learning rates $< 10^{-3}$ did not perform better than those with learning rate = $10^{-3}$ on \textit{any} run. Although the decrease in test losses were constant for learning rates $< 10^{-3}$, we feel that they may be computationally expensive and temporally inconvenient to train.
+    \begin{table}[!htbp]
+        \centering
+        \caption[Loss Values Calculated from Different Sets of Rewards]{Loss Values Calculated from Different Sets of Rewards: The values are small because the loss function $Z_P(\vect{r})$ (Equation \ref{eq:pricing_problem}) is averaged over the number of locations}
+        \label{tab:Loss Values For Different Learning Rates}
+        \begin{tabular}{c | c | c}
+            \hline
+            \multirow{2}{*}{\textbf{Learning Rate}} & \multicolumn{2}{c}{\textbf{Average Test Loss Values}} \\
+            & 3-layered & 4-layered\\
+            \hline
+            $10^{-2}$ & 0.168 $\pm$ 0.068 & 0.494 $\pm$ 0.083\\
+            $10^{-3}$ & \textbf{0.119 $\pm$ 0.016} & \textbf{0.228 $\pm$ 0.048}\\
+            $10^{-4}$ & 0.151 $\pm$ 0.040 & 0.237 $\pm$ 0.067\\
+            $10^{-5}$ & 0.212 $\pm$ 0.040 & 0.320 $\pm$ 0.067\\
+            \hline
+        \end{tabular}
+    \end{table}
+    
+    Table [] gives the average \textit{end} test loss results. Observing that the average test loss values of learning rate = $10^{-3}$ is the lowest, we compare its results with the previous study's (2-layered network), historical data \cite[// todo]{Xue2016Avi2}, and a 4-layered network with learning rate = $10^{-3}$ (Section \ref{sec:Identification Problem-Optimizing the Original Dataset}).
+    \begin{figure}[!htbp]
+        \centering
+        \includegraphics[width=16cm, height=10cm]{test_losses_diff_lr_plot}
+        \caption{sadkfhg}
+        \label{fig:}
+    \end{figure}
     \begin{figure}[!htbp]
         \centering
         \begin{minipage}{.49\textwidth}
@@ -355,11 +378,12 @@
                     xtick=data,
                     nodes near coords,
                     nodes near coords align={vertical},
+                    every node near coord/.style={/pgf/number format/fixed},
                     xlabel={Models},
                     xlabel style={yshift=-.5cm}
                 ]
-                \addplot coordinates {(2-layer,0.26) (3-layer,0.14) (4-layer,0.49) (Historical, 0.36)};
-                \addplot coordinates {(3-layer,0.04) (4-layer,0.14)};
+                \addplot coordinates {(2-layer,0.26) (3-layer,0.12) (4-layer,0.23) (Historical, 0.36)};% test set
+                \addplot coordinates {(3-layer,0.03) (4-layer,0.06)};% training set
                 \legend{Test Set,Training Set}
                 \end{axis}
             \end{tikzpicture}
@@ -373,11 +397,11 @@
             \label{fig:Predicted Probabilities of Agents Visiting Each Location Plotted on a Map}
         \end{minipage}
     \end{figure}
-    As depicted in Figure \ref{fig:Comparison of Loss Values from Different Models of the Identification Problem}, our 3-layered neural network outperformed the previous 2-layered model by 0.12 units (12\% more closer to Ground Truth - $\matr{y}$) \cite[Table 1]{Xue2016Avi2}, and also produced much better results (35\% more closer to Ground Truth) than the 4-layered model.
+    As depicted in Figure \ref{fig:Comparison of Loss Values from Different Models of the Identification Problem}, our 3-layered neural network outperformed the previous 2-layered model by 0.14 units (14\% more closer to Ground Truth - $\matr{y}$) \cite[Table 1]{Xue2016Avi2}, and also produced much better results (12\% more closer to Ground Truth) than the 4-layered model.
     
     We also generated the predicted probabilities of the agents visiting each location ($\matr{P} \cdot \matr{x}$) in the Test Set, and plotted it onto a map marked by the locations' latitudes and longitudes. Figure \ref{fig:Predicted Probabilities of Agents Visiting Each Location Plotted on a Map} shows such a plot generated by the 3-layered network, where each dot represents a location.
     
-    Although there remained a 10\% difference (0.10 loss units) in the values of training and testing set, the 3-layered model was not starkly overfitting as an average \textit{end} difference of $10.7\pm5.5\%$ persisted for many epochs, instead of increasing and tuning more to the training set. On the other hand, overfitting is more remarked in the case of 4-layered model, producing an average \textit{end} difference of $34.8\pm8.9\%$, but erratically hovering between 20\% and 50\%. This result is shown in Figure \ref{fig:Train & Test Loss Values' Plots of Different Models} with plots of loss values at each epoch for the 3- and the 4-layered network.
+    Although there remained a $\approx$ 9\% difference (0.09 loss units) in the values of training and testing set, the 3-layered model was not starkly overfitting as an average \textit{end} difference of $8.76\pm1.59\%$ persisted for many epochs, instead of increasing and tuning more to the training set. On the other hand, overfitting is more remarked in the case of 4-layered model, producing an average \textit{end} difference of $16.77 \pm 4.73\%$, but erratically hovering between 10\% and 30\%. This result is shown in Figure \ref{fig:Train & Test Loss Values' Plots of Different Models} with plots of loss values at each epoch for the 3- and the 4-layered network.
     \begin{figure}[!htbp]
         \centering
         \begin{subfigure}{.49\textwidth}

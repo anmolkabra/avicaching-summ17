@@ -35,7 +35,7 @@ parser.add_argument("--rewards", type=float, default=1000.0, metavar="R",
 parser.add_argument("--rand", action="store_true", default=False,
     help="uses random data")
 parser.add_argument("--weights-file", type=str, 
-    default="./stats/find_weights/weights/gpu, origXYR_seed=1, epochs=10000, train= 80%, lr=1.000e-02, time=1260.1639 sec.txt", 
+    default="./stats/find_weights/weights/orig/gpu, origXYR_seed=2, epochs=10000, train= 80%, lr=1.000e-03, time=1157.1230 sec.txt", 
     metavar="f", help="inputs the location of the file to use weights from")
 parser.add_argument("--test", type=str, default="", 
     metavar="t", help="inputs the location of the file to test rewards from")
@@ -74,6 +74,15 @@ randDIST_file = "./data/random/randDIST" + str(116) + ".txt"
 # =============================================================================
 def read_set_data():
     global X, numFeatures, F_DIST_w1, w1_for_r, w2
+    # shapes of datasets -- [] means expanded form:
+    # - X, Y: J
+    # - net.R: J [x J x 1]
+    # - F_DIST: J x J x numF
+    # - F_DIST_w1: J x J x numF
+    # - w1: J x J x numF
+    # - w2: J x numF [x 1]
+    # - w1_for_r: J x 1 x numF
+
     # read f and dist datasets from file, operate on them
     if args.rand:
         F = ad.read_F_file(randF_file, J)
@@ -99,7 +108,7 @@ def read_set_data():
     
     # split w1; multiply the fdist portion of w1 with F_DIST
     w1_for_fdist, w1_for_r = ad.split_along_dim(w1, numFeatures - 1, dim=1)
-    F_DIST_w1 = Variable(torch.bmm(F_DIST, torchten(w1_for_fdist)).squeeze(dim=2), requires_grad=False)
+    F_DIST_w1 = Variable(torch.bmm(F_DIST, torchten(w1_for_fdist)), requires_grad=False)
 
     # condense X along T into a single vector and normalize
     X = ad.normalize(X.sum(axis=0), using_max=False)
@@ -124,9 +133,9 @@ class MyNet(nn.Module):
     def forward(self, wt1, wt2):
         # print(self.R.data * 1000)
         repeatedR = self.R.repeat(J, 1).unsqueeze(dim=2)    # shape is J x J x 1
-        res = torch.bmm(repeatedR, wt1) + F_DIST_w1     # inp is J x J x numF after
+        res = torch.bmm(repeatedR, wt1) + F_DIST_w1     # res is J x J x numF after
         res = torchfun.relu(res)
-        res = torch.bmm(res, wt2).view(-1, J)    # inp is J x J
+        res = torch.bmm(res, wt2).view(-1, J)    # res is J x J
         # add eta to inp[u][u]
         # eta_matrix = Variable(eta * torch.eye(J).type(torchten))
         # if args.cuda:
@@ -148,7 +157,6 @@ def go_forward(net):
 
 def train(net, optimizer):
     global lp_A, lp_c, loss
-    start_train = time.time()
 
     # BACKPROPAGATE
     start_backprop_time = time.time()

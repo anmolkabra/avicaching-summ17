@@ -16,7 +16,7 @@ args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
 torchten = torch.FloatTensor
-J, T, totalR, numF = 20, 20, 1000, 10
+J, T, totalR, numF = 100, 20, 1000, 10
 torch.manual_seed(1)
 np.random.seed(seed=1)
 if args.cuda:
@@ -56,6 +56,7 @@ for e in xrange(args.epochs):
     # net.R.data = torchten(lp_res.x[:J]).unsqueeze(dim=0)
 
 sys.exit()
+###########
 
 
 class MyNet(nn.Module):
@@ -104,13 +105,15 @@ def train(net, optimizer):
     
     backprop_time = time.time() - start_backprop_time
     r_on_cpu = net.R.data.squeeze().cpu().numpy()   # transfer data for lp
+
     start_lp_time = time.time()
     
     # CONSTRAIN -- LP
     # 1.0 is the sum constraint of rewards
     # the first J outputs are the new rewards
     lp_res = lp.run_lp(lp_A, lp_c, J, r_on_cpu, 1.0)
-    print(time.time() - start_lp_time)
+    lp_time = time.time() - start_lp_time
+    print(lp_time)
     net.R.data = torchten(lp_res.x[:J]).unsqueeze(dim=0)
 
     if args.cuda:

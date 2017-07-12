@@ -445,12 +445,16 @@
             ]
             \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
                 (17,173.57) +- (2.91, 2.91)
+                (61,429.96) +- (6.92, 6.92)
                 (85,540.10) +- (4.45, 4.45)
+                (129,860.55) +- (7.58, 7.58)
                 (173,901.24) +- (3.53, 3.53)
             };  % cpu
             \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
                 (17,9.97) +- (0.021, 0.021)
+                (61,40.60) +- (0.111, 0.111)
                 (85,61.02) +- (0.085, 0.085)
+                (129,88.56) +- (2.525, 2.525)
                 (173,126.33) +- (0.097, 0.097)
             };  % gpu
             \legend{CPU ``set'',GPU ``set''}
@@ -529,16 +533,20 @@
                     nodes near coords,
                     every node near coord/.append style={yshift=-0.7cm}
                 ]
-                \addplot+ [mark=*,,
+                \addplot+ [mark=*,
                 nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta}
                 ] coordinates {
                     (11,14.21)
+                    (35,41.76)
                     (55,80.07)
+                    (85,162.07)
                     (116,310.77)
                 };  % cpu
-                \addplot+ [mark=*,] coordinates {
+                \addplot+ [mark=*] coordinates {
                     (11,8.13)
+                    (35,25.90)
                     (55,48.50)
+                    (85,100.98)
                     (116,163.11)
                 };  % gpu
                 \legend{CPU ``set'',GPU ``set''}
@@ -568,12 +576,16 @@
                 nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta}
                 ] coordinates {
                     (11,12.96)
+                    (35,39.94)
                     (55,77.48)
+                    (85,157.58)
                     (116,300.88)
                 };  % cpu
                 \addplot+ [mark=*,] coordinates {
                     (11,6.70)
+                    (35,24.13)
                     (55,46.44)
+                    (85,98.47)
                     (116,160.12)
                 };  % gpu
                 \legend{CPU ``set'',GPU ``set''}
@@ -596,15 +608,21 @@
                     legend style={at={(0.02,.98)},
                         anchor=north west},
                     nodes near coords,
+                    every node near coord/.append style={yshift=-0.7cm}
                 ]
-                \addplot+ [mark=*,] coordinates {
-                    (11,1.25) 
-                    (55,2.58) 
+                \addplot+ [mark=*,
+                nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta}] coordinates {
+                    (11,1.25)
+                    (35,1.82)
+                    (55,2.58)
+                    (85,4.48) 
                     (116,9.89)
                 };  % cpu
                 \addplot+ [mark=*,] coordinates {
-                    (11,1.43) 
-                    (55,2.05) 
+                    (11,1.43)
+                    (35,1.77) 
+                    (55,2.05)
+                    (85,2.51) 
                     (116,2.98)
                 };  % gpu
                 \legend{CPU ``set'',GPU ``set''}

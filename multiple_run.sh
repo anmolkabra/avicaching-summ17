@@ -1,2 +1,3 @@
 #!/usr/bin/env bash
-./runNNAvicaching_find_rewards_orig.sh
+./runNNAvicaching_find_rewards_rand.sh
+./runNNAvicaching_find_weights_rand.sh

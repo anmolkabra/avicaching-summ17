@@ -41,6 +41,23 @@ F_DIST_w1 = Variable(F_DIST_w1, requires_grad=False)
 w1_for_r, X = Variable(torchten(w1_for_r), requires_grad=False), Variable(torchten(X), requires_grad=False)
 w2 = Variable(torchten(w2), requires_grad=False)
 
+###### ONLY LP
+lp_A, lp_c = lp.build_A(J), lp.build_c(J)
+
+for e in xrange(args.epochs):
+    r_on_cpu = np.random.randn(J)
+    start_lp_time = time.time()
+    
+    # CONSTRAIN -- LP
+    # 1.0 is the sum constraint of rewards
+    # the first J outputs are the new rewards
+    lp_res = lp.run_lp(lp_A, lp_c, J, r_on_cpu, 1.0)
+    print(time.time() - start_lp_time)
+    # net.R.data = torchten(lp_res.x[:J]).unsqueeze(dim=0)
+
+sys.exit()
+
+
 class MyNet(nn.Module):
 
     def __init__(self):
@@ -92,9 +109,9 @@ def train(net, optimizer):
     # CONSTRAIN -- LP
     # 1.0 is the sum constraint of rewards
     # the first J outputs are the new rewards
-    net.R.data = torchten(lp.run_lp(lp_A, lp_c, J, r_on_cpu, 1.0).x[:J]).unsqueeze(dim=0)
-    
-    lp_time = time.time() - start_lp_time
+    lp_res = lp.run_lp(lp_A, lp_c, J, r_on_cpu, 1.0)
+    print(time.time() - start_lp_time)
+    net.R.data = torchten(lp_res.x[:J]).unsqueeze(dim=0)
 
     if args.cuda:
         # transfer data

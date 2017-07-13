@@ -166,19 +166,18 @@ def train(net, optimizer):
     optimizer.step()        # update rewards
     
     backprop_time = time.time() - start_backprop_time
-    r_on_cpu = net.R.data.squeeze().cpu().numpy()   # transfer data for lp
     start_lp_time = time.time()
+    r_on_cpu = net.R.data.squeeze().cpu().numpy()   # transfer data for lp
     
     # CONSTRAIN -- LP
     # 1.0 is the sum constraint of rewards
     # the first J outputs are the new rewards
     net.R.data = torchten(lp.run_lp(lp_A, lp_c, J, r_on_cpu, 1.0).x[:J]).unsqueeze(dim=0)
-    
-    lp_time = time.time() - start_lp_time
 
     if args.cuda:
         # transfer data
         net.R.data = net.R.data.cuda()
+    lp_time = time.time() - start_lp_time
     
     # FORWARD
     forward_time = go_forward(net)
@@ -223,12 +222,14 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
 if __name__ == "__main__":
     read_set_data()
     net = MyNet()
+    transfer_time = time.time()
     if args.cuda:
         net.cuda()
         w1_for_r, w2, F_DIST_w1, X = w1_for_r.cuda(), w2.cuda(), F_DIST_w1.cuda(), X.cuda()
         file_pre_gpu = "gpu, "
     else:
         file_pre_gpu = "cpu, "
+    transfer_time = time.time() - transfer_time
     
     if args.test:
         rewards = np.loadtxt(args.test, delimiter=" ")[:J]
@@ -249,6 +250,7 @@ if __name__ == "__main__":
 
     best_loss, total_lp_time = float("inf"), 0
     total_time = go_forward(net)
+    total_time += transfer_time
     train_loss = [ loss.data[0] ]
 
     for e in xrange(1, args.epochs + 1):

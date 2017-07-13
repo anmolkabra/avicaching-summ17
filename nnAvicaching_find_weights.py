@@ -277,10 +277,12 @@ def train(net, optimizer, loss_normalizer, u):
     for t in xrange(num_train):
         # build the input by appending trainR[t] to F_DIST
         inp = build_input(trainR[t])
+        
+        loop_start = time.time()
         if args.cuda:
             inp = inp.cuda()
         inp = Variable(inp)
-        loop_start = time.time()
+        
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
     
@@ -314,10 +316,12 @@ def test(net, loss_normalizer, u):
     for t in xrange(num_test):
         # build the input by appending testR[t]
         inp = build_input(testR[t])
+        
+        loop_start = time.time()
         if args.cuda:
             inp = inp.cuda()
         inp = Variable(inp)
-        loop_start = time.time()
+        
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
         
@@ -463,6 +467,7 @@ if __name__ == "__main__":
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
 
     # SET!!
+    transfer_time = time.time()
     if args.cuda:
         # transfer net and tensors to the gpu
         net.cuda()
@@ -473,6 +478,7 @@ if __name__ == "__main__":
         file_pre_gpu = "gpu, "
     else:
         file_pre_gpu = "cpu, "
+    transfer_time = time.time() - transfer_time
     if args.expand_R:
         file_pre_gpu = "expandedR, " + file_pre_gpu
 
@@ -485,7 +491,7 @@ if __name__ == "__main__":
             torch.mean(testY).expand_as(testY)).data, u_test)).pow(2).sum()
     
     # GO!!
-    train_time_loss, test_time_loss, total_time = [], [], 0.0
+    train_time_loss, test_time_loss, total_time = [], [], transfer_time
     for e in xrange(1, args.epochs + 1):
         # train
         train_res = train(net, optimizer, train_loss_normalizer, u_train)

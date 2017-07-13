@@ -1,12 +1,12 @@
 # #!/usr/bin/env bash
 
 # specs for tests:
-# locations: 11, 35, 55, 85, 116, 165, 220
+# locations: 11, 35, 55, 85, 116
 # batch-size T: 173
 # lr: 0.001
 # epochs: 1000
 
-for J in 11 35 55 85 116 165 220
+for J in 11 35 55 85 116
 do
     for s in 1 2 3
     do

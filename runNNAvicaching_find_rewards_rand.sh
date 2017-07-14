@@ -6,7 +6,7 @@
 # lr: 0.001
 # epochs: 1000
 
-for J in 11 35 55 85 116
+for J in 116 85 55 35 11
 do
     for s in 1 2 3
     do

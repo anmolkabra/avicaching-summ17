@@ -6,7 +6,7 @@
 # lr: 0.001
 # epochs: 1000
 
-for T in 17 51 85 129 173 255 340
+for T in 17 51 85 129 173
 do
     for s in 1 2 3
     do

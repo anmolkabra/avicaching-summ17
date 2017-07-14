@@ -1,8 +1,8 @@
 # #!/usr/bin/env bash
 
 # specs for tests:
-# locations: 11, 35, 55, 85, 116
-# batch-size T: 173
+# batch-size locations: 11, 35, 55, 85, 116
+# T: 173
 # lr: 0.001
 # epochs: 1000
 

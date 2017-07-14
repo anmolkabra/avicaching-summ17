@@ -193,6 +193,7 @@ def save_log(file_name, results, title, rewards=None):
     """
     with open(file_name, "wt") as f:
         f.write(title + "\n")
+        f.write("J: %3d\t\tT: %3d\n-------------\n" % (J, T))
         if rewards is not None:
             np.savetxt(f, rewards, fmt="%.15f", delimiter=" ")
         f.write("time = %.4f\t\tloss = %.15f\n" % (results[0], results[1]))

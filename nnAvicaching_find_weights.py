@@ -389,6 +389,7 @@ def save_log(file_name, x, y, title):
     """
     with open(file_name, "wt") as f:
         f.write(title + "\n")
+        f.write("J: %3d\t\tT: %3d\n-------------\n" % (J, T))
         for i in range(0, len(x), args.log_interval):
             f.write("epoch = %d\t\ttrainloss = %.4f, traintime = %.4f" % (
                 x[i], y[0][i][1], y[0][i][0]))

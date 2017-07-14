@@ -200,17 +200,20 @@
     \subsubsection{Minimizing Loss for the Identification Problem} \label{sec:Minimizing Loss for the Identification Problem}
     As shown in Figure \ref{fig:Neural network designed for the Identification Problem}, the neural network is made of 3 fully connected layers - the input layer, the hidden layer with rectified Linear Units (reLU), and the output layer generating the results using the softmax$(\cdot)$ function. The network can also be visualized as a collection of 1-dimensional layers (Figure \ref{fig:Side view of the network}), with the softmax$(\cdot)$ calculated on the collection's output.
     \begin{figure}[!htbp]
-        \begin{subfigure}{.64\textwidth}
-        \includegraphics[width=\textwidth]{weights_net}
-        \caption{3-dimensional view of the network slice, taking in $\matr{F}[v]$}
-        \label{fig:3-dimensional view of the network slice, taking in Fv}
+        \centering
+        \begin{subfigure}{\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{weights_net}
+            \caption{3-dimensional View of the Network Slice, Taking in $\matr{F}[v]$}
+            \label{fig:3-dimensional view of the network slice, taking in Fv}
         \end{subfigure}
-        \begin{subfigure}{.35\textwidth}
+        \begin{subfigure}{.75\textwidth}
+            \centering
             \includegraphics[width=\textwidth]{weights_net_side}
-            \caption{Side view of the network}
+            \caption{Side View of the Network: Output of one such cross-section is $p_{u_i, v}$}
             \label{fig:Side view of the network}
         \end{subfigure}
-        \caption{Neural network designed for the Identification Problem}
+        \caption{Neural Network Designed for the Identification Problem}
         \label{fig:Neural network designed for the Identification Problem}
     \end{figure}
     It is important to clarify that the network in Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}, which takes in $\matr{F}[v]$ as shown, is a slice of the original network, which takes in the complete tensor $\matr{F}$ and computes the complete result $\matr{P}^{T}$  per iteration of $t$. In other words, the input and the hidden layers are 3-dimensional, and the output layer is 2-dimensional. Since it is difficult to visualize the complete network on paper, slices of the network are depicted in Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}. Algorithm \ref{alg:Algorithm for the Identification Problem} details the steps for learning the parameters $\matr{w_1}$ and $\matr{w_2}$ based on Equations \ref{eq:iden_problem} \& \ref{eq:puv_equation}.
@@ -319,13 +322,46 @@
     
     \section{Experiment Specifications} \label{sec:Experiment Specifications}
     \begin{mydef} \label{def:GPU Speedup}
-        GPU Speedup: Ratio of increase in time elapsed in GPU and that of CPU per unit increase in batch-size. We define GPU Speedup in this way because we are interested in how the models will scale with increase in dataset, giving us more information than the commonly used formula (Speedup = $\frac{CPU-time}{GPU-time\; +\; Transfer-time}$) would do.
+        GPU Speedup: Ratio of time elapsed with GPU ``set'' and that with CPU ``set''. Time taken to transfer data from CPU to GPU is included in calculating GPU ``set'' time elapsed. (Speedup = $\frac{CPU-time}{GPU-time\; +\; Transfer-time}$)
     \end{mydef}
     To test both our models, we conducted several tests for optimization and GPU speedup over CPU. After initializing all parameters randomly and reading data from files, the models were run for 1000 to 10000 epochs depending on the complexity of the model and any potential benefits emerging with more epochs.
     
-    A Dell Precision Tower 3620 with Intel Core i7-7700K Processor [], 16GB RAM and NVIDIA Quadro P4000 GPU [] was used for all experiments. These experiments were either optimization tests on original datasets or GPU speedup tests randomly generated datasets. We believe that speedup tests on original datasets would give similar results, though we used randomly generated datasets because it was easier to scale and build random datasets of different batch-sizes. The models were timed only for the executed operations in a neural network or the LP, excluding transfer or tensors between the RAM and GPU's memory and preprocessing.
+    Hardware specifications and software versions used for the experiments are listed in Table \ref{tab:Hardware Specifications and Software Versions Used for Experiments}. We conducted two types of tests: optimization tests on original datasets and GPU speedup tests on randomly generated datasets. The random dataset of 116 locations ($J$) and 173 time units ($T$) was generated beforehand using NumPy (without any seed). We believe that speedup tests on original datasets would give similar results, though we used randomly generated datasets because it was easier to scale and build random datasets of different batch-sizes for testing. The models were timed for the executed operations in a neural network and the LP, including transfer times of tensors between the RAM and GPU's memory. Time taken for preprocessing was ignored. We also clarify that runtimes given in Results (\cref{sec:Results}) can differ based on other running processes and threads while doing experiments. However, one should obtain similar GPU speedup results when doing the experiments again.
+    \begin{table}[!htbp]
+        \centering
+        \caption{Hardware Specifications and Software Versions Used for Experiments}
+        \label{tab:Hardware Specifications and Software Versions Used for Experiments}
+        \begin{tabular}{|c|c|}
+            \hline
+            \multicolumn{2}{c}{\textbf{Hardware}}\\
+            \hline
+            \textbf{Type} & \textbf{Unit/Specs}\\
+            \hline
+            Desktop & Dell Precision Tower 3620\\
+            CPU & Intel Core i7-7700K\\
+            RAM & 16GB\\
+            GPU & NVIDIA Quadro P4000\\
+            \hline
+        \end{tabular}\quad
+        \begin{tabular}{|c|c|}
+            \hline
+            \multicolumn{2}{c}{\textbf{Software}}\\
+            \hline
+            \textbf{Library/Package} & \textbf{Version}\\
+            \hline
+            Ubuntu OS & 16.04.2 LTS\\
+            CUDA & 8.0\\
+            cuDNN & 5.1.10\\
+            MKL & 2017.0.3\\
+            Python & 2.7.13 (Anaconda)\\
+            PyTorch & 0.1.12\textunderscore2\\
+            NumPy & 1.12.1\\
+            SciPy & 0.19.0\\
+            \hline
+        \end{tabular}
+    \end{table}
     
-    Note that operations in the scripts were \textit{distributed between} CPU and GPU when GPU is mentioned as ``set'', while the operations were executed \textit{only} on the CPU when the ``CPU'' is mentioned as set. Since GPUs are inferior than CPUs at handling most operations other than simple arithmetic matrix ones, we used - and recommend using - both the CPU and the GPU in the former case (GPU ``set'') to handle operations each is superior at. However, since the models in \cref{sec:Identification Problem} and \cref{sec:Pricing Problem} (not the full scripts) are primarily arithmetic operations on matrices and tensors, it is clear that they were executed on the GPU when it was ``set'' and on the CPU when the CPU was ``set''. Other than this optimization, we did not specifically design any parallelized algorithm for either configurations, relying on the PyTorch Library's and NumPy-SciPy's inbuilt implementation.
+    Note that by GPU ``set'' we mean \textit{distributing} operations in the scripts between CPU and GPU, while by CPU ``set'' we mean that the operations were executed \textit{only} on the CPU. Since GPUs are inferior than CPUs at handling most operations other than simple arithmetic matrix ones (see \cref{sec:Computation Using GPUs}), we used - and recommend using - both the CPU and the GPU in the former case (GPU ``set'') to handle operations each is superior at. However, since the models in \cref{sec:Identification Problem} and \cref{sec:Pricing Problem} (not the full scripts) are primarily arithmetic operations on matrices and tensors, it is clear that they were executed on the GPU when it was ``set'' and on the CPU when the CPU was ``set''. Other than this optimization, we did not specifically design any parallelized algorithm for either configurations, relying on the PyTorch Library's and NumPy-SciPy's inbuilt implementation.
     
     On the algorithm side, we used Adam's algorithm for \textsc{Gradient-Descent}($\cdot$), after testing performances of several algorithms including but not limited to Stochastic Gradient Descent (SGD) \cite{SGD}, Adam's Algorithm \cite{Adam} and Adagrad \cite{Adagrad} (PyTorch lets you choose the corresponding function). Since Adam's algorithm was found to work best with both models over all test runs, all experiments were done using Adam's algorithm. Hence, all results were also obtained using Adam's algorithm.
     
@@ -333,30 +369,29 @@
     \subsubsection{Optimizing the Original Dataset} \label{sec:Identification Problem-Optimizing the Original Dataset}
     The 3-layered neural network was run for 10000 epochs on the original dataset, which was split 80:20 for training and testing sets, with different learning rates = $\{10^{-2}, 10^{-3}, 10^{-4}, 10^{-5}\}$. Since we were aiming for optimization, we ran multiple tests (5 different seeds with each learning rate) of the model only with the GPU ``set''.
     
-    To compare this model's optimization results with other model structures, the previously studied 2-layered network \cite{Xue2016Avi2} and a 4-layered neural network were used. The 4-layered network had another hidden layer with reLU, equivalent to the hidden layer in the current 3-layered network (Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}). The results from the 2-layered network were obtained from the previous study, and those from the 4-layered network were attained on the same original dataset with same parameter values (learning rates, epochs etc.).
+    To compare this model's optimization results with other model structures, the previously studied 2-layered network \cite{Xue2016Avi2} and a 4-layered neural network were used. The 4-layered network had another hidden layer with reLU, equivalent to the hidden layer in the current 3-layered network in Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}. The results from the 2-layered network were obtained from the previous study, and those from the 4-layered network were attained on the same original dataset with same parameter values (learning rates, epochs etc.).
     
     \subsubsection{Testing GPU Speedup on the Random Dataset} \label{sec:Identification Problem-Testing GPU Speedup on the Random Dataset}
-    After generating random datasets of different sizes ($T = 17, 85, 173$ - \cref{sec:Minimizing Loss for the Identification Problem}, we ran our 3-layered model on each dataset size with different seeds with both GPU and CPU ``set'', logging time elapsed. The total time elapsed was averaged for a batch-size on a device, which were used to generate scatter/line plots (see \cref{sec:IdProbRes - GPU}).
+    After generating a random dataset, we ran our 3-layered model on with different batch-sizes $T = 17, 51, 85, 129, 173$ ($J = 116$) and different seeds with both GPU and CPU ``set'', logging the elapsed time for model execution. The total time elapsed was averaged for a batch-size on a device, which were used to generate scatter/line plots (see \cref{sec:IdProbRes - GPU}).
     
     \subsection{Running the Pricing Problem's Model} \label{sec:Running the Pricing Problem's Model}
     \subsubsection{Optimizing the Original Dataset} \label{sec:Pricing Problem-Optimizing the Original Dataset}
     After obtaining the set of weights $\matr{w_1}$ and $\matr{w_2}$ optimized using different seeds, we tested to find the best rewards (with the lowest loss - Equation \ref{eq:pricing_problem}) with random $\vect{r}$ initiation. To obtain the best rewards, the model was run on all sets of weights obtained from the Identification Problem for 1000 epochs with different learning rates. In search for the best rewards with the minimum loss, we took this approach:
     \begin{enumerate}
-        \item Run differently seeded on all sets of weights (obtained from the Identification Problem) and identify a set of weights which performed better than the others (low $Z_I$ - Equation \ref{eq:pricing_problem}) on average. The learning rate was fixed to $10^{-3}$ in this case.
-        \item Use that set of weights to run a number of tests with varying seeds and learning rates = $\{10^{-2}, 5 \times 10^{-3}, 10^{-3}, 5 \times 10^{-4}, 10^{-4}, 5 \times 10^{-5}, 10^{-5}\}$.
-        \item Choose the best.
+        \item Run differently seeded rewards on all sets of weights (obtained from the Identification Problem) and identify a set of weights which performed better than the others (low $Z_I$ - Equation \ref{eq:pricing_problem}) on average. The learning rate was fixed to $10^{-3}$ in this case.
+        \item Use that set of weights to run a number of tests with varying seeds and learning rates = $\{10^{-2}, 5 \times 10^{-3}, 10^{-3}, 5 \times 10^{-4}, 10^{-4}, 5 \times 10^{-5}, 10^{-5}\}$, and choose the resulting rewards which gave the lowest loss value $Z_I$.
     \end{enumerate}
     Two sets of rewards were tested for loss values as baseline comparisons to our model - a randomly generated set, and another with elements proportional to the reciprocal of number of visits at each location. While the former was a random baseline, the latter captured the idea of allocating higher rewards to relatively under-sampled locations. The average loss values (on different sets of weights) were compared for all tests with the baselines.
     
     \subsubsection{Testing GPU Speedup on the Random Dataset} \label{sec:Pricing Problem-Testing GPU Speedup on the Random Dataset}
-    After generating random datasets of different sizes ($J = 11, 55, 116$ - \cref{sec:Minimizing Loss for the Identification Problem}), we ran the Pricing Problem's model on each dataset size with different seeds with both GPU and CPU ``set''.
+    Using the same random dataset as used before (data doesn't matter as long as it is random), we ran the Pricing Problem's model with different batch-sizes $J = 11, 35, 55, 85, 116$ ($T = 173$) and different seeds with both GPU and CPU ``set''.
     
-    Since PyTorch does not provide a GPU-accelerated Simplex LP solver, we relied on SciPy's Optimize Module to solve the that part of the model. Since SciPy's implementation does not utilize the GPU \textit{conspicuously}, we expected the LP problem to be executed on the CPU and thus deliver equal runtimes in both GPU and CPU ``set'' configurations.
+    Since PyTorch does not provide a GPU-accelerated Simplex LP solver, we relied on SciPy's Optimize Module to solve our LP sub-problem (see \cref{sec:Constraining Rewards}). Since SciPy's implementation does not utilize the GPU, we expected the LP problem to be executed on the CPU and thus deliver equal runtimes in both GPU and CPU ``set'' configurations.
     
     \section{Results} \label{sec:Results}
     \subsection{Identification Problem's Results} \label{sec:Identification Problem's Results}
     \subsubsection{Optimization Results} \label{sec:IdProbRes - Optimization}
-    Running the 3-layered network with the GPU ``set'' with different learning rates on different seeds (to calculate average performance of each learning rate) for 10000 epochs hinted at the model performing the best with learning rate = $10^{-3}$. 
+    Running the 3-layered network with the GPU ``set'' with different learning rates on different seeds (to calculate average performance of each learning rate) for 10000 epochs showed that the model performing the best with learning rate = $10^{-3}$. 
     
     We observed that higher learning rates ($>10^{-2}$) could only decrease the loss function ($Z_I$ - Equation \ref{eq:iden_problem}) to a limit, after each the updates in the weights caused the loss function to oscillate and increase. This phenomena is exemplified in Figure \ref{fig:Test Loss Plots of Different Learning Rates to Find Weights}, which are plots of different models with the same seed but different learning rates. On the other side of $10^{-3}$, lower learning rates took too long to train. Runtime for the model on 10000 epochs was an average 1232.56 seconds (20 runs = 5 seeds $\times$ 4 learning rates), and models with learning rates $< 10^{-3}$ did not perform better than those with learning rate = $10^{-3}$ on \textit{any} run. Although the decrease in test losses were constant for learning rates $< 10^{-3}$, we feel that they may be computationally expensive and temporally inconvenient to train.
     \begin{table}[!htbp]
@@ -424,7 +459,7 @@
     
     We also generated the predicted probabilities of the agents visiting each location ($\matr{P} \cdot \matr{x}$) in the Test Set, and plotted it onto a map marked by the locations' latitudes and longitudes. Figure \ref{fig:Predicted Probabilities of Agents Visiting Each Location Plotted on a Map} shows such a plot generated by the 3-layered network, where each dot represents a location.
     
-    Although there remained a $\approx$ 9\% difference (0.09 loss units) in the values of training and testing set, the 3-layered model was not starkly overfitting as an average \textit{end} difference of $8.76\pm1.59\%$ persisted for many epochs, instead of increasing and tuning more to the training set. On the other hand, overfitting is more remarked in the case of 4-layered model, producing an average \textit{end} difference of $16.77 \pm 4.73\%$, but erratically hovering between 10\% and 30\%. This result is shown in Figure \ref{fig:Train & Test Loss Values' Plots of Different Models} with plots of loss values at each epoch for the 3- and the 4-layered network.
+    Although there remained a $\approx$ 9\% difference (0.09 loss units) in the values of training and testing set, the 3-layered model was not starkly overfitting as an average \textit{end} difference of $8.76\pm1.59\%$ persisted for many epochs, instead of increasing and tuning more to the training set. This case was similar for the 4-layered model, producing an average \textit{end} difference of $16.77 \pm 4.73\%$. This result is shown in Figure \ref{fig:Train & Test Loss Values' Plots of Different Models} with plots of loss values at each epoch for the 3- and the 4-layered network. On a side note, learning rates greater than $10^{-3}$ led to high oscillation and some overfitting in both models.
     \begin{figure}[!htbp]
         \centering
         \begin{subfigure}{.49\textwidth}
@@ -444,40 +479,69 @@
     \end{figure}
 
     \subsubsection{GPU Speedup Results} \label{sec:IdProbRes - GPU}
-    Running on batches of sizes $T = 17, 85, 173$ on a randomly generated dataset for 1000 epochs, with both GPU and CPU ``set'' separately, we obtained full  execution time (including both training and testing) information. The average results (3 different seeds for each batch) are plotted in Figure \ref{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}, which show promising GPU speedup over CPU figures for any batch size - for every unit increase in batch-size $T$, CPU ``set'' takes $\approx$ 4.64 seconds, while GPU ``set'' takes only $\approx$ 0.74 more seconds (slopes of best-fit lines).
+    Running on batches of sizes $T = 17, 51, 85, 129, 173$ on a randomly generated dataset for 1000 epochs, with both GPU and CPU ``set'' separately, we obtained information on full execution runtimes (including both training and testing). The average results (over 3 different seeds for each batch) are plotted in Figure \ref{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}, which show promising GPU speedup over CPU figures for any batch size; the GPU speedup averaged over all tested batch-sizes is \textbf{9.06$\pm$0.45}.
     \begin{figure}[!htbp]
         \centering
-        \begin{tikzpicture}
+        \begin{subfigure}{.59\textwidth}
+            \begin{tikzpicture}
             \begin{axis}[
-                width=12cm,
-                height=8cm,
-                xtick=data,
-                xlabel={Batch-Size $T$},
-                ylabel={Time/s},
-                y tick label style={/pgf/number format/1000 sep=},
-                extra y tick style={grid=major, tick label style={xshift=-1cm}},
-                legend style={at={(0.02,.98)},
-                    anchor=north west},
-                nodes near coords,
+            width=\textwidth,
+            height=8cm,
+            xtick=data,
+            xlabel={Batch-Size $T$},
+            ylabel={Time/s},
+            enlarge x limits=0.15,
+            y tick label style={/pgf/number format/1000 sep=},
+            extra y tick style={grid=major, tick label style={xshift=-1cm}},
+            legend style={at={(0.02,.98)},
+                anchor=north west},
+            nodes near coords,
             ]
             \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
-                (17,173.57) +- (2.91, 2.91)
-                (61,429.96) +- (6.92, 6.92)
-                (85,540.10) +- (4.45, 4.45)
-                (129,860.55) +- (7.58, 7.58)
-                (173,901.24) +- (3.53, 3.53)
+                (17,118.23) +- (1.77, 1.77)
+                (51,345.33) +- (2.00, 2.00)
+                (85,547.59) +- (1.76, 1.76)
+                (129,871.01) +- (3.01, 3.01)
+                (173,1095.24) +- (1.71, 1.71)
             };  % cpu
             \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
-                (17,9.97) +- (0.021, 0.021)
-                (61,40.60) +- (0.111, 0.111)
-                (85,61.02) +- (0.085, 0.085)
-                (129,88.56) +- (2.525, 2.525)
-                (173,126.33) +- (0.097, 0.097)
+                (17,12.56) +- (0.022, 0.022)
+                (51,35.85) +- (0.232, 0.232)
+                (85,59.12) +- (0.131, 0.131)
+                (129,107.95) +- (12.788, 12.788)
+                (173,122.72) +- (0.169, 0.169)
             };  % gpu
             \legend{CPU ``set'',GPU ``set''}
             \end{axis}
-        \end{tikzpicture}
-        \caption[Finding Weights - Execution Times of Different Batch-Sizes $T$ with GPU and CPU ``set'' Separately]{Finding Weights - Execution Times of Different Batch-Sizes $T$ with GPU and CPU ``set'' Separately: Scaling on a GPU is more efficient (about $\frac{4.64}{0.74} \approx$ \textbf{6.22 times}) than doing so on a CPU. Also, the error bars are indiscernible because they are too small ($< 1\%$)}.
+            \end{tikzpicture}
+        \end{subfigure}
+        \begin{subfigure}{.4\textwidth}
+            \centering
+            \begin{tikzpicture}
+                \begin{axis}[
+                ybar,
+                width=\textwidth,
+                height=8cm,
+                xtick=data,
+                xlabel={Batch-Size $T$},
+                ylabel={GPU Speedup},
+                ymin=0,
+                enlarge x limits=0.15,
+                extra y tick style={grid=major, tick label style={xshift=-1cm}},
+                nodes near coords,
+                ]
+                \addplot+ coordinates {
+                    (17,9.41)
+                    (51,9.63)
+                    (85,9.26)
+                    (129,8.07)
+                    (173,8.92)
+                };
+                \legend{}
+                \end{axis}
+            \end{tikzpicture}
+        \end{subfigure}
+        \caption[Finding Weights - Execution Times of Different Batch-Sizes $T$ with GPU and CPU ``set'' Separately]{Finding Weights - Execution Times of Different Batch-Sizes $T$ with GPU and CPU ``set'' Separately: The GPU delivers faster computation than CPU even as the datasets' sizes grow - the average speedup is 9.06$\pm$0.45. Also, the error bars are indiscernible because they are too small ($< 1\%$)}.
         \label{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}
     \end{figure}
 

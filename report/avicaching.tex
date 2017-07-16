@@ -79,8 +79,8 @@
 \newcommand{\tens}[1]{\mathbf{#1}}  % tensor
 \newcommand{\mean}[1]{\overline{#1}}    % mean overline
 
-\title{[Title]}
-\author{Anmol Kabra}
+\title{Report: Solving the Avicaching Problem Faster and Better}
+\author{Anmol Kabra, Yexiang Xue \& Carla Gomes}
 \date{Summer 2017}
 
 \begin{document}
@@ -547,7 +547,7 @@
 
     \subsection{Pricing Problem's Results} \label{sec:Pricing Problem's Results}
     \subsubsection{Optimization Results} \label{sec:PriProbRes - Optimization}
-    Taking the approach mentioned in \cref{sec:Pricing Problem-Optimizing the Original Dataset}, different sets of weights gave consistent loss values (even with differently seeded rewards). The best was the set-2 of weights, using which the average loss value for the Pricing Problem hovered around 0.0079\%. Next, running differently seeded rewards with different learning rates on set-2 of weights, which performed the best, we obtained the lowest loss value of 0.0068\%.
+    Taking the approach mentioned in \cref{sec:Pricing Problem-Optimizing the Original Dataset}, different sets of weights gave consistent loss values (even with differently seeded rewards). The best was the set-2 of weights, using which the average loss value for the Pricing Problem hovered around 0.0079\%. Next, running differently seeded rewards with different learning rates on set-2 of weights, which performed the best, we obtained the \textbf{lowest loss value of 0.0068\%}.
 %    \begin{figure}[!htbp]
 %        \centering
 %        \begin{tikzpicture}
@@ -592,9 +592,9 @@
     \end{table}
     
     \subsubsection{GPU Speedup Results} \label{sec:PriProbRes - GPU}
-    After running on different batch-sizes $J = 11, 35, 55, 85, 116$, we did not observe radical speedup for the full model. Figure \ref{fig:Finding Rewards - Time Taken by the Full Model} shows the decreasing speedup trend, as the GPU ``set'' configuration started struggling to complete all epochs faster than with CPU ``set''. The GPU ``set'' config. took $\approx$ 1.42 seconds more for unit increase in batch-size $J$, whereas the CPU ``set'' config. took $\approx$ 2.44 seconds more - a speedup of just 1.72 times.
+    After running on different batch-sizes $J = 11, 35, 55, 85, 116$, we \textbf{did not observe radical speedup} for the full model. Figure \ref{fig:Finding Rewards - Time Taken by the Full Model} shows the decreasing speedup trend, as the GPU ``set'' configuration started struggling to complete all epochs faster than with CPU ``set''. GPU Speedup for the full model was a mere \textbf{1.53 $\pm$ 0.10}, with the GPU ``set'' config. giving better results as the dataset increased. 
     
-    However, after realizing that the LP problem (Equations \ref{eq:lp_math_constrain_rewards} \& \ref{eq:lp_code_constrain_rewards}) might be influencing the runtimes, we recorded execution times for both the neural network and the LP separately. As we suspected, the LP \textit{did} impact the runtime more than the neural networks did, and the GPU speedup for the Neural Network was expectedly high with growing batch-sizes - about 12.48 times (Figure \ref{fig:Finding Rewards - Time taken by the Neural Network}).
+    Since the the low GPU speedup was uncanny, we looked for operations that were causing the program to slow down on the GPU. Guessing that the LP problem (Equations \ref{eq:lp_math_constrain_rewards} \& \ref{eq:lp_code_constrain_rewards}) might be influencing the runtimes, we recorded execution times for both the neural network and the LP separately. As we suspected, the LP \textit{did} impact the runtime more than the neural networks did, while the GPU speedup for the Neural Network was expectedly high with \textit{only} with large batch-sizes (Figure \ref{fig:Finding Rewards - Time taken by the Neural Network}). The time elapsed for the Neural Network includes time taken to transfer tensors to and from the GPU, which results in overhead - as seen in higher runtime for lower batch-sizes in Figure \ref{fig:Finding Rewards - Time taken by the Neural Network}. However, as the batch-sizes grew, we see the computation dominating over the transfer time, resulting in higher CPU ``set'' runtimes; the GPU ``set'' runtimes almost grow linearly for the tested batch-sizes.
     \begin{figure}[!htbp]
         \centering
         \begin{subfigure}{\textwidth}
@@ -615,25 +615,25 @@
                     every node near coord/.append style={yshift=-0.7cm}
                 ]
                 \addplot+ [mark=*,
-                nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta}
+                nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit
                 ] coordinates {
-                    (11,14.21)
-                    (35,41.76)
-                    (55,80.07)
-                    (85,162.07)
-                    (116,310.77)
+                    (11,13.08) +- (1.04, 1.04)
+                    (35,50.51) +- (1.73, 1.73)
+                    (55,88.95) +- (0.35, 0.35)
+                    (85,185.34) +- (0.95, 0.95)
+                    (116,346.34) +- (1.67, 1.67)
                 };  % cpu
-                \addplot+ [mark=*] coordinates {
-                    (11,8.13)
-                    (35,25.90)
-                    (55,48.50)
-                    (85,100.98)
-                    (116,163.11)
+                \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
+                    (11,9.72) +- (0.08, 0.08)
+                    (35,33.97) +- (0.26, 0.26)
+                    (55,58.97) +- (0.19, 0.19)
+                    (85,119.50) +- (0.35, 0.35)
+                    (116,197.80) +- (4.02, 4.02)
                 };  % gpu
                 \legend{CPU ``set'',GPU ``set''}
                 \end{axis}
             \end{tikzpicture}
-            \caption{Time Taken by the Full Model: Unit increase in $J$ leads to 1.50 additional seconds with GPU ``set'', compared to 2.88 seconds with CPU ``set''.}
+            \caption{Time Taken by the Full Model: GPU Speedup over \textit{all} batch-sizes is only \textbf{1.53 $\pm$ 0.10}.}
             \label{fig:Finding Rewards - Time Taken by the Full Model}
         \end{subfigure}\vspace*{1em}
         \begin{subfigure}{.49\textwidth}
@@ -654,25 +654,25 @@
                     every node near coord/.append style={yshift=-0.7cm}
                 ]
                 \addplot+ [mark=*,
-                nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta}
+                nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit
                 ] coordinates {
-                    (11,12.96)
-                    (35,39.94)
-                    (55,77.48)
-                    (85,157.58)
-                    (116,300.88)
+                    (11,11.93) +- (0.94, 0.94)
+                    (35,48.76) +- (1.68, 1.68)
+                    (55,86.49) +- (0.36, 0.36)
+                    (85,180.60) +- (0.97, 0.97)
+                    (116,336.23) +- (1.46, 1.46)
                 };  % cpu
-                \addplot+ [mark=*,] coordinates {
-                    (11,6.70)
-                    (35,24.13)
-                    (55,46.44)
-                    (85,98.47)
-                    (116,160.12)
+                \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
+                    (11,7.14) +- (0.08, 0.08)
+                    (35,31.06) +- (0.26, 0.26)
+                    (55,55.81) +- (0.19, 0.19)
+                    (85,115.80) +- (0.35, 0.35)
+                    (116,193.66) +- (4.02, 4.02)
                 };  % gpu
                 \legend{CPU ``set'',GPU ``set''}
                 \end{axis}
             \end{tikzpicture}
-            \caption[Time taken by the LP]{Time taken by the LP: Unit increase in $J$ increases runtime by 1.49 seconds with GPU ``set''; 2.80 seconds with CPU ``set''}
+            \caption[Time taken by the LP]{Time taken by the LP: GPU Speedup over \textit{all} batch-sizes is only \textbf{1.62 $\pm$ 0.07}. As discussed in \cref{sec:PriProbRes - GPU} and \cref{sec:Strange GPU Speedup in LP Computation}, we shouldn't have witnessed this speedup as both configurations' LPs were computed on the CPU. Hence, we expected the speedup value to be $\approx$ 1. }
             \label{fig:Finding Rewards - Time taken by the LP}
         \end{subfigure}\hspace*{1em}
         \begin{subfigure}{.49\textwidth}
@@ -689,51 +689,60 @@
                     legend style={at={(0.02,.98)},
                         anchor=north west},
                     nodes near coords,
-                    every node near coord/.append style={yshift=-0.7cm}
+                    every node near coord/.append style={yshift=-0.65cm}
                 ]
-                \addplot+ [mark=*,
-                nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta}] coordinates {
-                    (11,1.25)
-                    (35,1.82)
-                    (55,2.58)
-                    (85,4.48) 
-                    (116,9.89)
+                \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
+                    (11,1.15) +- (0.10, 0.10)
+                    (35,1.75) +- (0.05, 0.05)
+                    (55,2.46) +- (0.01, 0.01)
+                    (85,4.74) +- (0.03, 0.03)
+                    (116,10.11) +- (0.26, 0.26)
                 };  % cpu
-                \addplot+ [mark=*,] coordinates {
-                    (11,1.43)
-                    (35,1.77) 
-                    (55,2.05)
-                    (85,2.51) 
-                    (116,2.98)
+                \addplot+ [mark=*,
+                nodes near coords=\raisebox{1.2cm}{\pgfmathprintnumber\pgfplotspointmeta}, error bars/.cd, y dir=both,y explicit] coordinates {
+                    (11,2.57) +- (0.01, 0.01)
+                    (35,2.91) +- (0.01, 0.01)
+                    (55,3.16) +- (0.01, 0.01)
+                    (85,3.70) +- (0.004, 0.004)
+                    (116,4.13) +- (0.001, 0.001)
                 };  % gpu
                 \legend{CPU ``set'',GPU ``set''}
                 \end{axis}
             \end{tikzpicture}
-            \caption[Time taken by the Neural Network]{Time taken by the Neural Network: Unit increase in $J$ increases runtime by 0.0148 seconds with GPU ``set''; 0.0846 seconds with CPU ``set''}
+            \caption{Time taken by the Neural Network: GPU Speedup over \textit{all} batch-sizes is only \textbf{1.11 $\pm$ 0.60} - mostly due to high transfer times even for low batch-sizes. However, as batch-sizes grow, computation time dominates over transfer time - GPU ``set'' performs better than CPU ``set''.}
             \label{fig:Finding Rewards - Time taken by the Neural Network}
         \end{subfigure}
         \vspace*{1em}
-        \caption[Finding Rewards - Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately]{Finding Rewards - Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately: Scaling is strongly hampered by the LP solver. With GPU ``set'', while each unit increase in $J$ results in 0.0079 additional seconds for the Neural Network, it takes 1.41 seconds more for the LP.}
+        \caption[Finding Rewards - Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately]{Finding Rewards - Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately: Scaling is strongly hampered by the LP solver. Comparing the contributions of LP and Neural Network to total runtime on GPU ``set'', \textbf{LP accounts for 90.88 $\pm$ 6.95 \% of the total time.}}
         \label{fig:Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPU ``set'' Separately}
     \end{figure}
 
-    Furthermore, although we expected SciPy's Optimize Module \cite{SCPOptimizeDocs} to run on the CPU (see \cref{sec:Pricing Problem-Testing GPU Speedup on the Random Dataset}), the LP problem ran faster when the GPU was ``set''. We did not anticipate this behavior, and we couldn't pick out a reason for the Optimize Module supposedly doing operations differently. Since our GPU ``set'' and CPU ``set'' configurations were only enforceable on user-created functions and datasets, we do not know why the LP solver delivered different speeds while solving the same problem. If it used the CPU or the GPU, it should have done so in both cases and the runtime would have been equal. While there could be differences in implementation, we cannot affirm or deny any reason behind this quirky behavior. Figure \ref{fig:Finding Rewards - Time taken by the LP} shows the unexpected speedup of $\frac{2.35}{1.41} \approx 1.66$x delivered by SciPy Optimize Module's LP solver.
+    \paragraph{Strange GPU Speedup in LP Computation}
+    Although the Speedup might seem foreseeable, it is exceptional not expected as we intentionally transferred the needed matrices/tensors to the CPU. SciPy's Optimize Module does not utilize the GPU conspicuously, and we expected similar runtimes for both configurations. However, since this result is not directly relevant to our goal (which is to focus on GPU computation), we pursue reasons in \cref{sec:Strange GPU Speedup in LP Computation} instead of digressing here.
     
     \section{Conclusion} \label{sec:Conclusion}
-    Our models for the Identification and the Pricing Problem outperformed previously studied ones and other baseline comparisons. For the Identification Problem, the average loss value was 12\% lower than the previous 2-layered model, and 35\% better than the 4-layered model, giving us better results than any other model. While we did not test deeper networks, ve that using more hidden layers will only aggravate overfitting and won't provide better results - as is the case with the 4-layered network. The Pricing Problem's model also delivered better results than other baseline comparisons for reward distribution, though the difference was not drastically large.
+    Our models for the Identification and the Pricing Problem outperformed previously studied ones \cite{Xue2016Avi2} and other baseline comparisons. For the Identification Problem, the average loss value was 14\% lower than the previous 2-layered model, and 12\% better than the 4-layered model, giving us better results than any other tested model. While we did not test deeper networks, we contend that using more hidden layers will only aggravate overfitting and won't provide better results - as is the case with the 4-layered network. The Pricing Problem's model also delivered at least 3x lower loss values than other baseline comparisons for reward distribution. Clearly, our model outperformed other models in both problems.
     
-    On the other hand, we can definitively conclude that these models ran faster on the GPU than the CPU, mainly because they were based on tensors and matrices. With an approximate speedup of 6.25 for unit increase in batch-size $T$ for the Identification Problem, we can scale to large datasets more efficiently on the GPU than the CPU. Although the Pricing Problem's model only delivered a speedup of ----- (with the LP problem heavily impacting the runtime), the 2-layered network for finding rewards gave a speedup of -----. This shows that neural network are inherently quick to optimize on a GPU. One can further use a GPU-accelerated LP solver or model the LP in the network itself (if possible) to get faster results.
+    On the other hand, we can definitively conclude that the Identification Problem ran faster on the GPU than the CPU, mainly because the model was based on tensors. The Pricing Problem's neural network only performed better with higher batch-sizes, with transfer times hampering performance on lower batch-sizes. With an approximate GPU speedup of 9.06 for the Identification Problem, we can scale to large datasets more efficiently on the GPU than the CPU. Although the Pricing Problem's model only delivered a speedup of $\approx$ 1.53 (with the LP problem heavily impacting the runtime), the 2-layered network for finding rewards gave a speedup of 1.11 $\pm$ 0.60. (mean over all tested batch-sizes). This shows that neural network are inherently quick to optimize on a GPU, if the batch-sizes are large enough. One can further use a GPU-accelerated LP solver or model the LP in the network itself (if possible) to get faster results. On the other hand, using newer generation GPUs and CPUs can undoubtedly solve the problems faster.
     
-    Figure \ref{fig:Plot for 3-layered Model} shows how the choice of Adam's algorithm \cite{Adam} for \textsc{Gradient-Descent}($\cdot$) helps the model to learn quickly. However, we also witness long periods of saturation after few epochs. This was the case for several other algorithms (SGD \cite{SGD} and Adagrad \cite{Adagrad}), but with different paces of learning. Since the organizers would want to further optimize the set of weights even, research could be done on avoiding the long, unchanging saturation phase. This may involve using other techniques for \textsc{Gradient-Descent}($\cdot$) (Algorithm \ref{alg:Algorithm for the Identification Problem}) and/or altering the loss function $Z_P(\matr{w_1}, \matr{w_2})$ (Equation \ref{eq:iden_problem}).
-    
-    One may also notice compelling arguments reflected by the results. Although these models are an \textit{upgrade} to the previous models, they deliver exciting inferences:
+    \subsection{Interesting Inferences}
+    One may also notice compelling reflections from the results. Although some models perform better than others, they bring out similar, interesting inferences:
     \begin{itemize}
         \item One interesting observation in Table \ref{tab:Loss Values Calculated from Different Sets of Rewards} is that the Loss Value from the Proportional Distribution (0.161\%) and Random Initialization (0.160\%) are very close, highlighting that the set of weights obtained from the Identification Problem are dependent on other factors ($\matr{f}, \matr{D}$) as well and not just rewards. In other words, incentivizing under-sampled locations more is as good as random distribution of rewards - as agents don't get more heavily influenced by rewards than any other factor to visit locations.\\
         Moreover, by looking at the model's generated rewards, one can infer that the model chooses to place large rewards in 
     \end{itemize}
+
+    \subsection{Further Research}
+    There exist numerous possibilities for solving the problems better and faster - from more complex models to better preprocessing. Some important suggestions are listed below:
     
+    \paragraph{Choice of Gradient-Descent Algorithm} Figure \ref{fig:Plot for 3-layered Model} shows how the choice of Adam's algorithm \cite{Adam} for \textsc{Gradient-Descent}($\cdot$) helps the model to learn quickly. However, we also witness long periods of saturation after few epochs. This was the case for several other algorithms (SGD \cite{SGD} and Adagrad \cite{Adagrad}), but with different paces of learning. Since the organizers would want to further optimize the set of weights even, research could be done on avoiding the long, unchanging saturation phase. This may involve using other techniques for \textsc{Gradient-Descent}($\cdot$) (Algorithm \ref{alg:Algorithm for the Identification Problem}) and/or altering the loss function $Z_P(\matr{w_1}, \matr{w_2})$ (Equation \ref{eq:iden_problem}).
     
-    \blindtext
+    \paragraph{Modeling LP Differently to Reduce Runtimes} LP is a simple tool for optimizing different problems, with various algorithms for solving LPs - Simplex, Criss-Cross and other Interior Point techniques. While it gives optimal results, it can be computationally expensive if the matrices are large (as depicted in Figure \ref{fig:Finding Rewards - Time taken by the LP}). One can try several approaches to reduce computation time here:
+    \begin{itemize}
+        \item Implement GPU Support for the LP. Good CUDA backend support did not exist during our study, forcing us to use SciPy's Optimize Module, which only supported NumPy matrices on the CPU.
+        \item Constrain Rewards differently (\cref{sec:Constraining Rewards}). We were unsuccessful in implementing a dual version of the LP, interspersed with the neural network. Nonetheless, constraining rewards using a neural network would drastically improve performance as the current LP accounts for $\approx$ 90 \% of the total runtime.
+    \end{itemize}
+
     \bibliographystyle{IEEEtran}
     \bibliography{IEEEabrv,avicaching}
     

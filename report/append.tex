@@ -49,4 +49,13 @@
     &&& r'_i, u_i \geq 0
     \end{aligned}
     \end{equation}
+    
+    \section{Strange GPU Speedup in LP Computation} \label{sec:Strange GPU Speedup in LP Computation}
+    Furthermore, although we expected SciPy's Optimize Module \cite{SCPOptimizeDocs} to run on the CPU (see \cref{sec:Pricing Problem-Testing GPU Speedup on the Random Dataset}), the LP problem ran faster when the GPU was ``set''. We did not anticipate this behavior, and we couldn't pick out a reason for the Optimize Module supposedly doing operations differently. Since our GPU ``set'' and CPU ``set'' configurations were only enforceable on user-created functions and datasets, we do not know why the LP solver delivered different speeds while solving the same problem. If it used the CPU or the GPU, it should have done so in both cases and the runtime would have been equal. While there could be differences in implementation, we cannot affirm or deny any reason behind this quirky behavior. Figure \ref{fig:Finding Rewards - Time taken by the LP} shows the unexpected speedup of $\frac{2.35}{1.41} \approx 1.66$x delivered by SciPy Optimize Module's LP solver.
+    
+    There could have been many reasons for this bizarre behavior, including but not limited to:
+    \begin{itemize}
+        \item SciPy's Optimize Module differentiating between configurations. This can be ruled out because the module could not have known the configuration during which it was called. That is just supernatural.
+        \item 
+    \end{itemize}
 \end{appendices}

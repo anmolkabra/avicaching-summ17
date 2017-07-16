@@ -166,18 +166,19 @@ def train(net, optimizer):
     optimizer.step()        # update rewards
     
     backprop_time = time.time() - start_backprop_time
-    start_lp_time = time.time()
+
     r_on_cpu = net.R.data.squeeze().cpu().numpy()   # transfer data for lp
-    
+
+    start_lp_time = time.time()
     # CONSTRAIN -- LP
     # 1.0 is the sum constraint of rewards
     # the first J outputs are the new rewards
     net.R.data = torchten(lp.run_lp(lp_A, lp_c, J, r_on_cpu, 1.0).x[:J]).unsqueeze(dim=0)
+    lp_time = time.time() - start_lp_time
 
     if args.cuda:
         # transfer data
         net.R.data = net.R.data.cuda()
-    lp_time = time.time() - start_lp_time
     
     # FORWARD
     forward_time = go_forward(net)

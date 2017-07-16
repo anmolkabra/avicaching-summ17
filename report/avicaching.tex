@@ -575,7 +575,7 @@
 %        \end{tikzpicture}
 %    \end{figure}
 
-    Compared to other proportional reward distribution (loss values calculated using set-2 of weights), our model optimized the rewards such that the loss value was $\approx$ \textbf{3 times} lower. We should also clarify that we compare the best loss values, as the organizer expects to find a distribution that is as optimal as possible. Table \ref{tab:Loss Values Calculated from Different Sets of Rewards} lists the best loss values obtained on each type of reward allocation (model's predicted, random and proportional - \cref{sec:Pricing Problem-Optimizing the Original Dataset}).
+    Compared to the proportional reward distribution (loss values calculated using set-2 of weights), our model optimized the rewards such that the loss value was $\approx$ \textbf{3 times} lower. We should also clarify that we compare the best loss values, as the organizer expects to find a distribution that is as optimal as possible. Table \ref{tab:Loss Values Calculated from Different Sets of Rewards} lists the best loss values obtained on each type of reward allocation (model's predicted, random and proportional - \cref{sec:Pricing Problem-Optimizing the Original Dataset}).
     \begin{table}[!htbp]
         \centering
         \caption[Loss Values Calculated from Different Sets of Rewards]{Loss Values Calculated from Different Sets of Rewards: The values are small because the loss function $Z_P(\vect{r})$ (Equation \ref{eq:pricing_problem}) is averaged over the number of locations}
@@ -592,7 +592,7 @@
     \end{table}
     
     \subsubsection{GPU Speedup Results} \label{sec:PriProbRes - GPU}
-    After running on different batch-sizes $J = 11, 55, 116$ (the Pricing Problem's model does not iterate over $T$ - Algorithm \ref{alg:Solving the Pricing Problem}), we did not observe radical speedup for the full model. Figure \ref{fig:Finding Rewards - Time Taken by the Full Model} shows the decreasing speedup trend, as the GPU ``set'' configuration started struggling to complete all epochs faster than with CPU ``set''. The GPU ``set'' config. took $\approx$ 1.42 seconds more for unit increase in batch-size $J$, whereas the CPU ``set'' config. took $\approx$ 2.44 seconds more - a speedup of just 1.72 times.
+    After running on different batch-sizes $J = 11, 35, 55, 85, 116$, we did not observe radical speedup for the full model. Figure \ref{fig:Finding Rewards - Time Taken by the Full Model} shows the decreasing speedup trend, as the GPU ``set'' configuration started struggling to complete all epochs faster than with CPU ``set''. The GPU ``set'' config. took $\approx$ 1.42 seconds more for unit increase in batch-size $J$, whereas the CPU ``set'' config. took $\approx$ 2.44 seconds more - a speedup of just 1.72 times.
     
     However, after realizing that the LP problem (Equations \ref{eq:lp_math_constrain_rewards} \& \ref{eq:lp_code_constrain_rewards}) might be influencing the runtimes, we recorded execution times for both the neural network and the LP separately. As we suspected, the LP \textit{did} impact the runtime more than the neural networks did, and the GPU speedup for the Neural Network was expectedly high with growing batch-sizes - about 12.48 times (Figure \ref{fig:Finding Rewards - Time taken by the Neural Network}).
     \begin{figure}[!htbp]

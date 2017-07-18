@@ -43,9 +43,9 @@
 \usepackage{url}
 \hypersetup{
     colorlinks=true,
-    linkcolor=red,      
-    urlcolor=blue,
-    citecolor=green!75!black
+    linkcolor=black,      
+    urlcolor=black,
+    citecolor=black
 }
 \usepackage{cleveref}
 \crefformat{section}{\S#2#1#3}
@@ -107,7 +107,7 @@
     \nomenclature[T]{CPU ``set''}{\textit{All} operations done on the CPU}
     \nomenclature[T]{GPU ``set''}{\textit{Only Matrix/Tensor} operations done on the GPU, rest on the CPU}
     \nomenclature[T]{LP}{Linear Programming}
-    \nomenclature[T]{LP Standard Format}{Arrangement of objective function and constraints operated on by library LP solvers - minimize [$\vect{c}^T \cdot \vect{x}$]; subject to [$\matr{A} \cdot \vect{x} \leq \vect{b}, \, x_i \geq 0$]}
+    \nomenclature[T]{LP Standard Format}{Arrangement of objective function and constraints operated on by library LP solvers - minimize [$\vect{c}^T \vect{x}$]; subject to [$\matr{A} \vect{x} \leq \vect{b}, \, x_i \geq 0$]}
     \nomenclature[T]{Tensor}{Multi-dimensional (usually more than 2 dimensions) array}
     \printnomenclature[1.5in]
     \cleardoublepage

@@ -61,7 +61,7 @@
 % nomenclature specs
 \makenomenclature
 \setlength{\nomitemsep}{-\parsep}
-\renewcommand{\nomname}{List of Functions, Symbols \& Terms}
+\renewcommand{\nomname}{List of Functions, Symbols and Terms}
 %% This code creates the groups
 % -----------------------------------------
 \usepackage{etoolbox}
@@ -80,7 +80,7 @@
 \newcommand{\mean}[1]{\overline{#1}}    % mean overline
 
 \title{Report: Solving the Avicaching Problem Faster and Better}
-\author{Anmol Kabra, Yexiang Xue \& Carla Gomes}
+\author{Anmol Kabra, Yexiang Xue and Carla Gomes}
 \date{Summer 2017}
 
 \begin{document}
@@ -216,7 +216,7 @@
         \caption{Neural Network Designed for the Identification Problem}
         \label{fig:Neural network designed for the Identification Problem}
     \end{figure}
-    It is important to clarify that the network in Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}, which takes in $\matr{F}[v]$ as shown, is a slice of the original network, which takes in the complete tensor $\matr{F}$ and computes the complete result $\matr{P}^{T}$  per iteration of $t$. In other words, the input and the hidden layers are 3-dimensional, and the output layer is 2-dimensional. Since it is difficult to visualize the complete network on paper, slices of the network are depicted in Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}. Algorithm \ref{alg:Algorithm for the Identification Problem} details the steps for learning the parameters $\matr{w_1}$ and $\matr{w_2}$ based on Equations \ref{eq:iden_problem} \& \ref{eq:puv_equation}.
+    It is important to clarify that the network in Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}, which takes in $\matr{F}[v]$ as shown, is a slice of the original network, which takes in the complete tensor $\matr{F}$ and computes the complete result $\matr{P}^{T}$  per iteration of $t$. In other words, the input and the hidden layers are 3-dimensional, and the output layer is 2-dimensional. Since it is difficult to visualize the complete network on paper, slices of the network are depicted in Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}. Algorithm \ref{alg:Algorithm for the Identification Problem} details the steps for learning the parameters $\matr{w_1}$ and $\matr{w_2}$ based on Equations \ref{eq:iden_problem} and \ref{eq:puv_equation}.
     
     \begin{algorithm}
         \caption{Algorithm for the Identification Problem} \label{alg:Algorithm for the Identification Problem}
@@ -326,7 +326,7 @@
     \end{mydef}
     To test both our models, we conducted several tests for optimization and GPU speedup over CPU. After initializing all parameters randomly and reading data from files, the models were run for 1000 to 10000 epochs depending on the complexity of the model and any potential benefits emerging with more epochs.
     
-    Hardware specifications and software versions used for the experiments are listed in Table \ref{tab:Hardware Specifications and Software Versions Used for Experiments}. We conducted two types of tests: optimization tests on original datasets and GPU speedup tests on randomly generated datasets. The random dataset of 116 locations ($J$) and 173 time units ($T$) was generated beforehand using NumPy (without any seed). We believe that speedup tests on original datasets would give similar results, though we used randomly generated datasets because it was easier to scale and build random datasets of different batch-sizes for testing. The models were timed for the executed operations in a neural network and the LP, including transfer times of tensors between the RAM and GPU's memory. Time taken for preprocessing was ignored. We also clarify that runtimes given in Results (\cref{sec:Results}) can differ based on other running processes and threads while doing experiments. However, one should obtain similar GPU speedup results when doing the experiments again.
+    Hardware specifications and software versions used for the experiments are listed in Table \ref{tab:Hardware Specifications and Software Versions Used for Experiments}. We conducted two types of tests: optimization tests on original datasets and GPU speedup tests on randomly generated datasets. Data was loaded as Floating Point 32 (FP32) units, but was stored with less precision (up to 10 decimal places) to reduce secondary memory usage. The random dataset of 116 locations ($J$) and 173 time units ($T$) was generated beforehand using NumPy (without any seed). We believe that speedup tests on original datasets would give similar results, though we used randomly generated datasets because it was easier to scale and build random datasets of different batch-sizes for testing. The models were timed for the executed operations in a neural network and the LP, including transfer times of tensors between the RAM and GPU's memory. Time taken for preprocessing was ignored. Although we switched off X (Graphical User Interface for Ubuntu OS) and performed tests in CLI (Command Line Interface) to reduce extraneous CPU/GPU usage, we should point out that runtimes given in Results (\cref{sec:Results}) may differ based on other running processes and threads while doing experiments. However, one should obtain similar GPU speedup results when repeating the experiments.
     \begin{table}[!htbp]
         \centering
         \caption{Hardware Specifications and Software Versions Used for Experiments}
@@ -474,7 +474,7 @@
             \caption{Plot for 4-layered Model // todo}
             \label{fig:Plot for 4-layered Model}
         \end{subfigure}
-        \caption[Train \& Test Loss Values' Plots for One of the Runs of Different Models]{Train \& Test Loss Values' Plots for One of the Runs of Different Models: Both networks learn the set of weights quickly, as displayed in the steep descent in loss values before $\approx$ 1000 epochs. This quick learning is due to the choice of \textsc{Gradient-Descent}($\cdot$) function - Adam's algorithm \cite{Adam}. Other algorithms like SGD \cite{SGD} and Adagrad \cite{Adagrad} learn relatively slowly.}
+        \caption[Train and Test Loss Values' Plots for One of the Runs of Different Models]{Train and Test Loss Values' Plots for One of the Runs of Different Models: Both networks learn the set of weights quickly, as displayed in the steep descent in loss values before $\approx$ 1000 epochs. This quick learning is due to the choice of \textsc{Gradient-Descent}($\cdot$) function - Adam's algorithm \cite{Adam}. Other algorithms like SGD \cite{SGD} and Adagrad \cite{Adagrad} learn relatively slowly.}
         \label{fig:Train & Test Loss Values' Plots of Different Models}
     \end{figure}
 
@@ -594,7 +594,7 @@
     \subsubsection{GPU Speedup Results} \label{sec:PriProbRes - GPU}
     After running on different batch-sizes $J = 11, 35, 55, 85, 116$, we \textbf{did not observe radical speedup} for the full model. Figure \ref{fig:Finding Rewards - Time Taken by the Full Model} shows the decreasing speedup trend, as the GPU ``set'' configuration started struggling to complete all epochs faster than with CPU ``set''. GPU Speedup for the full model was a mere \textbf{1.53 $\pm$ 0.10}, with the GPU ``set'' config. giving better results as the dataset increased. 
     
-    Since the the low GPU speedup was uncanny, we looked for operations that were causing the program to slow down on the GPU. Guessing that the LP problem (Equations \ref{eq:lp_math_constrain_rewards} \& \ref{eq:lp_code_constrain_rewards}) might be influencing the runtimes, we recorded execution times for both the neural network and the LP separately. As we suspected, the LP \textit{did} impact the runtime more than the neural networks did, while the GPU speedup for the Neural Network was expectedly high with \textit{only} with large batch-sizes (Figure \ref{fig:Finding Rewards - Time taken by the Neural Network}). The time elapsed for the Neural Network includes time taken to transfer tensors to and from the GPU, which results in overhead - as seen in higher runtime for lower batch-sizes in Figure \ref{fig:Finding Rewards - Time taken by the Neural Network}. However, as the batch-sizes grew, we see the computation dominating over the transfer time, resulting in higher CPU ``set'' runtimes; the GPU ``set'' runtimes almost grow linearly for the tested batch-sizes.
+    Since the the low GPU speedup was uncanny, we looked for operations that were causing the program to slow down on the GPU. Guessing that the LP problem (Equations \ref{eq:lp_math_constrain_rewards} and \ref{eq:lp_code_constrain_rewards}) might be influencing the runtimes, we recorded execution times for both the neural network and the LP separately. As we suspected, the LP \textit{did} impact the runtime more than the neural networks did, while the GPU speedup for the Neural Network was expectedly high with \textit{only} with large batch-sizes (Figure \ref{fig:Finding Rewards - Time taken by the Neural Network}). The time elapsed for the Neural Network includes time taken to transfer tensors to and from the GPU, which results in overhead - as seen in higher runtime for lower batch-sizes in Figure \ref{fig:Finding Rewards - Time taken by the Neural Network}. However, as the batch-sizes grew, we see the computation dominating over the transfer time, resulting in higher CPU ``set'' runtimes; the GPU ``set'' runtimes almost grow linearly for the tested batch-sizes.
     \begin{figure}[!htbp]
         \centering
         \begin{subfigure}{\textwidth}

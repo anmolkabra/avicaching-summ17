@@ -1,495 +1,474 @@
-9164 0.5 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+pid, cpu, mem, process
+72 39.8 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
+1015 0.0 0.0 [kworker/6:2]
 ----
-9164 0.7 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 79.0 0.7 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.7 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 99.0 0.7 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.7 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 119 0.7 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.7 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 141 0.7 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.8 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 254 0.8 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.8 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 153 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.8 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 209 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 268 0.8 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 313 0.8 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 236 0.8 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.8 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 280 0.8 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.8 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 306 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 336 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 377 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 310 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 333 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.8 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 357 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 392 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 333 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 354 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 373 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.8 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 401 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.8 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 420 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10910 0.1 0.0 [kworker/1:7]
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 367 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 384 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 406 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 425 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 379 0.8 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 394 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.8 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 410 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 427 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 440 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 399 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 411 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 427 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 444 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 406 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 415 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 424 0.9 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 427 1.0 python
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 0.9 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
+11057 430 0.0 [python]
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
 ----
-9164 1.0 python
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
-----
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
-1019 0.0 [bioset]
-----
-2106 0.2 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
-4936 0.2 /usr/lib/x86_64-linux-gnu/sssd/sssd_nss
-4935 0.1 /usr/lib/x86_64-linux-gnu/sssd/sssd_be
-838 0.1 /usr/sbin/NetworkManager
-851 0.1 /usr/lib/snapd/snapd
-10 0.0 [lru-add-drain]
-1 0.0 /sbin/init
-1015 0.0 [kworker/6:2]
-1018 0.0 [kworker/4:2]
-1019 0.0 [bioset]
+72 39.7 0.0 [kworker/0:1]
+129 33.9 0.0 [kworker/0:2]
+5619 1.1 0.0 top
+5272 0.5 0.0 top
+5498 0.5 0.0 top
+10758 0.2 0.0 bash
+10 0.0 0.0 [lru-add-drain]
+1 0.0 0.0 /sbin/init
+10074 0.0 0.0 [kworker/u16:1]
+1015 0.0 0.0 [kworker/6:2]
 ----

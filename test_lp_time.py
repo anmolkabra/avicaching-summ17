@@ -43,7 +43,7 @@ w2 = Variable(torchten(w2), requires_grad=False)
 
 ###### ONLY LP
 # lp_A, lp_c = lp.build_A(J), lp.build_c(J)
-# 
+# lp_time_log = []
 # for e in xrange(args.epochs):
 #     r_on_cpu = np.random.randn(J)
 #     start_lp_time = time.time()
@@ -52,9 +52,12 @@ w2 = Variable(torchten(w2), requires_grad=False)
 #     # 1.0 is the sum constraint of rewards
 #     # the first J outputs are the new rewards
 #     lp_res = lp.run_lp(lp_A, lp_c, J, r_on_cpu, 1.0)
-#     print(time.time() - start_lp_time)
+#     lp_time = time.time() - start_lp_time
+#     print(lp_time)
+#     lp_time_log.append([e, lp_time])
 #     # net.R.data = torchten(lp_res.x[:J]).unsqueeze(dim=0)
-# 
+# fname = "onlylp, epochs=%d, time=%.0f" % (args.epochs, time.time())
+# np.savetxt("./stats/" + fname + ".txt", lp_time_log, fmt="%.6f", delimiter=",")
 # sys.exit()
 ###########
 

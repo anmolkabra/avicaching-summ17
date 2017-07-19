@@ -1,7 +1,7 @@
 \begin{appendices}
     \section{Implementation} \label{sec:Implementation}
     The code can be found here[]. \\
-    Both the Identification and the Pricing Problem were programmed in Python 2.7 using NumPy 1.12.1, SciPy 0.19.1 and PyTorch 0.1.12 modules [web cites] \cite{SCPOptimizeDocs}\cite{NPDocs}. [Results from Python plotted in Matplotlib 2.0.2] With some code optimizations, the input dataset $\matr{F}$ was built using NumPy's \texttt{ndarray} and PyTorch's \texttt{tensor} functions. Since PyTorch offers NumPy-like code base but with dedicated neural network functions and submodules, PyTorch's \texttt{relu} and \texttt{softmax} functions were used along with other matrix operations.\\
+    Both the Identification and the Pricing Problem were programmed in Python 2.7 using NumPy 1.12.1, SciPy 0.19.1 and Pytorch 0.1.12 modules [web cites] \cite{SCPOptimizeDocs}\cite{NPDocs}. [Results from Python plotted in Matplotlib 2.0.2] With some code optimizations, the input dataset $\matr{F}$ was built using NumPy's \texttt{ndarray} and Pytorch's \texttt{tensor} functions. Since Pytorch offers NumPy-like code base but with dedicated neural network functions and submodules, Pytorch's \texttt{relu} and \texttt{softmax} functions were used along with other matrix operations.\\
     
     \subsection{Specific Implementation Details for the Pricing Problem}
     Among all the code optimizations in both models, some in that for the Pricing Problem are worth discussing, as they drastically differ from Algorithm \ref{alg:Solving the Pricing Problem} or are intricate. Most optimizations relevant to the Identification Problem are trivial and relate directly to those for the Pricing Problem. Therefore, only those in the Pricing Problem model are discussed.
@@ -51,116 +51,186 @@
     \end{equation}
     
     \section{Strange GPU Speedup in LP Computation} \label{sec:Strange GPU Speedup in LP Computation}
-    Even though we intentionally transferred the rewards vector to and constrained it using \texttt{scipy.optimize} module's \texttt{linprog} function on the CPU, we obtained an unexpected GPU speedup in the runtimes (see \cref{sec:PriProbRes - GPU} and Figure \ref{fig:Finding Rewards - Time taken by the LP}). Confounded by this weird behavior, we wanted to pinpoint the reasons because SciPy's function could not have differentiated between the configurations and delivered different results. However, since this was not our research's prime motive, we did not take a strong quantitative approach in determining the cause(s). There could have been many reasons for this bizarre behavior, including but not limited to:
+    Even though we intentionally transferred the rewards vector to and constrained it using \texttt{scipy.optimize} module's \texttt{linprog} function on the CPU, we obtained an unexpected GPU speedup in the LP runtimes (see \cref{sec:PriProbRes - GPU} and Figure \ref{fig:Finding Rewards - Time taken by the LP}). Confounded by this weird behavior, we wanted to pinpoint the reason(s) because SciPy's function could not have differentiated between the configurations and delivered different results. However, since this was not our research's prime motive, we did not take a strong quantitative approach in determining the cause(s).
+    
+    \subsection{Possible Reasons for GPU Speedup} \label{sec:Possible Reasons for GPU Speedup}
+    There could have been many reasons for this bizarre behavior, including but not limited to:
     \begin{enumerate}
-        \item SciPy's Optimize Module differentiating between configurations. This can be ruled out because the module could not have known the configuration during which it was called. This is because the configuration settings were applicable only on user-programmed operations, and needed to be explicitly stated - as mandated by PyTorch \cite{PTDocs}. SciPy's Optimize Module identifying the configurations is just supernatural.
-        \item CPU ``set'' using exploiting more main memory than GPU ``set''. We suspected that since CPU ``set'' configuration's operations were executed solely on the CPU, the residing datasets could have used more main memory than when GPU ``set'' was running. This could have hampered the performance of LP with CPU ``set''. Unlike the 1\textsuperscript{st} possibility, this would have meant that CPU ``set'' was slowing down the LP, and not that GPU ``set'' was speeding up the LP.
+        \item SciPy's Optimize Module differentiating between configurations. This can be ruled out because the module could not have known the configuration during which it was called. This is because the configuration settings were applicable only on user-programmed operations, and needed to be explicitly stated - as mandated by Pytorch \cite{PTDocs}. SciPy's Optimize Module identifying the configurations is just supernatural.
+        \item CPU ``set'' using exploiting more main memory than GPU ``set''. We suspected that since CPU ``set'' configuration's operations were executed solely on the CPU, the residing datasets could have used more main memory than when GPU ``set'' was running. This could have hampered the performance of LP with CPU ``set'', as the LP had lesser space to operate in. Unlike the 1\textsuperscript{st} possibility, this would have meant that CPU ``set'' was slowing down the LP, and not that GPU ``set'' was speeding up the LP.
+        \item Neural network in CPU ``set'' using more CPU threads than that in GPU ``set''. The Intel i7-7700K processor is quad-core with 8 threads. Since Pytorch uses OpenMP \cite{PTDocs}, a parallel processing API for CPUs, we fancied the neural network to utilize more threads than that in GPU ``set'', thus allowing less available threads for the LP to run. 
+        
+        However, given that our scripts in Python did not explicitly use parallel programming with CPU ``set'' and the code was sequential, one could very well suggest that upon completion of the neural network, all threads should have been synchronized, after which the LP would have started. This would have meant that the LP's resources would have been independent of the neural network's resources, raising questions on this possibility.
     \end{enumerate}
 
+    \subsection{adsf}
+    First we determined whether the LP runtime was being sped up with GPU ``set'' or slowed down with CPU ``set''. To test this, we created a copy of our Pricing Problem's model, which focused only on logging LP runtimes at each epoch. For a baseline comparison, we scripted the same LP \textit{without} the neural network, which gave us the \underline{original} runtimes for the LP (ran for equal number of epochs), without any involvement of Pytorch modules or functions. 
+    
+    Comparing the former runtimes (CPU and GPU ``set'') with `Only LP' runtime (independent script) in Figure [], we observed that the LP in the CPU ``set'' configuration took longer to execute than that in  `Only LP' setting during each epoch. We also noticed little to no interaction between the neural network in GPU ``set'' with the LP, as the runtimes of LP in GPU ``set'' were similar to those of LP in `Only LP' setting. This confirmed that CPU ``set'' was slowing down the LP and GPU ``set'' was not speeding it up. But why?
+    \begin{figure}[!htbp]
+        \centering
+        \begin{tikzpicture}
+        \begin{axis}[
+        domain=0:10,
+        enlargelimits=false,
+        ]
+        \addplot [very thick, red!50!black] coordinates {
+            (0.0, 0)
+            (0.2, 79.0)
+            (0.4, 99.0)
+            (0.6, 119)
+            (0.8, 141)
+            (1.0, 254)
+            (1.2, 153)
+            (1.4, 209)
+            (1.6, 268)
+            (1.8, 313)
+            (2.0, 236)
+            (2.2, 280)
+            (2.4, 306)
+            (2.6, 336)
+            (2.8, 377)
+            (3.0, 310)
+            (3.2, 333)
+            (3.4, 357)
+            (3.6, 392)
+            (3.8, 333)
+            (4.0, 354)
+            (4.2, 373)
+            (4.4, 401)
+            (4.6, 420)
+            (4.8, 367)
+            (5.0, 384)
+            (5.2, 406)
+            (5.4, 425)
+            (5.6, 379)
+            (5.8, 394)
+            (6.0, 410)
+            (6.2, 427)
+            (6.4, 440)
+            (6.6, 399)
+            (6.8, 411)
+            (7.0, 427)
+            (7.2, 444)
+            (7.4, 406)
+            (7.6, 415)
+            (7.8, 424)
+            (8.0, 427)
+            (8.2, 430)
+            (8.4, 0)
+        };
+        \end{axis}
+        \end{tikzpicture}
+    \end{figure}
+    
+    
     The 2\textsuperscript{nd} hypothesis/possibility seemed more promising than the others, and we built some programs to test its various aspects, which are elaborated in next sections.
     
     \subsection{Main Memory Usage by Both Configurations}
     As the initial approach, we logged details of main memory usage when the models were running. Contrary to our expectations (again), the GPU ``set'' was utilizing more main memory than CPU ``set'' was. Precisely, when running the Pricing Problem's model with $T = 173, J = 116$ without GUI and logging at 0.2 second intervals until the model completed, the GPU ``set'' was using 9.0 - 9.1 \% of the main memory, whereas CPU ``set'' was using only 0.9 \% memory. During the tests, only 1 CPU core was utilized for GPU ``set'', whereas 6-8 cores were being used for CPU ``set''. Clearly, main memory usage wouldn't have been the reason for the strange GPU speedup in LP runtime as LP's GPU ``set'' runtime would have been lower if the relation with main memory usage was true. However, there could be a relation between CPU usage and LP runtime.
     
-    \begin{tikzpicture}
-    \begin{axis}[
-    domain=0:10,
-    enlargelimits=false,
-    ]
-    %
-    \addplot[fill=red, opacity=.4, domain=0:10] coordinates {
-        (0.0, 0)
-        (0.2, 79.0)
-        (0.4, 99.0)
-        (0.6, 119)
-        (0.8, 141)
-        (1.0, 254)
-        (1.2, 153)
-        (1.4, 209)
-        (1.6, 268)
-        (1.8, 313)
-        (2.0, 236)
-        (2.2, 280)
-        (2.4, 306)
-        (2.6, 336)
-        (2.8, 377)
-        (3.0, 310)
-        (3.2, 333)
-        (3.4, 357)
-        (3.6, 392)
-        (3.8, 333)
-        (4.0, 354)
-        (4.2, 373)
-        (4.4, 401)
-        (4.6, 420)
-        (4.8, 367)
-        (5.0, 384)
-        (5.2, 406)
-        (5.4, 425)
-        (5.6, 379)
-        (5.8, 394)
-        (6.0, 410)
-        (6.2, 427)
-        (6.4, 440)
-        (6.6, 399)
-        (6.8, 411)
-        (7.0, 427)
-        (7.2, 444)
-        (7.4, 406)
-        (7.6, 415)
-        (7.8, 424)
-        (8.0, 427)
-        (8.2, 430)
-        (8.4, 0)
-    }\closedcycle;
-    
-    \addplot [very thick, red!50!black] coordinates {
-        (0.0, 0)
-        (0.2, 79.0)
-        (0.4, 99.0)
-        (0.6, 119)
-        (0.8, 141)
-        (1.0, 254)
-        (1.2, 153)
-        (1.4, 209)
-        (1.6, 268)
-        (1.8, 313)
-        (2.0, 236)
-        (2.2, 280)
-        (2.4, 306)
-        (2.6, 336)
-        (2.8, 377)
-        (3.0, 310)
-        (3.2, 333)
-        (3.4, 357)
-        (3.6, 392)
-        (3.8, 333)
-        (4.0, 354)
-        (4.2, 373)
-        (4.4, 401)
-        (4.6, 420)
-        (4.8, 367)
-        (5.0, 384)
-        (5.2, 406)
-        (5.4, 425)
-        (5.6, 379)
-        (5.8, 394)
-        (6.0, 410)
-        (6.2, 427)
-        (6.4, 440)
-        (6.6, 399)
-        (6.8, 411)
-        (7.0, 427)
-        (7.2, 444)
-        (7.4, 406)
-        (7.6, 415)
-        (7.8, 424)
-        (8.0, 427)
-        (8.2, 430)
-        (8.4, 0)
-    };
-    \end{axis}
-    \end{tikzpicture}
+    \begin{figure}[!htbp]
+        \centering
+        \begin{tikzpicture}
+        \begin{axis}[
+        domain=0:10,
+        enlargelimits=false,
+        ]
+        %
+        \addplot[fill=red, opacity=.4, domain=0:10] coordinates {
+            (0.0, 0)
+            (0.2, 79.0)
+            (0.4, 99.0)
+            (0.6, 119)
+            (0.8, 141)
+            (1.0, 254)
+            (1.2, 153)
+            (1.4, 209)
+            (1.6, 268)
+            (1.8, 313)
+            (2.0, 236)
+            (2.2, 280)
+            (2.4, 306)
+            (2.6, 336)
+            (2.8, 377)
+            (3.0, 310)
+            (3.2, 333)
+            (3.4, 357)
+            (3.6, 392)
+            (3.8, 333)
+            (4.0, 354)
+            (4.2, 373)
+            (4.4, 401)
+            (4.6, 420)
+            (4.8, 367)
+            (5.0, 384)
+            (5.2, 406)
+            (5.4, 425)
+            (5.6, 379)
+            (5.8, 394)
+            (6.0, 410)
+            (6.2, 427)
+            (6.4, 440)
+            (6.6, 399)
+            (6.8, 411)
+            (7.0, 427)
+            (7.2, 444)
+            (7.4, 406)
+            (7.6, 415)
+            (7.8, 424)
+            (8.0, 427)
+            (8.2, 430)
+            (8.4, 0)
+        }\closedcycle;
+        
+        \addplot [very thick, red!50!black] coordinates {
+            (0.0, 0)
+            (0.2, 79.0)
+            (0.4, 99.0)
+            (0.6, 119)
+            (0.8, 141)
+            (1.0, 254)
+            (1.2, 153)
+            (1.4, 209)
+            (1.6, 268)
+            (1.8, 313)
+            (2.0, 236)
+            (2.2, 280)
+            (2.4, 306)
+            (2.6, 336)
+            (2.8, 377)
+            (3.0, 310)
+            (3.2, 333)
+            (3.4, 357)
+            (3.6, 392)
+            (3.8, 333)
+            (4.0, 354)
+            (4.2, 373)
+            (4.4, 401)
+            (4.6, 420)
+            (4.8, 367)
+            (5.0, 384)
+            (5.2, 406)
+            (5.4, 425)
+            (5.6, 379)
+            (5.8, 394)
+            (6.0, 410)
+            (6.2, 427)
+            (6.4, 440)
+            (6.6, 399)
+            (6.8, 411)
+            (7.0, 427)
+            (7.2, 444)
+            (7.4, 406)
+            (7.6, 415)
+            (7.8, 424)
+            (8.0, 427)
+            (8.2, 430)
+            (8.4, 0)
+        };
+        \end{axis}
+        \end{tikzpicture}
+    \end{figure}
     
     \subsubsection{asdf}
 \end{appendices}

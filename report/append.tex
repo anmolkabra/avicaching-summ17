@@ -63,64 +63,35 @@
         However, given that our scripts in Python did not explicitly use parallel programming with CPU ``set'' and the code was sequential, one could very well suggest that upon completion of the neural network, all threads should have been synchronized, after which the LP would have started. This would have meant that the LP's resources would have been independent of the neural network's resources, raising questions on this possibility.
     \end{enumerate}
 
-    \subsection{adsf}
+    \subsection{LP Slowing Down or Speeding Up?} \label{sec:LP Slowing Down or Speeding Up?}
     First we determined whether the LP runtime was being sped up with GPU ``set'' or slowed down with CPU ``set''. To test this, we created a copy of our Pricing Problem's model, which focused only on logging LP runtimes at each epoch. For a baseline comparison, we scripted the same LP \textit{without} the neural network, which gave us the \underline{original} runtimes for the LP (ran for equal number of epochs), without any involvement of Pytorch modules or functions. 
     
-    Comparing the former runtimes (CPU and GPU ``set'') with `Only LP' runtime (independent script) in Figure [], we observed that the LP in the CPU ``set'' configuration took longer to execute than that in  `Only LP' setting during each epoch. We also noticed little to no interaction between the neural network in GPU ``set'' with the LP, as the runtimes of LP in GPU ``set'' were similar to those of LP in `Only LP' setting. This confirmed that CPU ``set'' was slowing down the LP and GPU ``set'' was not speeding it up. But why?
+    Comparing the former runtimes (CPU and GPU ``set'') with `Only LP' runtime (independent script) in Figure \ref{fig:LP Runtime Example for Different Configurations}, we observed that the LP in the CPU ``set'' configuration took longer to execute than that in  `Only LP' setting during each epoch. We also noticed little to no interaction between the neural network in GPU ``set'' with the LP, as the runtimes of LP in GPU ``set'' were similar to those of LP in `Only LP' setting. This confirmed that CPU ``set'' was slowing down the LP and GPU ``set'' was not speeding it up. But why?
     \begin{figure}[!htbp]
         \centering
         \begin{tikzpicture}
         \begin{axis}[
-        domain=0:10,
-        enlargelimits=false,
+            width=\textwidth,
+            height=8cm,
+            xlabel=Epochs,
+            ylabel=Time/s,
+            scaled y ticks = false,
+            grid=both,
+            every axis plot/.append style={very thick},
         ]
-        \addplot [very thick, red!50!black] coordinates {
-            (0.0, 0)
-            (0.2, 79.0)
-            (0.4, 99.0)
-            (0.6, 119)
-            (0.8, 141)
-            (1.0, 254)
-            (1.2, 153)
-            (1.4, 209)
-            (1.6, 268)
-            (1.8, 313)
-            (2.0, 236)
-            (2.2, 280)
-            (2.4, 306)
-            (2.6, 336)
-            (2.8, 377)
-            (3.0, 310)
-            (3.2, 333)
-            (3.4, 357)
-            (3.6, 392)
-            (3.8, 333)
-            (4.0, 354)
-            (4.2, 373)
-            (4.4, 401)
-            (4.6, 420)
-            (4.8, 367)
-            (5.0, 384)
-            (5.2, 406)
-            (5.4, 425)
-            (5.6, 379)
-            (5.8, 394)
-            (6.0, 410)
-            (6.2, 427)
-            (6.4, 440)
-            (6.6, 399)
-            (6.8, 411)
-            (7.0, 427)
-            (7.2, 444)
-            (7.4, 406)
-            (7.6, 415)
-            (7.8, 424)
-            (8.0, 427)
-            (8.2, 430)
-            (8.4, 0)
-        };
+        \addplot[red] table [col sep=comma,x=epoch, y=cpuset]{images/lp_time_logs.csv};% node [pos=0.01, scale=2, below=8pt, left=-6pt] {CPU ``set''};
+        \addlegendentry{CPU ``set''}
+        
+        \addplot[blue] table [col sep=comma,x=epoch, y=gpuset]{images/lp_time_logs.csv};% node [pos=0.1, scale=2, above=3pt] {GPU ``set''};
+        \addlegendentry{GPU ``set''}
+        
+        \addplot[brown] table [col sep=comma,x=epoch, y=onlylp]{images/lp_time_logs.csv};% node [pos=0.15, scale=2, above=5pt, right=5pt] {`Only LP'};
+        \addlegendentry{`Only LP'}
+        
         \end{axis}
         \end{tikzpicture}
+        \caption[LP Runtime Example for Different Configurations]{LP Runtime Example for Different Configurations: LPs in both CPU and GPU ``set'' start running slowly, but pick up speed after $\approx$ 20 epochs. We could not explain the presence of pikes in CPU ``set'' and their absence in GPU ``set''.}
+        \label{fig:LP Runtime Example for Different Configurations}
     \end{figure}
     
     

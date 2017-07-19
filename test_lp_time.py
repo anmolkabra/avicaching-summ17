@@ -43,18 +43,18 @@ w2 = Variable(torchten(w2), requires_grad=False)
 
 ###### ONLY LP
 # lp_A, lp_c = lp.build_A(J), lp.build_c(J)
-
+# 
 # for e in xrange(args.epochs):
 #     r_on_cpu = np.random.randn(J)
 #     start_lp_time = time.time()
-    
+#    
 #     # CONSTRAIN -- LP
 #     # 1.0 is the sum constraint of rewards
 #     # the first J outputs are the new rewards
 #     lp_res = lp.run_lp(lp_A, lp_c, J, r_on_cpu, 1.0)
 #     print(time.time() - start_lp_time)
 #     # net.R.data = torchten(lp_res.x[:J]).unsqueeze(dim=0)
-
+# 
 # sys.exit()
 ###########
 
@@ -136,15 +136,22 @@ optimizer = optim.Adam(net.parameters(), 0.001)
 lp_A, lp_c = lp.build_A(J), lp.build_c(J)
 
 total_lp_time = 0
+lp_time_log = []
 total_time = go_forward(net)
 print(loss.data[0])
 for e in xrange(1, args.epochs + 1):
     train_t = train(net, optimizer)
     curr_loss = loss.data[0]
-
+    lp_time_log.append([e, train_t[1]])
     total_time += train_t[0]
     total_lp_time += train_t[1]
     if e % 20 == 0:
         print("epoch=%5d, loss=%.10f" % (e, curr_loss))
 
 print(total_time, total_lp_time)
+if args.cuda:
+    file_pre = "gpu, "
+else:
+    file_pre = "cpu, "
+fname = "epochs=%d, time=%.0f" % (args.epochs, time.time())
+np.savetxt("./stats/" + file_pre + fname + ".txt", lp_time_log, fmt="%.6f", delimiter=",")

@@ -3,7 +3,7 @@
 # gpu set
 echo "pid, cpu, mem, process" >> ./stats/cpu_gpuset.txt
 wait $(jobs -p)
-python nnAvicaching_find_rewards.py --rand --epochs 200 --hide-loss-plot --weights-file "./stats/find_weights/weights/rand/gpu, randXYR_seed=1, epochs=1000, train= 80%, lr=1.000e-03, time=119.2222 sec.txt" &
+python test_lp_time.py --epochs 200 &
 while [ `pgrep python` ]
 do
     sleep .2
@@ -15,7 +15,7 @@ done
 # cpu set
 echo "pid, cpu, mem, process" >> ./stats/cpu_cpuset.txt
 wait $(jobs -p)
-python nnAvicaching_find_rewards.py --rand --epochs 200 --hide-loss-plot --weights-file "./stats/find_weights/weights/rand/gpu, randXYR_seed=1, epochs=1000, train= 80%, lr=1.000e-03, time=119.2222 sec.txt" --no-cuda &
+python test_lp_time.py --epochs 200 --no-cuda &
 while [ `pgrep python` ]
 do
     sleep .2

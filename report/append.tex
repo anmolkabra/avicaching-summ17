@@ -90,14 +90,14 @@
         
         \end{axis}
         \end{tikzpicture}
-        \caption[LP Runtime Example for Different Configurations]{LP Runtime Example for Different Configurations: LPs in both CPU and GPU ``set'' start running slowly, but pick up speed after $\approx$ 20 epochs. We could not explain the presence of pikes in CPU ``set'' and their absence in GPU ``set''. The test was done on a random dataset for 200 epochs, while the other experiment specifications were same as in \cref{sec:Experiment Specifications}.}
+        \caption[LP Runtime Example for Different Configurations]{LP Runtime Example for Different Configurations: LPs in both CPU and GPU ``set'' start running slowly, but pick up speed after $\approx$ 20 epochs. We could not explain the presence of spikes in LP runtimes of CPU ``set'' and their absence in GPU ``set''. The test was done on a random dataset for 200 epochs, while the other experiment specifications were same as in \cref{sec:Experiment Specifications}.}
         \label{fig:LP Runtime Example for Different Configurations}
     \end{figure}
     
     \subsection{CPU and Main Memory Usage} \label{sec:CPU and Main Memory Usage}
-    While logging the LP runtimes in \cref{sec:LP Slowing Down or Speeding Up?}, we also recorded an estimate of the amount of computer resources both configurations were using. Using the \texttt{top} package in Ubuntu, we polled the resource monitor every 0.1 seconds while the python script was running. Figures \ref{fig:CPU Usage by Different Configurations} and \ref{fig:Main Memory Usage by Different Configurations} shows how much main memory and CPU resource each setting was using.
+    While logging the LP runtimes in \cref{sec:LP Slowing Down or Speeding Up?}, we also recorded an estimate of the amount of computer resources both configurations were using. Using the \texttt{top} package in Ubuntu, we polled the resource monitor every 0.1 seconds while the python script was running\footnote{\label{foo:logs not epochs} Running processes were polled every 0.1 seconds - contributing to a `log'. The longer the script ran, the more logs collected.}. Figures \ref{fig:CPU Usage by Different Configurations} and \ref{fig:Main Memory Usage by Different Configurations} shows how much main memory and CPU resource each setting was using.
     
-    It is fascinating to see that CPU ``set'' constantly used more than 4 out of 8 available threads, i.e., $>400 \%$ CPU usage, during execution, while GPU ``set'' only used a single thread. Also, since we polled at every 0.1 second, and the LP took a minimum of 0.14 seconds (Figure \ref{fig:LP Runtime Example for Different Configurations}), the data displayed in Figure \ref{fig:CPU Usage by Different Configurations} must show resource use \textit{while} the LP was running. Considering that the LP in `Only LP' setting only used a single thread (100 \%), it makes sense that GPU ``set'' would use 1 thread for execution - the neural network operations were performed on the GPU, leaving the CPU empty for management and LP. On the other hand, it is apparent that CPU ``set'' had multi-threaded operations running simultaneously, even though we reasoned its low possibility (\#3 in \cref{sec:Possible Reasons for GPU Speedup}). Since we know from the `Only LP' setting that the LP only used a single thread, the other threads in CPU ``set'' must have been the neural network. Although this counters our reasoning that the neural network threads should have synchronized before the LP started, it seems that those threads were still active. While we cannot explain this behavior, this activity does not impact correctness, as found from optimization tests on CPU ``set''\footnote{CPU ``set'' tests were specifically done for optimization on original datasets to check this. However, as stated in \cref{sec:Experiment Specifications}, only GPU ``set'' tests are discussed and shown. Since we got the same results as for GPU ``set'' optimization tests \cref{sec:PriProbRes - Optimization}, the results are not shown in the report.} (same optimization figures as obtained for GPU ``set'' - \cref{sec:PriProbRes - Optimization}).
+    It is fascinating to see that CPU ``set'' constantly used more than 4 out of 8 available threads, i.e., $>400 \%$ CPU usage, during execution, while GPU ``set'' only used a single thread. Also, since we polled at every 0.1 second, and the LP took a minimum of 0.14 seconds (Figure \ref{fig:LP Runtime Example for Different Configurations}), the data displayed in Figure \ref{fig:CPU Usage by Different Configurations} must show resource use \textit{while} the LP was running. Considering that the LP in `Only LP' setting only used a single thread (100 \%), it makes sense that GPU ``set'' would use 1 thread for execution - the neural network operations were performed on the GPU, leaving the CPU empty for management and LP. On the other hand, it is apparent that CPU ``set'' had multi-threaded operations running simultaneously, even though we reasoned its low possibility (\#3 in \cref{sec:Possible Reasons for GPU Speedup}). Since we know from the `Only LP' setting that the LP only used a single thread, the other threads in CPU ``set'' must have been the neural network. Although this counters our reasoning that the neural network threads should have synchronized before the LP started, it seems that those threads were still active. While we cannot explain this behavior, this activity does not impact correctness, as found from optimization tests on CPU ``set''\footnote{CPU ``set'' tests were done for optimization on original datasets to check this. Since we got the same results as for GPU ``set'' optimization tests \cref{sec:PriProbRes - Optimization}, the results are not shown in the report.} (same optimization figures as obtained for GPU ``set'' - \cref{sec:PriProbRes - Optimization}).
     
     On the other hand, GPU ``set'' was using 10 times as much main memory as CPU ``set'' or `Only LP', even though all matrix operations were executed and stored on the GPU. Not only this is weird, but it is also opposite of what we expected to happen - CPU ``set'' using more main memory and hampering LP performance. It is ironic that the LP performs better (even as good as `Only LP') on GPU ``set'' even when the configuration uses a lot more main memory than CPU ``set''. Clearly, the main memory usage cannot be a criterion for assessing LP performance on different configurations.
     \begin{figure}[!htbp]
@@ -126,7 +126,7 @@
             enlarge x limits=0.15,
             no markers,
             ylabel={CPU Usage/\%},
-            ymax=100,
+            ymax=200,
             ymin=0,
             ]
             \addplot+[fill=blue, opacity=.4] table [col sep=comma,x=epoch, y=cpu]{datafiles/ext_cpu_gpuset.csv} \closedcycle;
@@ -140,7 +140,7 @@
             width=\textwidth,
             enlarge x limits=0.15,
             no markers,
-            xlabel={Epochs},
+            xlabel={Logs},
             ymax=200,
             ymin=0,
             ]
@@ -149,7 +149,7 @@
             \addplot+[very thick, green!50!black] table [col sep=comma,x=epoch, y=cpu]{datafiles/ext_onlylp.csv};
             \end{axis}
             \end{tikzpicture}
-            \caption[CPU Usage by Different Configurations]{CPU Usage by Different Configurations: From top - CPU ``set'', GPU ``set'', `Only LP'}
+            \caption[CPU Usage by Different Configurations]{CPU Usage by Different Configurations\textsuperscript{\ref{foo:logs not epochs}}: From top - CPU ``set'', GPU ``set'', `Only LP'. CPU Usage for GPU ``set'' and `Only LP' are very similar as operations other than the LP run on the GPU.}
             \label{fig:CPU Usage by Different Configurations}
         \end{minipage}\hfill
         \begin{minipage}{.49\textwidth}
@@ -190,7 +190,7 @@
             width=\textwidth,
             enlarge x limits=0.15,
             no markers,
-            xlabel={Epochs},
+            xlabel={Logs},
             ymax=1,
             ymin=0,
             ]
@@ -199,7 +199,7 @@
             \addplot+[very thick, green!50!black] table [col sep=comma,x=epoch, y=mem]{datafiles/ext_onlylp.csv};
             \end{axis}
             \end{tikzpicture}
-            \caption[Main Memory Usage by Different Configurations]{Main Memory Usage by Different Configurations: From top - CPU ``set'', GPU ``set'', `Only LP'}
+            \caption[Main Memory Usage by Different Configurations]{Main Memory Usage by Different Configurations\textsuperscript{\ref{foo:logs not epochs}}: From top - CPU ``set'', GPU ``set'', `Only LP'. The neural network doesn't occupy much main memory in CPU ``set'' - could be due to Python/Pytorch's garbage collection.}
             \label{fig:Main Memory Usage by Different Configurations}
         \end{minipage}
     \end{figure}

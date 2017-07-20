@@ -283,9 +283,9 @@ if __name__ == "__main__":
     epoch_data = np.arange(0, args.epochs + 1)
     fname = file_pre_gpu + file_pre + log_name
 
-    save_plot("./stats/find_rewards/plots/" + fname + ".png", epoch_data, 
+    save_plot("./stats/find_rewards/plots/1_" + fname + ".png", epoch_data, 
         train_loss, "epoch", "loss", log_name)
-    save_log("./stats/find_rewards/logs/" + fname + ".txt", (total_time, best_loss),
+    save_log("./stats/find_rewards/logs/1_" + fname + ".txt", (total_time, best_loss),
         weights_file_name, best_rew)
 
     print("---> " + fname + " DONE")

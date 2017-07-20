@@ -15,8 +15,10 @@
 % tikz
 \usepackage{tikz}
 \usepackage{pgfplots}
-\usepackage{pgfplotstable}
+%\usepackage{pgfplotstable}
 \pgfplotsset{compat=1.13}
+\usetikzlibrary{external}
+\tikzexternalize[prefix=external-figures/]
 
 % fig
 \usepackage{natbib}
@@ -142,7 +144,7 @@
     // todo
     
     \section{Problem Formulation} \label{sec:Problem Formulation}
-    Since NVIDIA General Purpose GPUs enable faster computation on tensors, accelerated through CUDA and cuDNN (CUDA Deep Neural Network library) \cite{NVIDIA}, both the Identification and the Pricing Problem (see \cref{sec:Identification Problem} and \cref{sec:Pricing Problem}) were formulated as tensor-based 3-layered and 2-layered neural networks respectively using the PyTorch library \cite{PTDocs}.
+    Since NVIDIA General Purpose GPUs enable faster computation on tensors, accelerated through CUDA and cuDNN (CUDA Deep Neural Network library) \cite{NVIDIA}, both the Identification and the Pricing Problem (see \cref{sec:Identification Problem} and \cref{sec:Pricing Problem}) were formulated as tensor-based 3-layered and 2-layered neural networks respectively using the Pytorch library \cite{PTDocs}.
     
     \subsection{Identification Problem} \label{sec:Identification Problem}
     As discussed in \cref{sec:Introduction}, the model should learn parameters that caused the change in agents' behavior when a certain set of rewards was applied to locations in the experiment region. Learning those parameters will help us understand how agents behave with a fixed reward distribution, and will enable organizers to redistribute rewards based on that behavior.
@@ -179,7 +181,7 @@
     \end{figure}
     Since preprocessing the dataset impacts the efficiency of the network, the input dataset, comprising of distance between locations $\matr{D}$, environmental features $\vect{f}$ and given rewards $\vect{r_t}$ (all normalized), is built in a specific manner. Because GPUs are efficient in operating on matrices and tensors, the input dataset is built into a tensor (Figure \ref{fig:A Tensor representing the complete Input Dataset}) such that operations can be performed on batches of slices $\tens{F}[v]$.
     
-    Another advantage of building the dataset as a tensor comes with the PyTorch library, which provides convenient handling and transfer of tensors residing on CPUs and GPUs \cite{PTDocs}. Algorithm \ref{alg:Constructing the Input Dataset} describes the steps to construct this dataset.
+    Another advantage of building the dataset as a tensor comes with the Pytorch library, which provides convenient handling and transfer of tensors residing on CPUs and GPUs \cite{PTDocs}. Algorithm \ref{alg:Constructing the Input Dataset} describes the steps to construct this dataset.
     \begin{algorithm}
         \caption{Constructing the Input Dataset} \label{alg:Constructing the Input Dataset}
         \begin{algorithmic}[1]
@@ -354,16 +356,16 @@
             cuDNN & 5.1.10\\
             MKL & 2017.0.3\\
             Python & 2.7.13 (Anaconda)\\
-            PyTorch & 0.1.12\textunderscore2\\
+            Pytorch & 0.1.12\textunderscore2\\
             NumPy & 1.12.1\\
             SciPy & 0.19.0\\
             \hline
         \end{tabular}
     \end{table}
     
-    Note that by GPU ``set'' we mean \textit{distributing} operations in the scripts between CPU and GPU, while by CPU ``set'' we mean that the operations were executed \textit{only} on the CPU. Since GPUs are inferior than CPUs at handling most operations other than simple arithmetic matrix ones (see \cref{sec:Computation Using GPUs}), we used - and recommend using - both the CPU and the GPU in the former case (GPU ``set'') to handle operations each is superior at. However, since the models in \cref{sec:Identification Problem} and \cref{sec:Pricing Problem} (not the full scripts) are primarily arithmetic operations on matrices and tensors, it is clear that they were executed on the GPU when it was ``set'' and on the CPU when the CPU was ``set''. Other than this optimization, we did not specifically design any parallelized algorithm for either configurations, relying on the PyTorch Library's and NumPy-SciPy's inbuilt implementation.
+    Note that by GPU ``set'' we mean \textit{distributing} operations in the scripts between CPU and GPU, while by CPU ``set'' we mean that the operations were executed \textit{only} on the CPU. Since GPUs are inferior than CPUs at handling most operations other than simple arithmetic matrix ones (see \cref{sec:Computation Using GPUs}), we used - and recommend using - both the CPU and the GPU in the former case (GPU ``set'') to handle operations each is superior at. However, since the models in \cref{sec:Identification Problem} and \cref{sec:Pricing Problem} (not the full scripts) are primarily arithmetic operations on matrices and tensors, it is clear that they were executed on the GPU when it was ``set'' and on the CPU when the CPU was ``set''. Other than this optimization, we did not specifically design any parallelized algorithm for either configurations, relying on the Pytorch Library's and NumPy-SciPy's inbuilt implementation.
     
-    On the algorithm side, we used Adam's algorithm for \textsc{Gradient-Descent}($\cdot$), after testing performances of several algorithms including but not limited to Stochastic Gradient Descent (SGD) \cite{SGD}, Adam's Algorithm \cite{Adam} and Adagrad \cite{Adagrad} (PyTorch lets you choose the corresponding function). Since Adam's algorithm was found to work best with both models over all test runs, all experiments were done using Adam's algorithm. Hence, all results were also obtained using Adam's algorithm.
+    On the algorithm side, we used Adam's algorithm for \textsc{Gradient-Descent}($\cdot$), after testing performances of several algorithms including but not limited to Stochastic Gradient Descent (SGD) \cite{SGD}, Adam's Algorithm \cite{Adam} and Adagrad \cite{Adagrad} (Pytorch lets you choose the corresponding function). Since Adam's algorithm was found to work best with both models over all test runs, all experiments were done using Adam's algorithm. Hence, all results were also obtained using Adam's algorithm.
     
     \subsection{Running the Identification Problem's Model} \label{sec:Running the Identification Problem's Model}
     \subsubsection{Optimizing the Original Dataset} \label{sec:Identification Problem-Optimizing the Original Dataset}
@@ -386,7 +388,7 @@
     \subsubsection{Testing GPU Speedup on the Random Dataset} \label{sec:Pricing Problem-Testing GPU Speedup on the Random Dataset}
     Using the same random dataset as used before (data doesn't matter as long as it is random), we ran the Pricing Problem's model with different batch-sizes $J = 11, 35, 55, 85, 116$ ($T = 173$) and different seeds with both GPU and CPU ``set''.
     
-    Since PyTorch does not provide a GPU-accelerated Simplex LP solver, we relied on SciPy's Optimize Module to solve our LP sub-problem (see \cref{sec:Constraining Rewards}). Since SciPy's implementation does not utilize the GPU, we expected the LP problem to be executed on the CPU and thus deliver equal runtimes in both GPU and CPU ``set'' configurations.
+    Since Pytorch does not provide a GPU-accelerated Simplex LP solver, we relied on SciPy's Optimize Module to solve our LP sub-problem (see \cref{sec:Constraining Rewards}). Since SciPy's implementation does not utilize the GPU, we expected the LP problem to be executed on the CPU and thus deliver equal runtimes in both GPU and CPU ``set'' configurations.
     
     \section{Results} \label{sec:Results}
     \subsection{Identification Problem's Results} \label{sec:Identification Problem's Results}

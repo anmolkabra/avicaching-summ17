@@ -246,3 +246,16 @@ def make_rand_DIST_file(file_name, J):
     data = np.random.rand(J, J) * 100
     data[np.diag_indices(J)] = 0.0
     np.savetxt(file_name, data, fmt="%.6f", delimiter=" ")
+
+def combine_lp_time_log(outfile, cpu_set, gpu_set, onlylp):
+    """
+    combines lp runtime logs for tex-tikz input
+    """
+    with open(cpu_set, "r") as c, open(gpu_set, "r") as g, open(onlylp) as o,\
+        open(outfile, "w") as out:
+        out.write("epoch,cpuset,gpuset,onlylp\n")
+        e = 1
+        for cline, gline, oline in zip(c, g, o):
+            out.write("%d,%.6f,%.6f,%.6f\n" % \
+                (e, float(cline.split(",")[1]), float(gline.split(",")[1]), float(oline.split(",")[1])))
+            e += 1

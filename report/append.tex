@@ -79,13 +79,13 @@
             grid=both,
             every axis plot/.append style={very thick},
         ]
-        \addplot[red] table [col sep=comma,x=epoch, y=cpuset]{images/lp_time_logs.csv};% node [pos=0.01, scale=2, below=8pt, left=-6pt] {CPU ``set''};
+        \addplot[red] table [col sep=comma,x=epoch, y=cpuset]{datafiles/lp_time_logs.csv};
         \addlegendentry{CPU ``set''}
         
-        \addplot[blue] table [col sep=comma,x=epoch, y=gpuset]{images/lp_time_logs.csv};% node [pos=0.1, scale=2, above=3pt] {GPU ``set''};
+        \addplot[blue] table [col sep=comma,x=epoch, y=gpuset]{datafiles/lp_time_logs.csv};
         \addlegendentry{GPU ``set''}
         
-        \addplot[brown] table [col sep=comma,x=epoch, y=onlylp]{images/lp_time_logs.csv};% node [pos=0.15, scale=2, above=5pt, right=5pt] {`Only LP'};
+        \addplot[brown] table [col sep=comma,x=epoch, y=onlylp]{datafiles/lp_time_logs.csv};
         \addlegendentry{`Only LP'}
         
         \end{axis}
@@ -94,112 +94,118 @@
         \label{fig:LP Runtime Example for Different Configurations}
     \end{figure}
     
-    \subsection{Main Memory and CPU Usage by Both Configurations}
-    Next, we recorded an estimate of the amount of computer resources both configurations were using.
-    As the initial approach, we logged details of main memory usage when the models were running. Contrary to our expectations (again), the GPU ``set'' was utilizing more main memory than CPU ``set'' was. Precisely, when running the Pricing Problem's model with $T = 173, J = 116$ without GUI and logging at 0.2 second intervals until the model completed, the GPU ``set'' was using 9.0 - 9.1 \% of the main memory, whereas CPU ``set'' was using only 0.9 \% memory. During the tests, only 1 CPU core was utilized for GPU ``set'', whereas 6-8 cores were being used for CPU ``set''. Clearly, main memory usage wouldn't have been the reason for the strange GPU speedup in LP runtime as LP's GPU ``set'' runtime would have been lower if the relation with main memory usage was true. However, there could be a relation between CPU usage and LP runtime.
+    \subsection{CPU and Main Memory Usage} \label{sec:CPU and Main Memory Usage}
+    While logging the LP runtimes in \cref{sec:LP Slowing Down or Speeding Up?}, we also recorded an estimate of the amount of computer resources both configurations were using. Using the \texttt{top} package in Ubuntu, we polled the resource monitor every 0.1 seconds while the python script was running. Figures \ref{fig:CPU Usage by Different Configurations} and \ref{fig:Main Memory Usage by Different Configurations} shows how much main memory and CPU resource each setting was using.
     
+    It is fascinating to see that CPU ``set'' constantly used more than 4 out of 8 available threads, i.e., $>400 \%$ CPU usage, during execution, while GPU ``set'' only used a single thread. Also, since we polled at every 0.1 second, and the LP took a minimum of 0.14 seconds (Figure \ref{fig:LP Runtime Example for Different Configurations}), the data displayed in Figure \ref{fig:CPU Usage by Different Configurations} must show resource use \textit{while} the LP was running. Considering that the LP in `Only LP' setting only used a single thread (100 \%), it makes sense that GPU ``set'' would use 1 thread for execution - the neural network operations were performed on the GPU, leaving the CPU empty for management and LP. On the other hand, it is apparent that CPU ``set'' had multi-threaded operations running simultaneously, even though we reasoned its low possibility (\#3 in \cref{sec:Possible Reasons for GPU Speedup}). Since we know from the `Only LP' setting that the LP only used a single thread, the other threads in CPU ``set'' must have been the neural network. Although this counters our reasoning that the neural network threads should have synchronized before the LP started, it seems that those threads were still active. While we cannot explain this behavior, this activity does not impact correctness, as found from optimization tests on CPU ``set''\footnote{CPU ``set'' tests were specifically done for optimization on original datasets to check this. However, as stated in \cref{sec:Experiment Specifications}, only GPU ``set'' tests are discussed and shown. Since we got the same results as for GPU ``set'' optimization tests \cref{sec:PriProbRes - Optimization}, the results are not shown in the report.} (same optimization figures as obtained for GPU ``set'' - \cref{sec:PriProbRes - Optimization}).
+    
+    On the other hand, GPU ``set'' was using 10 times as much main memory as CPU ``set'' or `Only LP', even though all matrix operations were executed and stored on the GPU. Not only this is weird, but it is also opposite of what we expected to happen - CPU ``set'' using more main memory and hampering LP performance. It is ironic that the LP performs better (even as good as `Only LP') on GPU ``set'' even when the configuration uses a lot more main memory than CPU ``set''. Clearly, the main memory usage cannot be a criterion for assessing LP performance on different configurations.
     \begin{figure}[!htbp]
         \centering
-        \begin{tikzpicture}
-        \begin{axis}[
-        domain=0:10,
-        enlargelimits=false,
-        ]
-        %
-        \addplot[fill=red, opacity=.4, domain=0:10] coordinates {
-            (0.0, 0)
-            (0.2, 79.0)
-            (0.4, 99.0)
-            (0.6, 119)
-            (0.8, 141)
-            (1.0, 254)
-            (1.2, 153)
-            (1.4, 209)
-            (1.6, 268)
-            (1.8, 313)
-            (2.0, 236)
-            (2.2, 280)
-            (2.4, 306)
-            (2.6, 336)
-            (2.8, 377)
-            (3.0, 310)
-            (3.2, 333)
-            (3.4, 357)
-            (3.6, 392)
-            (3.8, 333)
-            (4.0, 354)
-            (4.2, 373)
-            (4.4, 401)
-            (4.6, 420)
-            (4.8, 367)
-            (5.0, 384)
-            (5.2, 406)
-            (5.4, 425)
-            (5.6, 379)
-            (5.8, 394)
-            (6.0, 410)
-            (6.2, 427)
-            (6.4, 440)
-            (6.6, 399)
-            (6.8, 411)
-            (7.0, 427)
-            (7.2, 444)
-            (7.4, 406)
-            (7.6, 415)
-            (7.8, 424)
-            (8.0, 427)
-            (8.2, 430)
-            (8.4, 0)
-        }\closedcycle;
-        
-        \addplot [very thick, red!50!black] coordinates {
-            (0.0, 0)
-            (0.2, 79.0)
-            (0.4, 99.0)
-            (0.6, 119)
-            (0.8, 141)
-            (1.0, 254)
-            (1.2, 153)
-            (1.4, 209)
-            (1.6, 268)
-            (1.8, 313)
-            (2.0, 236)
-            (2.2, 280)
-            (2.4, 306)
-            (2.6, 336)
-            (2.8, 377)
-            (3.0, 310)
-            (3.2, 333)
-            (3.4, 357)
-            (3.6, 392)
-            (3.8, 333)
-            (4.0, 354)
-            (4.2, 373)
-            (4.4, 401)
-            (4.6, 420)
-            (4.8, 367)
-            (5.0, 384)
-            (5.2, 406)
-            (5.4, 425)
-            (5.6, 379)
-            (5.8, 394)
-            (6.0, 410)
-            (6.2, 427)
-            (6.4, 440)
-            (6.6, 399)
-            (6.8, 411)
-            (7.0, 427)
-            (7.2, 444)
-            (7.4, 406)
-            (7.6, 415)
-            (7.8, 424)
-            (8.0, 427)
-            (8.2, 430)
-            (8.4, 0)
-        };
-        \end{axis}
-        \end{tikzpicture}
+        \begin{minipage}{.49\textwidth}
+            \centering
+            \begin{tikzpicture}
+            \begin{axis}[
+            name=cpuusage-cpuset,
+            width=\textwidth,
+            enlarge x limits=0.15,
+            no markers,
+            ymax=800,
+            ymin=0,
+            ]
+            \addplot+[fill=red, opacity=.4] table [col sep=comma,x=epoch, y=cpu]{datafiles/ext_cpu_cpuset.csv} \closedcycle;
+            
+            \addplot+[very thick, red!50!black] table [col sep=comma,x=epoch, y=cpu]{datafiles/ext_cpu_cpuset.csv};
+            
+            \end{axis}
+            
+            \begin{axis}[
+            name=cpuusage-gpuset,
+            at=(cpuusage-cpuset.below south west), anchor=above north west,
+            width=\textwidth,
+            enlarge x limits=0.15,
+            no markers,
+            ylabel={CPU Usage/\%},
+            ymax=100,
+            ymin=0,
+            ]
+            \addplot+[fill=blue, opacity=.4] table [col sep=comma,x=epoch, y=cpu]{datafiles/ext_cpu_gpuset.csv} \closedcycle;
+            
+            \addplot+[very thick, blue!50!black] table [col sep=comma,x=epoch, y=cpu]{datafiles/ext_cpu_gpuset.csv};
+            \end{axis}
+            
+            \begin{axis}[
+            name=cpuusage-onlylp,
+            at=(cpuusage-gpuset.below south west), anchor=above north west,
+            width=\textwidth,
+            enlarge x limits=0.15,
+            no markers,
+            xlabel={Epochs},
+            ymax=200,
+            ymin=0,
+            ]
+            \addplot+[fill=green, opacity=.4] table [col sep=comma,x=epoch, y=cpu]{datafiles/ext_onlylp.csv} \closedcycle;
+            
+            \addplot+[very thick, green!50!black] table [col sep=comma,x=epoch, y=cpu]{datafiles/ext_onlylp.csv};
+            \end{axis}
+            \end{tikzpicture}
+            \caption[CPU Usage by Different Configurations]{CPU Usage by Different Configurations: From top - CPU ``set'', GPU ``set'', `Only LP'}
+            \label{fig:CPU Usage by Different Configurations}
+        \end{minipage}\hfill
+        \begin{minipage}{.49\textwidth}
+            \centering
+            \begin{tikzpicture}
+            \begin{axis}[
+            name=memusage-cpuset,
+            width=\textwidth,
+            enlarge x limits=0.15,
+            no markers,
+            ymax=1,
+            ymin=0,
+            ]
+            \addplot+[fill=red, opacity=.4] table [col sep=comma,x=epoch, y=mem]{datafiles/ext_cpu_cpuset.csv} \closedcycle;
+            
+            \addplot+[very thick, red!50!black] table [col sep=comma,x=epoch, y=mem]{datafiles/ext_cpu_cpuset.csv};
+            
+            \end{axis}
+            
+            \begin{axis}[
+            name=memusage-gpuset,
+            at=(memusage-cpuset.below south west), anchor=above north west,
+            width=\textwidth,
+            enlarge x limits=0.15,
+            no markers,
+            ylabel={Main Memory Usage/\%},
+            ymax=10,
+            ymin=0,
+            ]
+            \addplot+[fill=blue, opacity=.4] table [col sep=comma,x=epoch, y=mem]{datafiles/ext_cpu_gpuset.csv} \closedcycle;
+            
+            \addplot+[very thick, blue!50!black] table [col sep=comma,x=epoch, y=mem]{datafiles/ext_cpu_gpuset.csv};
+            \end{axis}
+            
+            \begin{axis}[
+            name=memusage-onlylp,
+            at=(memusage-gpuset.below south west), anchor=above north west,
+            width=\textwidth,
+            enlarge x limits=0.15,
+            no markers,
+            xlabel={Epochs},
+            ymax=1,
+            ymin=0,
+            ]
+            \addplot+[fill=green, opacity=.4] table [col sep=comma,x=epoch, y=mem]{datafiles/ext_onlylp.csv} \closedcycle;
+            
+            \addplot+[very thick, green!50!black] table [col sep=comma,x=epoch, y=mem]{datafiles/ext_onlylp.csv};
+            \end{axis}
+            \end{tikzpicture}
+            \caption[Main Memory Usage by Different Configurations]{Main Memory Usage by Different Configurations: From top - CPU ``set'', GPU ``set'', `Only LP'}
+            \label{fig:Main Memory Usage by Different Configurations}
+        \end{minipage}
     \end{figure}
+
+    \subsubsection{Inexplicable Behavior} \label{sec:Inexplicable Behavior}
+    The machine's resource logs while model execution defy our expectations starkly. Elaborated in \cref{sec:CPU and Main Memory Usage}, it is clear that Main Memory Usage does not explain the strange GPU Speedup in LP runtimes for CPU and GPU ``set''; instead, main memory logs show the opposite picture - with GPU ``set'' using $\approx$ 10 times as much main memory as CPU ``set'' or `Only LP'. On the other hand, CPU Usage logs do correspond with our LP runtime observations, but the former phenomenon is inexplicable, at least from our side. We believe that the neural network should stop executing and the threads should synchronize, before the LP starts. The LP on CPU ``set'' should then use just 1 thread, as with `Only LP' setting, forming high spikes in the CPU usage graph (top, Figure \ref{fig:CPU Usage by Different Configurations}). At odds with what we expect, the CPU Usage graph shows constant use of 4-5 threads with tiny spikes, which are natural, indicating that the neural network's threads were running \textit{along with} the LP. While this would have targeted the model's correctness on CPU ``set'' config., the results we obtained are same as those with GPU ``set''.
     
-    \subsubsection{asdf}
+    
 \end{appendices}

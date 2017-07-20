@@ -5,7 +5,6 @@
 \pgfplotsset{compat=1.13}
 
 \begin{document}
-    \pgfplotstabletypeset[precision=4, col sep=comma]{test_losses_seed_5_diff_lr.csv}
     \begin{tikzpicture}
         \begin{axis}[
             width=16cm,
@@ -28,16 +27,16 @@
         \addlegendimage{empty legend}
         \addlegendentry{\hspace{-.6cm}\textbf{Learning Rates}}
 
-        \addplot[red] table [col sep=comma,x=e, y=a]{test_losses_seed_5_diff_lr.csv} node [pos=0.01, scale=2, below=8pt, left=-6pt] {$10^{-2}$};
+        \addplot[red] table [col sep=comma,x=e, y=a]{../datafiles/test_losses_seed_5_diff_lr.csv} node [pos=0.01, scale=2, below=8pt, left=-6pt] {$10^{-2}$};
         \addlegendentry{$10^{-2}$}
 
-        \addplot[blue] table [col sep=comma,x=e, y=b]{test_losses_seed_5_diff_lr.csv} node [pos=0.1, scale=2, above=3pt] {$10^{-3}$};
+        \addplot[blue] table [col sep=comma,x=e, y=b]{../datafiles/test_losses_seed_5_diff_lr.csv} node [pos=0.1, scale=2, above=3pt] {$10^{-3}$};
         \addlegendentry{$10^{-3}$}
 
-        \addplot[brown] table [col sep=comma,x=e, y=c]{test_losses_seed_5_diff_lr.csv} node [pos=0.15, scale=2, above=5pt, right=5pt] {$10^{-4}$};
+        \addplot[brown] table [col sep=comma,x=e, y=c]{../datafiles/test_losses_seed_5_diff_lr.csv} node [pos=0.15, scale=2, above=5pt, right=5pt] {$10^{-4}$};
         \addlegendentry{$10^{-4}$}
 
-        \addplot[green] table [col sep=comma,x=e, y=d]{test_losses_seed_5_diff_lr.csv} node [pos=0.5, scale=2, above=5pt] {$10^{-5}$};
+        \addplot[green] table [col sep=comma,x=e, y=d]{../datafiles/test_losses_seed_5_diff_lr.csv} node [pos=0.5, scale=2, above=5pt] {$10^{-5}$};
         \addlegendentry{$10^{-5}$}
 
         \end{axis}

@@ -18,7 +18,7 @@ wait $(jobs -p)
 python test_lp_time.py --epochs 200 &
 while [ `pgrep python` ]
 do
-    sleep .2
+    sleep .1
     ps aux | awk '{print $2, $3, $4, $11}' | sort -k2rn | head -n 3 >> ./stats/cpu_gpuset.txt && echo "----" >> ./stats/cpu_gpuset.txt
     nvidia-smi >> ./stats/gpu_gpuset.txt
     echo "gpuset"
@@ -30,7 +30,7 @@ wait $(jobs -p)
 python test_lp_time.py --epochs 200 --no-cuda &
 while [ `pgrep python` ]
 do
-    sleep .2
+    sleep .1
     ps aux | awk '{print $2, $3, $4, $11}' | sort -k2rn | head -n 3 >> ./stats/cpu_cpuset.txt && echo "----" >> ./stats/cpu_cpuset.txt
     echo "cpuset"
 done

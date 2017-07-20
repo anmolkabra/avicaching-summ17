@@ -259,3 +259,16 @@ def combine_lp_time_log(outfile, cpu_set, gpu_set, onlylp):
             out.write("%d,%.6f,%.6f,%.6f\n" % \
                 (e, float(cline.split(",")[1]), float(gline.split(",")[1]), float(oline.split(",")[1])))
             e += 1
+
+def extract_python_processes(outfile, infile):
+    with open(infile, "r") as i, open(outfile, "w") as o:
+        e = 1
+        o.write("epoch,cpu,mem\n")
+        for line in i:
+            if "python" in line:
+                # pid, mem, cpu, name -- order of stored info
+                el = line.split(" ")
+                # print(elements[1], elements[2], elements[3])
+                o.write("%d,%.1f,%.1f\n" % \
+                    (e, float(el[1]), float(el[2])))
+                e += 1

@@ -86,9 +86,9 @@ def split_along_dim(M, num, dim):
     """
     return np.split(M, [num], axis=dim)
 
-def read_weights_file(file_name, locs, numFeatures):
+def read_weights_file(file_name, locs_in_file, locs, numFeatures):
     data = np.loadtxt(file_name)
-    w1, w2 = split_along_dim(data, len(data) - 116, dim=0)  # w2 is the last 116 rows
+    w1, w2 = split_along_dim(data, len(data) - locs_in_file, dim=0)  # w2 is the last locs_in_file rows
     w1, w2 = w1[:locs * numFeatures], w2[:locs] # take out only locs slices
     w1 = w1.reshape((locs, numFeatures, numFeatures))
     return (w1, w2)

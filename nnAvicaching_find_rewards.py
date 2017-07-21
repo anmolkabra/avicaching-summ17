@@ -65,9 +65,9 @@ torchten = torch.FloatTensor
 lp_A, lp_c = [], []
 loss = 0
 
-randXYR_file = "./data/random/randXYR" + str(116) + ".txt"
-randF_file = "./data/random/randF" + str(116) + ".csv"
-randDIST_file = "./data/random/randDIST" + str(116) + ".txt"
+randXYR_file = "./data/random/randXYR" + str(232) + ".txt"
+randF_file = "./data/random/randF" + str(232) + ".csv"
+randDIST_file = "./data/random/randDIST" + str(232) + ".txt"
 
 # =============================================================================
 # data input

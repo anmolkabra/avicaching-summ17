@@ -64,10 +64,10 @@ X, w1_for_r, w2, F_DIST_w1, numFeatures = [], [], [], [], 0
 torchten = torch.FloatTensor
 lp_A, lp_c = [], []
 loss = 0
-
-randXYR_file = "./data/random/randXYR" + str(232) + ".txt"
-randF_file = "./data/random/randF" + str(232) + ".csv"
-randDIST_file = "./data/random/randDIST" + str(232) + ".txt"
+locs_in_file = 232
+randXYR_file = "./data/random/randXYR" + str(locs_in_file) + ".txt"
+randF_file = "./data/random/randF" + str(locs_in_file) + ".csv"
+randDIST_file = "./data/random/randDIST" + str(locs_in_file) + ".txt"
 
 # =============================================================================
 # data input
@@ -98,7 +98,7 @@ def read_set_data():
     numFeatures += 1                # for rewards later
 
     # read W and X
-    w1, w2 = ad.read_weights_file(weights_file_name, J, numFeatures)
+    w1, w2 = ad.read_weights_file(weights_file_name, locs_in_file, J, numFeatures)
     w2 = np.expand_dims(w2, axis=2)
 
     if args.rand:

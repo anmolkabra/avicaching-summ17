@@ -83,6 +83,13 @@ def read_set_data():
     """
     global trainX, trainY, trainR, testX, testY, testR, F_DIST, numFeatures
     global u_train, u_test
+    # shapes of datasets -- [] means expanded form:
+    # - X, Y: T x J
+    # - R: T x J [x 15]
+    # - net.w1: J x numF x numF
+    # - net.w2: J x numF x 1
+    # - F_DIST: J x J x numF
+
     # read f and dist datasets from file, operate on them
     if args.rand:
         F = ad.read_F_file(randF_file, J)

@@ -1,10 +1,10 @@
 \documentclass[12pt]{article}
 
 \usepackage{blindtext} % Package to generate dummy text throughout this template 
+\usepackage{amssymb, amsthm, amsmath}
 
 % writing
 \usepackage[utf8]{inputenc}
-\usepackage{amssymb, amsthm}
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
 \linespread{1.5}
@@ -45,16 +45,15 @@
 \usepackage{url}
 \hypersetup{
     colorlinks=true,
-    linkcolor=black,      
+    linkcolor=black,
     urlcolor=black,
     citecolor=black
 }
-\usepackage{cleveref}
-\crefformat{section}{\S#2#1#3}
-\crefformat{subsection}{\S#2#1#3}
-\crefformat{subsubsection}{\S#2#1#3}
-
-\usepackage{amsmath}    % conflicts with cleveref
+\usepackage[capitalise]{cleveref}
+\crefname{appsec}{Appendix}{Appendices}
+%\Crefformat{section}{\S#2#1#3}
+%\Crefformat{subsection}{\S#2#1#3}
+%\Crefformat{subsubsection}{\S#2#1#3}
 
 \setlength{\parindent}{2em}
 %\setlength{\parskip}{1.5em}
@@ -121,46 +120,47 @@
     \pagenumbering{arabic}
     % main body
     \section{Introduction} \label{sec:Introduction}
-    Optimizing predictive models on datasets obtained from citizen-science projects can be computationally expensive as these datasets grow in size with time. Consequently, models based on multi-layered neural networks, Integer Programming and other optimization routines can prove increasingly difficult as the number of parameters increase, despite using the faster Central Processing Units (CPUs) in the market. Incidentally, it becomes difficult for citizen-science projects to scale if the organizers use CPUs to run optimization models. However, Graphical Processing Units (GPUs), which offer multiple cores to parallelize computation, can outperform CPUs in computing such predictive models if these models heavily rely on large-scale matrix multiplications. By using GPUs over CPUs to accelerate computation on a citizen-science project, the model could achieve better optimization in less time, enabling the project to scale.
+    Optimizing predictive models on datasets obtained from citizen-science projects can be computationally expensive as these datasets grow in size. Consequently, running models based on Multi-layered Neural Networks, Integer Programming and other optimization routines can become more computationally difficult as the number of parameters increase, despite using the faster Central Processing Units (CPUs) in the market. Incidentally, it becomes difficult for citizen-science projects to scale if the organizers use CPUs to run neural networks, which require extensive tensor operations. However, Graphical Processing Units (GPUs), which offer numerous cores to parallelize computation, can outperform CPUs in computing such predictive models if these models \textit{heavily} rely on large-scale tensor operations []. By using GPUs over CPUs to accelerate computation on a citizen-science project, the model could achieve better optimization in less time, enabling the project to scale.
     
     \subsection{Avicaching}
-    Part of the eBird project, which aims to ``maximize the utility and accessibility of the vast numbers of bird observations made each year by recreational and professional bird watchers'' [cite website], Avicaching is a incentive-driven game trying to homogenize the spatial distribution of citizens' (agents') observations \cite{Xue2016Avi1}. Since the dataset of agents' observations in eBird is geographically heterogeneous (concentrated in some places like cities and sparse in others), Avicaching homogenizes the observation set by placing rewards and attracting agents at under-sampled locations \cite{Xue2016Avi1}. For the agents, collecting rewards increases their 'utility' (excitement or fun), while for the organizers, a more homogeneous observation dataset means better sampling and validates the models' applicability. 
+    Part of the eBird project, which aims to ``maximize the utility and accessibility of the vast numbers of bird observations made each year by recreational and professional bird watchers'' [cite website], Avicaching is a incentive-driven game trying to homogenize the spatial distribution of citizens' (agents') observations \cite{Xue2016Avi1}. Since the dataset of agents' observations in eBird is geographically heterogeneous (concentrated in some places like cities and sparse in others), Avicaching homogenizes the observation set by placing rewards at and attracting agents to under-sampled locations \cite{Xue2016Avi1}. For the agents, collecting rewards increases their `utility' (excitement, fun etc.), while for the organizers, a more homogeneous observation dataset means better sampling and higher confidence in using it to deploy other models. 
     
-    To accomplish this task of specifying rewards at different locations based on the historical records of observations, Avicaching would learn how agents change their behavior when a certain sample of rewards were applied to the set of locations, and then distribute a newer set of rewards across the locations based on those learned parameters \cite{Xue2016Avi2}. This requirement naturally translates into a predictive optimization problem, which is implemented using multi-layered neural networks and linear programming.
+    To accomplish this task of specifying rewards at different locations based on the historical records of observations, Avicaching would learn how agents change their behavior when a certain sample of rewards were applied to the set of locations, and then redistribute rewards across the locations based on those learned parameters \cite{Xue2016Avi2}. This requirement naturally translates into a predictive optimization problem, implemented using multi-layered neural networks and linear programming.
     
     \subsection{Important Questions}
-    Although the previously devised solutions to Avicaching were conceptually effective \cite{Xue2016Avi1}\cite{Xue2016Avi2}, using CPUs to solve Mixed Integer Programming and shallow neural networks made the solutions impractical to scale. Solving the problems faster would have also allowed organizers to find better results (more optimized). These concerns, which form the pivot for our research, are concisely described in next sections.
+    Although the previously devised solutions to Avicaching were conceptually effective \cite{Xue2016Avi1, Xue2016Avi2}, using CPUs to solve Mixed Integer Programming and (even) shallow neural networks made the models impractical to scale. Solving the problems faster would have also allowed organizers to find better results (more optimized). These concerns, which form the pivot for our research, are concisely described below.
     
     \subsubsection{Solving Faster} \label{sec:Important Questions - Solving Faster}
-    We were interested in using GPUs, with their growing capability to accelerate problems based on large matrix and tensor operations, to run our optimization models. Newer generation NVIDIA GPUs equipped with thousands of CUDA (NVIDIA's parallel computing API) cores \cite{NVIDIA} could have empowered Avicaching's organizers to scale the game, if the game was computed using simple arithmetic operations on tensors, rather than using conditional logic (why? - reasoned in \cref{sec:Computation Using GPUs}). Since even the faster CPUs - in the range of Intel Core i7 chipsets - are sequential in processing and do not provide as comparable parallel processing as GPUs do, we believed to solve the problem much faster using GPUs. \textbf{But how much faster?}
+    We were interested in using GPUs to run our optimization models because of their capability to accelerate problems based on large tensor operations. Newer generation NVIDIA GPUs, equipped with thousands of CUDA (NVIDIA's parallel computing API) cores \cite{NVIDIA}, could have empowered Avicaching's organizers to scale the game, if the game was computed using simple arithmetic operations on tensors, rather than using conditional logic (see \Cref{sec:Computation Using GPUs}). Since even the faster CPUs - in the range of Intel Core i7 chipsets - are sequential in processing and do not provide as comparable parallel processing\footnote{CPUs often have multiple cores nowadays, but very few compared to what many GPUs have. We use Intel i7-7700K (4 cores) CPU and NVIDIA Quadro P4000 (1792 CUDA cores) for our tests.} as GPUs do, we seek to solve the problem much faster using GPUs. \textbf{But how much faster?}
     
     \subsubsection{Better Results} \label{sec:Important Questions - Better Results}
-    The previous model, for learning the parameters in agents' change of behavior on a fixed set of rewards, delivered predictions that differed 26\% from Ground Truth \cite[// todo]{Xue2016Avi2}. This model was then used to distribute a new set of rewards in a budget. If we could get closer to the Ground Truth, i.e., better learn the parameters for the change, we could distribute a new set of rewards based on superior prediction. Since the organizers need the \textit{best} distribution of rewards (our motive in this research too), we would need a set of learned parameters that is closer to the Ground Truth (in terms of Normalized Mean Squared Error \cite[// todo]{Xue2016Avi2}). In a gist, we aimed to \textbf{learn the parameters more suitably}, and find the \textbf{best allocation of rewards?}
+    The previous model, for learning the parameters in agents' change of behavior on a fixed set of rewards, delivered predictions that differed 26 \% from Ground Truth \cite[Table 1]{Xue2016Avi2}. This model was then used to redistribute rewards in a budget. If we could get closer to the Ground Truth, i.e., better learn the parameters for the change, we could redistribute rewards with superior prediction/accuracy. Since the organizers need the \textit{best} distribution of rewards, we will need a set of learned parameters that is closer to the Ground Truth (in terms of Normalized Mean Squared Error \cite[Section 4.2]{Xue2016Avi2}). In a gist, we aim to \textbf{learn the parameters more suitably}, and find the \textbf{best allocation of rewards?}
     
     \subsubsection{Adjusting the Model's Features} \label{sec:Important Questions - Adjusting the Model's Features}
-    Once our model starts delivering better results than the previously devised models, one thinks if some characteristics of the model (hyper-parameters such as learning rate) can be changed to get more preferable results (though one could also build a better model too). While a goal of ``getting better results'' may seem like an unending strife, there is a trade-off with practicality as these adjustments take time and computation power to test - and we didn't have unlimited resources. Therefore, we asked if one could \textbf{reasonably adjust hyper-parameters to improve performance and optimization.} By ``reasonable adjustments'' we mean changes that improve performance by more than [// todo]5 times using comparable resources.
+    Once our model starts delivering better results than the previously devised models, one thinks if some characteristics of the model (hyper-parameters such as learning rate) can be changed to get more preferable results (one could also build a better model). While a goal of ``getting better results'' is an unending struggle, there is a trade-off with practicality as these adjustments take time and computation power to test - and we didn't have unlimited resources. Therefore, we asked if one could \textbf{reasonably adjust hyper-parameters to improve performance and optimization.}
     
     \subsection{Computation Using GPUs} \label{sec:Computation Using GPUs}
     // todo
     
     \section{Problem Formulation} \label{sec:Problem Formulation}
-    Since NVIDIA General Purpose GPUs enable faster computation on tensors, accelerated through CUDA and cuDNN (CUDA Deep Neural Network library) \cite{NVIDIA}, both the Identification and the Pricing Problem (see \cref{sec:Identification Problem} and \cref{sec:Pricing Problem}) were formulated as tensor-based 3-layered and 2-layered neural networks respectively using the Pytorch library \cite{PTDocs}.
+    Our models strongly draws from the previous studies \cite{Xue2016Avi1, Xue2016Avi2}, with modifications directed at reducing computation time, as well as getting better results. Since GPUs enable faster computation on tensors, both the Identification and the Pricing Problem are formulated as tensor-based 3-layered and 2-layered neural networks respectively using the Pytorch library \cite{PTDocs}. Recognizing that NVIDIA GPUs easily pair with Pytorch \cite{PTDocs}, accelerating tensor operations using CUDA and cuDNN \cite{cuDNNPaper, NVIDIA}, we aim to maximize parallel operations and minimize thread synchronization.
     
     \subsection{Identification Problem} \label{sec:Identification Problem}
-    As discussed in \cref{sec:Introduction}, the model should learn parameters that caused the change in agents' behavior when a certain set of rewards was applied to locations in the experiment region. Learning those parameters will help us understand how agents behave with a fixed reward distribution, and will enable organizers to redistribute rewards based on that behavior.
+    As discussed in \Cref{sec:Introduction}, the model should learn parameters that caused the change in agents' behavior when a certain set of rewards was applied to locations in the experiment region. Learning those parameters will help us understand how agents behave with a fixed reward distribution, and will enable organizers to redistribute rewards based on that behavior.
     
-    Specifically, given datasets $\vect{y_t}$ and $\vect{x_t}$ of agents' visit densities, with and without the rewards $\vect{r_t}$, we want to find weights $\matr{w_1}$ and $\matr{w_2}$ that caused the change from $\vect{x_t}$ to $\vect{y_t}$, factoring in possible influence from environmental factors $\matr{f}$ and distances between locations $\matr{D}$. Although the original model proposed to learn a single set of weights $\matr{w}$ \cite{Xue2016Avi2}, our proposed model considers two sets of weights $\matr{w_1}$ and $\matr{w_2}$ as it may theoretically result into higher accuracy and lower loss. Mathematically, the model can be formulated as:
-    \begin{equation} \label{eq:iden_problem}
+    Specifically, given datasets $\vect{y_t}$ and $\vect{x_t}$ of agents' visit densities at time $t$, before and after the rewards $\vect{r_t}$ were placed, we want to find weights $\matr{w_1}$ and $\matr{w_2}$ that caused the change from $\vect{x_t}$ to $\vect{y_t}$, considering possible influence from environmental factors $\matr{f}$ and distances between locations $\matr{D}$. Although the original model proposed to learn a single set of weights $\matr{w}$ \cite{Xue2016Avi2}, our proposed model considers two sets of weights $\matr{w_1}$ and $\matr{w_2}$ as it may theoretically result into higher accuracy and lower loss value. Mathematically, the model can be formulated as:
+    \begin{equation} \label{eqn:iden_problem}
         \begin{aligned}
             & \underset{\matr{w_1}, \matr{w_2}}{\text{minimize}}
             & & Z_I(\matr{w_1}, \matr{w_2}) = \sum_{t} (\omega_t(\vect{y_t} - \matr{P}(\matr{f}, \vect{r_t}; \matr{w_1}, \matr{w_2})\vect{x_t}))^{2}
         \end{aligned}
     \end{equation}
-    where $\omega_t$ is a set of weights (not a learnable parameter) at time $t$ capturing penalties relative to the priority of homogenizing different locations at time $t$. In other words, it highlights if the organizer wishes higher homogeneity at one time over another. Elements $p_{u, v}$ of $\matr{P}$ are given as:
-    \begin{equation} \label{eq:puv_equation}
-    p_{u, v} = \frac{\exp(\matr{w_2} \cdot \text{reLU} (\matr{w_1} \cdot [d_{u, v}, \vect{f_{u}}, r_{u}]))}{\sum_{u'} \exp(\matr{w_2} \cdot \text{reLU} (\matr{w_1} \cdot [d_{u', v}, \vect{f_{u'}}, r_{u'}]))} = \frac{\exp(\Gamma_{u, v})}{\sum_{u'}\exp(\Gamma_{u', v})} = \text{softmax}(\Gamma_{u, v})
+    where $\omega_t$ is a set of weights (not a learnable parameter) at time $t$ capturing penalties relative to the priority of homogenizing different locations at time $t$. In other words, it highlights if the organizer wishes higher homogeneity at one time unit over another. Elements $p_{u, v}$ of $\matr{P}$ are given as ($\vect{\Theta_i}$ substituted for $\vect{w_i}_v^T$):
+    \begin{equation} \label{eqn:puv_equation}
+    p_{u, v} = \frac{\exp(\vect{\Theta_2} \cdot \text{reLU} (\matr{\Theta_1} \cdot [d_{u, v}, \vect{f_{u}}, r_{u}]))}{\sum_{u'} \exp(\vect{\Theta_2} \cdot \text{reLU} (\matr{\Theta_1} \cdot [d_{u', v}, \vect{f_{u'}}, r_{u'}]))} = \frac{\exp(\Gamma_{u, v})}{\sum_{u'}\exp(\Gamma_{u', v})} = \text{softmax}(\Gamma_{u, v})
     \end{equation}
-    To optimize the loss value $Z_I(\matr{w_1}, \matr{w_2})$, the neural network learns the set of weights through multiple epochs of backpropagating the loss using gradient descent. Furthermore, the program processes the dataset before feeding to the network to avoid unnecessary sub-epoch iterations and to promote batch operations on tensors. 
+    
+    To optimize the loss value $Z_I(\matr{w_1}, \matr{w_2})$, the neural network learns the set of weights through multiple epochs of backpropagating the loss using gradient descent. Furthermore, the program preprocesses the dataset to avoid unnecessary sub-epoch iterations and to promote batch operations on tensors.
     
     \subsubsection{Structure of Input Dataset for Identifying Weights} \label{sec:Structure of Input Dataset for Identifying Weights}
     \begin{figure}[!htbp]
@@ -179,9 +179,9 @@
         \caption{Visual representation of the Input Dataset}
         \label{fig:Visual representation of the Input Dataset}
     \end{figure}
-    Since preprocessing the dataset impacts the efficiency of the network, the input dataset, comprising of distance between locations $\matr{D}$, environmental features $\vect{f}$ and given rewards $\vect{r_t}$ (all normalized), is built in a specific manner. Because GPUs are efficient in operating on matrices and tensors, the input dataset is built into a tensor (Figure \ref{fig:A Tensor representing the complete Input Dataset}) such that operations can be performed on batches of slices $\tens{F}[v]$.
+    Since preprocessing the dataset reduces data operations during model execution, the input dataset, comprising of distance between locations $\matr{D}$, environmental features $\vect{f}$ and given rewards $\vect{r_t}$ (all normalized), is built into a tensor (\Cref{fig:A Tensor representing the complete Input Dataset}) such that operations can be performed on batches of slices $\tens{F}[v]$.
     
-    Another advantage of building the dataset as a tensor comes with the Pytorch library, which provides convenient handling and transfer of tensors residing on CPUs and GPUs \cite{PTDocs}. Algorithm \ref{alg:Constructing the Input Dataset} describes the steps to construct this dataset.
+    Another advantage of building the dataset as a tensor comes with the Pytorch library, which provides convenient handling and transfer of tensors residing on the Main Memory and GPUs' internal global memory \cite{PTDocs}. \Cref{alg:Constructing the Input Dataset} describes the steps to construct this dataset.
     \begin{algorithm}
         \caption{Constructing the Input Dataset} \label{alg:Constructing the Input Dataset}
         \begin{algorithmic}[1]
@@ -191,7 +191,7 @@
             \State $\vect{r_t} \gets \Call{Normalize}{\vect{r_t}, axis = 0}$\Comment{$\vect{r_t}[u]$ is the reward at location $u$}
             \For{$v = 1, 2, \dots, J$}
                 \For{$u = 1, 2, \dots, J$}
-                    \State $\tens{F}[v][u] \gets [\matr{D}[v][u], \vect{f}[u], \vect{r_t}[u]]$ \Comment{As depicted in Figure \ref{fig:Zoomed-in contents of Fvu}}
+                    \State $\tens{F}[v][u] \gets [\matr{D}[v][u], \vect{f}[u], \vect{r_t}[u]]$ \Comment{As depicted in \Cref{fig:Zoomed-in contents of Fvu}}
                  \EndFor
             \EndFor
             \State \Return $\matr{F}$
@@ -200,14 +200,14 @@
     \end{algorithm}
 
     \subsubsection{Minimizing Loss for the Identification Problem} \label{sec:Minimizing Loss for the Identification Problem}
-    As shown in Figure \ref{fig:Neural network designed for the Identification Problem}, the neural network is made of 3 fully connected layers - the input layer, the hidden layer with rectified Linear Units (reLU), and the output layer generating the results using the softmax$(\cdot)$ function. The network can also be visualized as a collection of 1-dimensional layers (Figure \ref{fig:Side view of the network}), with the softmax$(\cdot)$ calculated on the collection's output.
+    As shown in \Cref{fig:Neural network designed for the Identification Problem}, the neural network is made of 3 fully connected layers - the input layer, the hidden layer with rectified Linear Units (reLU), and the output layer with softmax$(\cdot)$ function units. The network can also be visualized as a stack of 1-dimensional layers (\Cref{fig:Side view of the network}), with the softmax$(\cdot)$ calculated on the stack's output.
     \begin{figure}[!htbp]
         \centering
         \begin{subfigure}{\textwidth}
             \centering
             \includegraphics[width=\textwidth]{weights_net}
             \caption{3-dimensional View of the Network Slice, Taking in $\matr{F}[v]$}
-            \label{fig:3-dimensional view of the network slice, taking in Fv}
+            \label{fig:3-dimensional view of the network slice taking in Fv}
         \end{subfigure}
         \begin{subfigure}{.75\textwidth}
             \centering
@@ -218,7 +218,8 @@
         \caption{Neural Network Designed for the Identification Problem}
         \label{fig:Neural network designed for the Identification Problem}
     \end{figure}
-    It is important to clarify that the network in Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}, which takes in $\matr{F}[v]$ as shown, is a slice of the original network, which takes in the complete tensor $\matr{F}$ and computes the complete result $\matr{P}^{T}$  per iteration of $t$. In other words, the input and the hidden layers are 3-dimensional, and the output layer is 2-dimensional. Since it is difficult to visualize the complete network on paper, slices of the network are depicted in Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}. Algorithm \ref{alg:Algorithm for the Identification Problem} details the steps for learning the parameters $\matr{w_1}$ and $\matr{w_2}$ based on Equations \ref{eq:iden_problem} and \ref{eq:puv_equation}.
+
+    It is important to clarify that the network in \Cref{fig:3-dimensional view of the network slice taking in Fv}, which takes in $\matr{F}[v]$ as shown, is a slice of the original network, which takes in the complete tensor $\matr{F}$ and computes the complete result $\matr{P}^{T}$  per iteration of $t$. In other words, the input and the hidden layers are 3-dimensional, and the output layer is 2-dimensional. Since it is difficult to visualize the complete network on paper, slices of the network are depicted in \Cref{fig:3-dimensional view of the network slice taking in Fv}. \Cref{alg:Algorithm for the Identification Problem} details the steps for learning the parameters $\matr{w_1}$ and $\matr{w_2}$ based on \Cref{eqn:iden_problem,eqn:puv_equation}.
     
     \begin{algorithm}
         \caption{Algorithm for the Identification Problem} \label{alg:Algorithm for the Identification Problem}
@@ -228,7 +229,7 @@
             \For{$e = 1, 2, \dots, \text{Epochs}$}
                 \State $loss \gets 0$
                 \For{$t = 1, 2, \dots, T$}
-                    \State $\matr{F} \gets \Call{Build-Dataset}{\matr{D}, \matr{f}, \matr{r}[t]}$\Comment{Defined in Algorithm \ref{alg:Constructing the Input Dataset}}
+                    \State $\matr{F} \gets \Call{Build-Dataset}{\matr{D}, \matr{f}, \matr{r}[t]}$\Comment{Defined in Algorithm \Cref{alg:Constructing the Input Dataset}}
                     \State $\matr{H} \gets  \text{reLU}(\Call{Batch-Multiply}{\matr{F}, \matr{w_1}})$
                     \State $\matr{O} \gets \text{softmax}(\Call{Batch-Multiply}{\matr{H}, \matr{w_2}})$
                     \State $\matr{P} \gets \matr{O}^T$
@@ -243,7 +244,7 @@
     
     \subsection{Pricing Problem} \label{sec:Pricing Problem}
     After learning the set of weights $\matr{w_1}$ and $\matr{w_2}$ highlighting the change in agents' behavior to collect observations, the Pricing Problem aims to redistribute rewards to the all locations such that the predicted behavior of agents influenced by the new set of rewards is homogeneous. Thus, given a budget of rewards $\mathcal{R}$, this optimization problem can be expressed as:
-    \begin{equation} \label{eq:pricing_problem}
+    \begin{equation} \label{eqn:pricing_problem}
         \begin{aligned}
             & \underset{\vect{r}}{\text{minimize}}
             & & Z_P(\vect{r}) = \frac{1}{n}\lVert \vect{y} - \mean{\vect{y}} \rVert\\
@@ -253,28 +254,28 @@
             &&& r_i \geq 0
         \end{aligned}
     \end{equation}
-    where elements of $\matr{P}$ are defined as in Equation \ref{eq:puv_equation}.
+    where elements of $\matr{P}$ are defined as in \Cref{eqn:puv_equation}.
     
-    To allocate the rewards $\vect{r}$ optimally, the calculations for the pricing problem are akin to that for the Identification Problem (see \cref{sec:Identification Problem}). However, since only 1 set of rewards need to be optimized, we use an altered 2-layer network instead of the 3-layered network used to identify the weights. Calculation for $\matr{P}$ is modeled as a 2-layered network that minimizes the loss function $Z_P(\vect{r})$ using gradient descent. While Equation \ref{eq:pricing_problem} looks like a typical Linear Programming (LP) problem, only a part of the formulation uses LP to constrain the rewards.  Although this use of a 2-layered neural network may seem equivalent to that of the Identification Problem, there are major changes in the structure of the network used here. These alterations for the Pricing Problem and differences from the Identification Problem are discussed further in the following sections. Specific Implementation details, with code optimizations and more data preprocessing, are described in \cref{sec:Implementation}.
+    To allocate the rewards $\vect{r}$ optimally, the calculations for the pricing problem are akin to that for the Identification Problem (see \Cref{sec:Identification Problem}). However, since only 1 set of rewards need to be optimized, we use an altered 2-layer (input and output layers) network instead of the 3-layered network used for the Identification Problem. While \Cref{eqn:pricing_problem} looks like a typical Linear Programming problem, only a part of the formulation uses LP to constrain the rewards. We calculate $\matr{P}$ using a 2-layered network that minimizes the loss function $Z_P(\vect{r})$ using gradient descent, and constrain the rewards using linear programming. Fundamental processes are described below, whereas specific implementation details, with code optimizations and more data preprocessing, are described in \Cref{app:Implementation}.
     
     \subsubsection{Input Dataset for Finding Rewards}
-    Since it is the set of rewards $\vect{r}$ that need to be optimized, they must serve as the ``weights'' of the network (note that ``weights'' here refer to the weighted edges of this network and not to the set of calculated weights $\matr{w_1}$ and $\matr{w_2}$). Therefore, the rewards $\vect{r}$ are no longer fed into the network but are its characteristic. Instead, the calculated weights $\matr{w_1}$ are fed into the network, and are ``weighted'' by the rewards.
+    Since it is the set of rewards $\vect{r}$ that need to be optimized, they must serve as the ``weights'' of the network (``weights'' here refer to the weighted edges of this network and not to the set of calculated weights $\matr{w_1}$ and $\matr{w_2}$). Therefore, the rewards $\vect{r}$ are no longer fed into the network but are its characteristic. Instead, the calculated weights $\matr{w_1}$ are fed into the network, and are ``weighted'' by the rewards.
     
-    The observation density datasets, $\matr{x}$ and $\matr{y}$, are also aggregated for all agents such that they give information in terms of locations $u$ only. This is also why rewards $\vect{r}$ does not depend on $t$ - we want a generalized set of rewards for all time $t$ per location $u$. Therefore, the algorithm for constructing $\matr{F}$ (see \cref{sec:Structure of Input Dataset for Identifying Weights}) is same as Algorithm \ref{alg:Constructing the Input Dataset} but with a change - $\vect{r_t}$ replaced by $\vect{r}$.
+    The observation density datasets, $\matr{x}$ and $\matr{y}$, are also aggregated for all agents such that they give information in terms of locations $u$ only. This is also why rewards vector $\vect{r}$ does not depend on $t$ - we want a generalized set of rewards for all time $t$ per location $u$. Therefore, the algorithm for constructing $\matr{F}$ (see \Cref{sec:Structure of Input Dataset for Identifying Weights}) is same as \Cref{alg:Constructing the Input Dataset} but with a change - $\vect{r_t}$ replaced by $\vect{r}$.
     
     \subsubsection{Calculating Rewards} \label{sec:Calculating Rewards}
-    Algorithm \ref{alg:Solving the Pricing Problem} for finding $\matr{P}$ is very similar to Phase 1 of Algorithm \ref{alg:Algorithm for the Identification Problem} but without any epochs of $t$, as $\vect{x}, \vect{y}, \vect{r}$ are vectors rather than matrices. Also, since the model would predict $\vect{y}$, it does not need labels $\vect{y}$ as a dataset. Although Algorithm \ref{alg:Solving the Pricing Problem} might look arcane in the logic flow, it is straightforward - as displayed in Figure \ref{fig:Logic Flow of Algorithm Pricing Problem}. The algorithm only arranges the commands in a particular way to optimize implementation and execution.
+    \Cref{alg:Solving the Pricing Problem} for finding $\matr{P}$ is very similar to \Cref{alg:Algorithm for the Identification Problem}'s first few steps but without any epochs of $t$. Also, since the model would predict $\vect{y}$, it does not need labels $\vect{y}$ as a dataset. Although \Cref{alg:Solving the Pricing Problem}'s logic flow may seem arcane, it is straight-forward - as displayed in \Cref{fig:Logic Flow of Algorithm Pricing Problem}.
     \begin{figure}[!htbp]
         \centering
         \includegraphics[width=\textwidth]{logic_alg_pricing}
-        \caption{Logic Flow of Algorithm \ref{alg:Solving the Pricing Problem}}
+        \caption{Logic Flow of \Cref{alg:Solving the Pricing Problem}}
         \label{fig:Logic Flow of Algorithm Pricing Problem}
     \end{figure}
     \begin{algorithm}
         \caption{Solving the Pricing Problem} \label{alg:Solving the Pricing Problem}
         \begin{algorithmic}[1]
             \Function{Forward}{$\matr{D}, \matr{f}, \vect{r}, \matr{w_1}, \matr{w_2}, \vect{x}$}
-                \State $\matr{F} \gets \Call{Build-Dataset}{\matr{D}, \matr{f}, \vect{r}}$\Comment{Defined in Algorithm \ref{alg:Constructing the Input Dataset}}
+                \State $\matr{F} \gets \Call{Build-Dataset}{\matr{D}, \matr{f}, \vect{r}}$\Comment{Defined in  \Cref{alg:Constructing the Input Dataset}}
                 \State $\matr{O}_1 \gets \text{reLU}(\Call{Batch-Multiply}{\matr{F}, \matr{w_1}})$
                 \State $\matr{O}_2 \gets \text{softmax}(\Call{Batch-Multiply}{\matr{O}_1, \matr{w_2}})$
                 \State $\matr{P} \gets \matr{O}_2^T$
@@ -290,17 +291,17 @@
                 
             \State $\Call{Gradient-Descent}{loss, \vect{r}}$
             \State $\vect{r} \gets \Call{Update-Using-Gradients}{\vect{r}}$
-            \State $\vect{r} \gets \Call{LP}{\vect{r}, \mathcal{R}}$\Comment{LP($\cdot$) explained in \cref{sec:Constraining Rewards}}
+            \State $\vect{r} \gets \Call{LP}{\vect{r}, \mathcal{R}}$\Comment{LP($\cdot$) explained in \Cref{sec:Constraining Rewards}}
             \State $loss \gets \Call{Forward}{\matr{D}, \matr{f}, \vect{r}, \matr{w_1}, \matr{w_2}, \vect{x}}$
-            \State $\Call{Log-Best-Rewards}{loss, \vect{r}}$\Comment{Records $\vect{r}$ with the lowest $loss$ yet}
+            \State $\Call{Log-Best-Rewards}{loss, \vect{r}}$\Comment{Record $\vect{r}$ with the lowest $loss$ yet}
             \EndFor
         \end{algorithmic}
     \end{algorithm}
 
     \subsubsection{Constraining Rewards} \label{sec:Constraining Rewards}
-    After updating the rewards, the program constrains them using LP($\cdot$) such that $\sum_{i}r_i \leq \mathcal{R}$ and $r_i \geq 0$. To do so, the LP($\cdot$) finds another set of rewards $\vect{r'}$ such that the absolute difference between new and old rewards ($\sum_{i}|r'_i - r_i|$) is minimum. The mathematical formulation is given in Equation \ref{eq:lp_math_constrain_rewards}, which was implemented (see \cref{sec:Implementation}) using SciPy's Optimize Module \cite{SCPOptimizeDocs}. Since the module supports a standard format for doing linear programming, Equation \ref{eq:lp_code_constrain_rewards} (after rearranging constraints and building $\matr{A}, \vect{b}$ and $\vect{c}$) is used, which is mathematically equivalent to Equation \ref{eq:lp_math_constrain_rewards}.
+    After updating the rewards, the program constrains them using LP($\cdot$) such that $\sum_{i}r_i \leq \mathcal{R}$ and $r_i \geq 0$. To do so, the LP($\cdot$) finds another set of rewards $\vect{r'}$ such that the absolute difference between new and old rewards ($\sum_{i}|r'_i - r_i|$) is minimum. The mathematical formulation is given in \Cref{eqn:lp_math_constrain_rewards}, which was implemented using SciPy's Optimize Module \cite{SCPOptimizeDocs}. Since the module supports a standard format for doing linear programming, \Cref{eqn:lp_code_constrain_rewards} is used (see \Cref{app:Implementation}), which is mathematically equivalent to \Cref{eqn:lp_math_constrain_rewards}.
     \begin{multicols}{2}
-        \begin{equation} \label{eq:lp_math_constrain_rewards}
+        \begin{equation} \label{eqn:lp_math_constrain_rewards}
             \begin{aligned}\\
                 & \underset{\vect{r'}}{\text{minimize}}
                 & & \sum_{i}|r'_i - r_i|\\
@@ -309,7 +310,7 @@
                 &&& r_i \geq 0\\ \\
             \end{aligned}
         \end{equation}\break
-        \begin{equation} \label{eq:lp_code_constrain_rewards}
+        \begin{equation} \label{eqn:lp_code_constrain_rewards}
             \begin{aligned}
                 & \underset{[\vect{r'}, \vect{u}]}{\text{minimize}}
                 & & \sum_{i} u_i\\
@@ -323,12 +324,13 @@
     \end{multicols}
     
     \section{Experiment Specifications} \label{sec:Experiment Specifications}
+    We define GPU Speedup as:
     \begin{mydef} \label{def:GPU Speedup}
         GPU Speedup: Ratio of time elapsed with GPU ``set'' and that with CPU ``set''. Time taken to transfer data from CPU to GPU is included in calculating GPU ``set'' time elapsed. (Speedup = $\frac{CPU-time}{GPU-time\; +\; Transfer-time}$)
     \end{mydef}
     To test both our models, we conducted several tests for optimization and GPU speedup over CPU. After initializing all parameters randomly and reading data from files, the models were run for 1000 to 10000 epochs depending on the complexity of the model and any potential benefits emerging with more epochs.
     
-    Hardware specifications and software versions used for the experiments are listed in Table \ref{tab:Hardware Specifications and Software Versions Used for Experiments}. We conducted two types of tests: optimization tests on original datasets and GPU speedup tests on randomly generated datasets. Data was loaded as Floating Point 32 (FP32) units, but was stored with less precision (up to 10 decimal places) to reduce secondary memory usage. The random dataset of 116 locations ($J$) and 173 time units ($T$) was generated beforehand using NumPy (without any seed). We believe that speedup tests on original datasets would give similar results, though we used randomly generated datasets because it was easier to scale and build random datasets of different batch-sizes for testing. The models were timed for the executed operations in a neural network and the LP, including transfer times of tensors between the RAM and GPU's memory. Time taken for preprocessing was ignored. Although we switched off X (Graphical User Interface for Ubuntu OS) and performed tests in CLI (Command Line Interface) to reduce extraneous CPU/GPU usage, we should point out that runtimes given in Results (\cref{sec:Results}) may differ based on other running processes and threads while doing experiments. However, one should obtain similar GPU speedup results when repeating the experiments.
+    Hardware specifications and software versions used for the experiments are listed in Table \Cref{tab:Hardware Specifications and Software Versions Used for Experiments}. We conducted two types of tests: optimization tests on original datasets and GPU speedup tests on randomly generated datasets. Data was loaded as Floating Point 32 (FP32) units, but was stored with less precision (up to 10 decimal places) to reduce secondary memory usage. The random dataset of 116 locations ($J$) and 173 time units ($T$) was generated beforehand using NumPy (without any seed). We believe that speedup tests on original datasets would give similar results, though we used randomly generated datasets because it was easier to scale and build random datasets of different batch-sizes for testing. The models were timed for the executed operations in a neural network and the LP, including transfer times of tensors between the RAM and GPU's memory. Time taken for preprocessing was ignored. Although we switched off X (Graphical User Interface for Ubuntu OS) and performed tests in CLI (Command Line Interface) to reduce extraneous CPU/GPU usage, we should point out that runtimes given in Results (\Cref{sec:Results}) may differ based on other running processes and threads while doing experiments. However, one should obtain similar GPU speedup results when repeating the experiments.
     \begin{table}[!htbp]
         \centering
         \caption{Hardware Specifications and Software Versions Used for Experiments}
@@ -363,7 +365,7 @@
         \end{tabular}
     \end{table}
     
-    Note that by GPU ``set'' we mean \textit{distributing} operations in the scripts between CPU and GPU, while by CPU ``set'' we mean that the operations were executed \textit{only} on the CPU. Since GPUs are inferior than CPUs at handling most operations other than simple arithmetic matrix ones (see \cref{sec:Computation Using GPUs}), we used - and recommend using - both the CPU and the GPU in the former case (GPU ``set'') to handle operations each is superior at. However, since the models in \cref{sec:Identification Problem} and \cref{sec:Pricing Problem} (not the full scripts) are primarily arithmetic operations on matrices and tensors, it is clear that they were executed on the GPU when it was ``set'' and on the CPU when the CPU was ``set''. Other than this optimization, we did not specifically design any parallelized algorithm for either configurations, relying on the Pytorch Library's and NumPy-SciPy's inbuilt implementation.
+    Note that by GPU ``set'' we mean \textit{distributing} operations in the scripts between CPU and GPU, while by CPU ``set'' we mean that the operations were executed \textit{only} on the CPU. Since GPUs are inferior than CPUs at handling most operations other than simple arithmetic matrix ones (see \Cref{sec:Computation Using GPUs}), we used - and recommend using - both the CPU and the GPU in the former case (GPU ``set'') to handle operations each is superior at. However, since the models in \Cref{sec:Identification Problem} and \Cref{sec:Pricing Problem} (not the full scripts) are primarily arithmetic operations on matrices and tensors, it is clear that they were executed on the GPU when it was ``set'' and on the CPU when the CPU was ``set''. Other than this optimization, we did not specifically design any parallelized algorithm for either configurations, relying on the Pytorch Library's and NumPy-SciPy's inbuilt implementation.
     
     On the algorithm side, we used Adam's algorithm for \textsc{Gradient-Descent}($\cdot$), after testing performances of several algorithms including but not limited to Stochastic Gradient Descent (SGD) \cite{SGD}, Adam's Algorithm \cite{Adam} and Adagrad \cite{Adagrad} (Pytorch lets you choose the corresponding function). Since Adam's algorithm was found to work best with both models over all test runs, all experiments were done using Adam's algorithm. Hence, all results were also obtained using Adam's algorithm.
     
@@ -371,16 +373,16 @@
     \subsubsection{Optimizing the Original Dataset} \label{sec:Identification Problem-Optimizing the Original Dataset}
     The 3-layered neural network was run for 10000 epochs on the original dataset, which was split 80:20 for training and testing sets, with different learning rates = $\{10^{-2}, 10^{-3}, 10^{-4}, 10^{-5}\}$. Since we were aiming for optimization, we ran multiple tests (5 different seeds with each learning rate) of the model only with the GPU ``set''.
     
-    To compare this model's optimization results with other model structures, the previously studied 2-layered network \cite{Xue2016Avi2} and a 4-layered neural network were used. The 4-layered network had another hidden layer with reLU, equivalent to the hidden layer in the current 3-layered network in Figure \ref{fig:3-dimensional view of the network slice, taking in Fv}. The results from the 2-layered network were obtained from the previous study, and those from the 4-layered network were attained on the same original dataset with same parameter values (learning rates, epochs etc.).
+    To compare this model's optimization results with other model structures, the previously studied 2-layered network \cite{Xue2016Avi2} and a 4-layered neural network were used. The 4-layered network had another hidden layer with reLU, equivalent to the hidden layer in the current 3-layered network in Figure \Cref{fig:3-dimensional view of the network slice, taking in Fv}. The results from the 2-layered network were obtained from the previous study, and those from the 4-layered network were attained on the same original dataset with same parameter values (learning rates, epochs etc.).
     
     \subsubsection{Testing GPU Speedup on the Random Dataset} \label{sec:Identification Problem-Testing GPU Speedup on the Random Dataset}
-    After generating a random dataset, we ran our 3-layered model on with different batch-sizes $T = 17, 51, 85, 129, 173$ ($J = 116$) and different seeds with both GPU and CPU ``set'', logging the elapsed time for model execution. The total time elapsed was averaged for a batch-size on a device, which were used to generate scatter/line plots (see \cref{sec:IdProbRes - GPU}).
+    After generating a random dataset, we ran our 3-layered model on with different batch-sizes $T = 17, 51, 85, 129, 173$ ($J = 116$) and different seeds with both GPU and CPU ``set'', logging the elapsed time for model execution. The total time elapsed was averaged for a batch-size on a device, which were used to generate scatter/line plots (see \Cref{sec:IdProbRes - GPU}).
     
     \subsection{Running the Pricing Problem's Model} \label{sec:Running the Pricing Problem's Model}
     \subsubsection{Optimizing the Original Dataset} \label{sec:Pricing Problem-Optimizing the Original Dataset}
-    After obtaining the set of weights $\matr{w_1}$ and $\matr{w_2}$ optimized using different seeds, we tested to find the best rewards (with the lowest loss - Equation \ref{eq:pricing_problem}) with random $\vect{r}$ initiation. To obtain the best rewards, the model was run on all sets of weights obtained from the Identification Problem for 1000 epochs with different learning rates. In search for the best rewards with the minimum loss, we took this approach:
+    After obtaining the set of weights $\matr{w_1}$ and $\matr{w_2}$ optimized using different seeds, we tested to find the best rewards (with the lowest loss - Equation \Cref{eqn:pricing_problem}) with random $\vect{r}$ initiation. To obtain the best rewards, the model was run on all sets of weights obtained from the Identification Problem for 1000 epochs with different learning rates. In search for the best rewards with the minimum loss, we took this approach:
     \begin{enumerate}
-        \item Run differently seeded rewards on all sets of weights (obtained from the Identification Problem) and identify a set of weights which performed better than the others (low $Z_I$ - Equation \ref{eq:pricing_problem}) on average. The learning rate was fixed to $10^{-3}$ in this case.
+        \item Run differently seeded rewards on all sets of weights (obtained from the Identification Problem) and identify a set of weights which performed better than the others (low $Z_I$ - Equation \Cref{eqn:pricing_problem}) on average. The learning rate was fixed to $10^{-3}$ in this case.
         \item Use that set of weights to run a number of tests with varying seeds and learning rates = $\{10^{-2}, 5 \times 10^{-3}, 10^{-3}, 5 \times 10^{-4}, 10^{-4}, 5 \times 10^{-5}, 10^{-5}\}$, and choose the resulting rewards which gave the lowest loss value $Z_I$.
     \end{enumerate}
     Two sets of rewards were tested for loss values as baseline comparisons to our model - a randomly generated set, and another with elements proportional to the reciprocal of number of visits at each location. While the former was a random baseline, the latter captured the idea of allocating higher rewards to relatively under-sampled locations. The average loss values (on different sets of weights) were compared for all tests with the baselines.
@@ -388,17 +390,17 @@
     \subsubsection{Testing GPU Speedup on the Random Dataset} \label{sec:Pricing Problem-Testing GPU Speedup on the Random Dataset}
     Using the same random dataset as used before (data doesn't matter as long as it is random), we ran the Pricing Problem's model with different batch-sizes $J = 11, 35, 55, 85, 116$ ($T = 173$) and different seeds with both GPU and CPU ``set''.
     
-    Since Pytorch does not provide a GPU-accelerated Simplex LP solver, we relied on SciPy's Optimize Module to solve our LP sub-problem (see \cref{sec:Constraining Rewards}). Since SciPy's implementation does not utilize the GPU, we expected the LP problem to be executed on the CPU and thus deliver equal runtimes in both GPU and CPU ``set'' configurations.
+    Since Pytorch does not provide a GPU-accelerated Simplex LP solver, we relied on SciPy's Optimize Module to solve our LP sub-problem (see \Cref{sec:Constraining Rewards}). Since SciPy's implementation does not utilize the GPU, we expected the LP problem to be executed on the CPU and thus deliver equal runtimes in both GPU and CPU ``set'' configurations.
     
     \section{Results} \label{sec:Results}
     \subsection{Identification Problem's Results} \label{sec:Identification Problem's Results}
     \subsubsection{Optimization Results} \label{sec:IdProbRes - Optimization}
     Running the 3-layered network with the GPU ``set'' with different learning rates on different seeds (to calculate average performance of each learning rate) for 10000 epochs showed that the model performing the best with learning rate = $10^{-3}$. 
     
-    We observed that higher learning rates ($>10^{-2}$) could only decrease the loss function ($Z_I$ - Equation \ref{eq:iden_problem}) to a limit, after each the updates in the weights caused the loss function to oscillate and increase. This phenomena is exemplified in Figure \ref{fig:Test Loss Plots of Different Learning Rates to Find Weights}, which are plots of different models with the same seed but different learning rates. On the other side of $10^{-3}$, lower learning rates took too long to train. Runtime for the model on 10000 epochs was an average 1232.56 seconds (20 runs = 5 seeds $\times$ 4 learning rates), and models with learning rates $< 10^{-3}$ did not perform better than those with learning rate = $10^{-3}$ on \textit{any} run. Although the decrease in test losses were constant for learning rates $< 10^{-3}$, we feel that they may be computationally expensive and temporally inconvenient to train.
+    We observed that higher learning rates ($>10^{-2}$) could only decrease the loss function ($Z_I$ - Equation \Cref{eqn:iden_problem}) to a limit, after each the updates in the weights caused the loss function to oscillate and increase. This phenomena is exemplified in Figure \Cref{fig:Test Loss Plots of Different Learning Rates to Find Weights}, which are plots of different models with the same seed but different learning rates. On the other side of $10^{-3}$, lower learning rates took too long to train. Runtime for the model on 10000 epochs was an average 1232.56 seconds (20 runs = 5 seeds $\times$ 4 learning rates), and models with learning rates $< 10^{-3}$ did not perform better than those with learning rate = $10^{-3}$ on \textit{any} run. Although the decrease in test losses were constant for learning rates $< 10^{-3}$, we feel that they may be computationally expensive and temporally inconvenient to train.
     \begin{table}[!htbp]
         \centering
-        \caption[Loss Values Calculated for Different Models for Identification Problem]{Loss Values Calculated for Different Models for Identification Problem: For both the 3- and the 4-layered models, learning rate = $10^{-3}$ outperformed other learning rates. Consequently, that learning rate is used in comparison with other models in Figure \ref{fig:Comparison of Loss Values from Different Models of the Identification Problem}.}
+        \caption[Loss Values Calculated for Different Models for Identification Problem]{Loss Values Calculated for Different Models for Identification Problem: For both the 3- and the 4-layered models, learning rate = $10^{-3}$ outperformed other learning rates. Consequently, that learning rate is used in comparison with other models in Figure \Cref{fig:Comparison of Loss Values from Different Models of the Identification Problem}.}
         \label{tab:Loss Values Calculated for Different Models for Identification Problem}
         \begin{tabular}{c | c | c}
             \hline
@@ -413,7 +415,7 @@
         \end{tabular}
     \end{table}
     
-    Table \ref{tab:Loss Values Calculated for Different Models for Identification Problem} gives the average \textit{end} test loss results. Observing that the average test loss values of learning rate = $10^{-3}$ is the lowest, we compare its results with the previous study's 2-layered network, historical data \cite[// todo]{Xue2016Avi2}, and a 4-layered network with learning rate = $10^{-3}$ (see \cref{sec:Identification Problem-Optimizing the Original Dataset}).
+    Table \Cref{tab:Loss Values Calculated for Different Models for Identification Problem} gives the average \textit{end} test loss results. Observing that the average test loss values of learning rate = $10^{-3}$ is the lowest, we compare its results with the previous study's 2-layered network, historical data \cite[// todo]{Xue2016Avi2}, and a 4-layered network with learning rate = $10^{-3}$ (see \Cref{sec:Identification Problem-Optimizing the Original Dataset}).
     
     \begin{figure}[!htbp]
         \centering
@@ -457,11 +459,11 @@
         \end{minipage}
     \end{figure}
 
-    As depicted in Figure \ref{fig:Comparison of Loss Values from Different Models of the Identification Problem}, our 3-layered neural network outperformed the previous 2-layered model by \textbf{0.14 units (14\% more closer to Ground Truth - $\matr{y}$)} \cite[Table 1]{Xue2016Avi2}, and also produced much better results (12\% more closer to Ground Truth) than the 4-layered model.
+    As depicted in Figure \Cref{fig:Comparison of Loss Values from Different Models of the Identification Problem}, our 3-layered neural network outperformed the previous 2-layered model by \textbf{0.14 units (14\% more closer to Ground Truth - $\matr{y}$)} \cite[Table 1]{Xue2016Avi2}, and also produced much better results (12\% more closer to Ground Truth) than the 4-layered model.
     
-    We also generated the predicted probabilities of the agents visiting each location ($\matr{P} \cdot \matr{x}$) in the Test Set, and plotted it onto a map marked by the locations' latitudes and longitudes. Figure \ref{fig:Predicted Probabilities of Agents Visiting Each Location Plotted on a Map} shows such a plot generated by the 3-layered network, where each dot represents a location.
+    We also generated the predicted probabilities of the agents visiting each location ($\matr{P} \cdot \matr{x}$) in the Test Set, and plotted it onto a map marked by the locations' latitudes and longitudes. Figure \Cref{fig:Predicted Probabilities of Agents Visiting Each Location Plotted on a Map} shows such a plot generated by the 3-layered network, where each dot represents a location.
     
-    Although there remained a $\approx$ 9\% difference (0.09 loss units) in the values of training and testing set, the 3-layered model was not starkly overfitting as an average \textit{end} difference of $8.76\pm1.59\%$ persisted for many epochs, instead of increasing and tuning more to the training set. This case was similar for the 4-layered model, producing an average \textit{end} difference of $16.77 \pm 4.73\%$. This result is shown in Figure \ref{fig:Train & Test Loss Values' Plots of Different Models} with plots of loss values at each epoch for the 3- and the 4-layered network. On a side note, learning rates greater than $10^{-3}$ led to high oscillation and some overfitting in both models.
+    Although there remained a $\approx$ 9\% difference (0.09 loss units) in the values of training and testing set, the 3-layered model was not starkly overfitting as an average \textit{end} difference of $8.76\pm1.59\%$ persisted for many epochs, instead of increasing and tuning more to the training set. This case was similar for the 4-layered model, producing an average \textit{end} difference of $16.77 \pm 4.73\%$. This result is shown in Figure \Cref{fig:Train & Test Loss Values' Plots of Different Models} with plots of loss values at each epoch for the 3- and the 4-layered network. On a side note, learning rates greater than $10^{-3}$ led to high oscillation and some overfitting in both models.
     \begin{figure}[!htbp]
         \centering
         \begin{subfigure}{.49\textwidth}
@@ -481,7 +483,7 @@
     \end{figure}
 
     \subsubsection{GPU Speedup Results} \label{sec:IdProbRes - GPU}
-    Running on batches of sizes $T = 17, 51, 85, 129, 173$ on a randomly generated dataset for 1000 epochs, with both GPU and CPU ``set'' separately, we obtained information on full execution runtimes (including both training and testing). The average results (over 3 different seeds for each batch) are plotted in Figure \ref{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}, which show promising GPU speedup over CPU figures for any batch size; the GPU speedup averaged over all tested batch-sizes is \textbf{9.06$\pm$0.45}.
+    Running on batches of sizes $T = 17, 51, 85, 129, 173$ on a randomly generated dataset for 1000 epochs, with both GPU and CPU ``set'' separately, we obtained information on full execution runtimes (including both training and testing). The average results (over 3 different seeds for each batch) are plotted in Figure \Cref{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}, which show promising GPU speedup over CPU figures for any batch size; the GPU speedup averaged over all tested batch-sizes is \textbf{9.06$\pm$0.45}.
     \begin{figure}[!htbp]
         \centering
         \begin{subfigure}{.59\textwidth}
@@ -549,7 +551,7 @@
 
     \subsection{Pricing Problem's Results} \label{sec:Pricing Problem's Results}
     \subsubsection{Optimization Results} \label{sec:PriProbRes - Optimization}
-    Taking the approach mentioned in \cref{sec:Pricing Problem-Optimizing the Original Dataset}, different sets of weights gave consistent loss values (even with differently seeded rewards). The best was the set-2 of weights, using which the average loss value for the Pricing Problem hovered around 0.0079\%. Next, running differently seeded rewards with different learning rates on set-2 of weights, which performed the best, we obtained the \textbf{lowest loss value of 0.0068\%}.
+    Taking the approach mentioned in \Cref{sec:Pricing Problem-Optimizing the Original Dataset}, different sets of weights gave consistent loss values (even with differently seeded rewards). The best was the set-2 of weights, using which the average loss value for the Pricing Problem hovered around 0.0079\%. Next, running differently seeded rewards with different learning rates on set-2 of weights, which performed the best, we obtained the \textbf{lowest loss value of 0.0068\%}.
 %    \begin{figure}[!htbp]
 %        \centering
 %        \begin{tikzpicture}
@@ -577,10 +579,10 @@
 %        \end{tikzpicture}
 %    \end{figure}
 
-    Compared to the proportional reward distribution (loss values calculated using set-2 of weights), our model optimized the rewards such that the loss value was $\approx$ \textbf{3 times} lower. We should also clarify that we compare the best loss values, as the organizer expects to find a distribution that is as optimal as possible. Table \ref{tab:Loss Values Calculated from Different Sets of Rewards} lists the best loss values obtained on each type of reward allocation (model's predicted, random and proportional - \cref{sec:Pricing Problem-Optimizing the Original Dataset}).
+    Compared to the proportional reward distribution (loss values calculated using set-2 of weights), our model optimized the rewards such that the loss value was $\approx$ \textbf{3 times} lower. We should also clarify that we compare the best loss values, as the organizer expects to find a distribution that is as optimal as possible. Table \Cref{tab:Loss Values Calculated from Different Sets of Rewards} lists the best loss values obtained on each type of reward allocation (model's predicted, random and proportional - \Cref{sec:Pricing Problem-Optimizing the Original Dataset}).
     \begin{table}[!htbp]
         \centering
-        \caption[Loss Values Calculated from Different Sets of Rewards]{Loss Values Calculated from Different Sets of Rewards: The values are small because the loss function $Z_P(\vect{r})$ (Equation \ref{eq:pricing_problem}) is averaged over the number of locations}
+        \caption[Loss Values Calculated from Different Sets of Rewards]{Loss Values Calculated from Different Sets of Rewards: The values are small because the loss function $Z_P(\vect{r})$ (Equation \Cref{eqn:pricing_problem}) is averaged over the number of locations}
         \label{tab:Loss Values Calculated from Different Sets of Rewards}
         \begin{tabular}{|c|c|}
             \hline
@@ -594,9 +596,9 @@
     \end{table}
     
     \subsubsection{GPU Speedup Results} \label{sec:PriProbRes - GPU}
-    After running on different batch-sizes $J = 11, 35, 55, 85, 116$, we \textbf{did not observe radical speedup} for the full model. Figure \ref{fig:Finding Rewards - Time Taken by the Full Model} shows the decreasing speedup trend, as the GPU ``set'' configuration started struggling to complete all epochs faster than with CPU ``set''. GPU Speedup for the full model was a mere \textbf{1.53 $\pm$ 0.10}, with the GPU ``set'' config. giving better results as the dataset increased. 
+    After running on different batch-sizes $J = 11, 35, 55, 85, 116$, we \textbf{did not observe radical speedup} for the full model. Figure \Cref{fig:Finding Rewards - Time Taken by the Full Model} shows the decreasing speedup trend, as the GPU ``set'' configuration started struggling to complete all epochs faster than with CPU ``set''. GPU Speedup for the full model was a mere \textbf{1.53 $\pm$ 0.10}, with the GPU ``set'' config. giving better results as the dataset increased. 
     
-    Since the the low GPU speedup was uncanny, we looked for operations that were causing the program to slow down on the GPU. Guessing that the LP problem (Equations \ref{eq:lp_math_constrain_rewards} and \ref{eq:lp_code_constrain_rewards}) might be influencing the runtimes, we recorded execution times for both the neural network and the LP separately. As we suspected, the LP \textit{did} impact the runtime more than the neural networks did, while the GPU speedup for the Neural Network was expectedly high with \textit{only} with large batch-sizes (Figure \ref{fig:Finding Rewards - Time taken by the Neural Network}). The time elapsed for the Neural Network includes time taken to transfer tensors to and from the GPU, which results in overhead - as seen in higher runtime for lower batch-sizes in Figure \ref{fig:Finding Rewards - Time taken by the Neural Network}. However, as the batch-sizes grew, we see the computation dominating over the transfer time, resulting in higher CPU ``set'' runtimes; the GPU ``set'' runtimes almost grow linearly for the tested batch-sizes.
+    Since the the low GPU speedup was uncanny, we looked for operations that were causing the program to slow down on the GPU. Guessing that the LP problem (Equations \Cref{eqn:lp_math_constrain_rewards} and \Cref{eqn:lp_code_constrain_rewards}) might be influencing the runtimes, we recorded execution times for both the neural network and the LP separately. As we suspected, the LP \textit{did} impact the runtime more than the neural networks did, while the GPU speedup for the Neural Network was expectedly high with \textit{only} with large batch-sizes (Figure \Cref{fig:Finding Rewards - Time taken by the Neural Network}). The time elapsed for the Neural Network includes time taken to transfer tensors to and from the GPU, which results in overhead - as seen in higher runtime for lower batch-sizes in Figure \Cref{fig:Finding Rewards - Time taken by the Neural Network}. However, as the batch-sizes grew, we see the computation dominating over the transfer time, resulting in higher CPU ``set'' runtimes; the GPU ``set'' runtimes almost grow linearly for the tested batch-sizes.
     \begin{figure}[!htbp]
         \centering
         \begin{subfigure}{\textwidth}
@@ -674,7 +676,7 @@
                 \legend{CPU ``set'',GPU ``set''}
                 \end{axis}
             \end{tikzpicture}
-            \caption[Time taken by the LP]{Time taken by the LP: GPU Speedup over \textit{all} batch-sizes is only \textbf{1.62 $\pm$ 0.07}. As discussed in \cref{sec:PriProbRes - GPU} and \cref{sec:Strange GPU Speedup in LP Computation}, we shouldn't have witnessed this speedup as both configurations' LPs were computed on the CPU. Hence, we expected the speedup value to be $\approx$ 1. }
+            \caption[Time taken by the LP]{Time taken by the LP: GPU Speedup over \textit{all} batch-sizes is only \textbf{1.62 $\pm$ 0.07}. As discussed in \Cref{sec:PriProbRes - GPU} and \Cref{sec:Strange GPU Speedup in LP Computation}, we shouldn't have witnessed this speedup as both configurations' LPs were computed on the CPU. Hence, we expected the speedup value to be $\approx$ 1. }
             \label{fig:Finding Rewards - Time taken by the LP}
         \end{subfigure}\hspace*{1em}
         \begin{subfigure}{.49\textwidth}
@@ -720,7 +722,7 @@
     \end{figure}
 
     \paragraph{Strange GPU Speedup in LP Computation}
-    Although the Speedup might seem foreseeable, it is exceptional not expected as we intentionally transferred the needed matrices/tensors to the CPU. SciPy's Optimize Module does not utilize the GPU conspicuously, and we expected similar runtimes for both configurations. However, since this result is not directly relevant to our goal (which is to focus on GPU computation), we pursue reasons in \cref{sec:Strange GPU Speedup in LP Computation} instead of digressing here.
+    Although the Speedup might seem foreseeable, it is exceptional not expected as we intentionally transferred the needed matrices/tensors to the CPU. SciPy's Optimize Module does not utilize the GPU conspicuously, and we expected similar runtimes for both configurations. However, since this result is not directly relevant to our goal (which is to focus on GPU computation), we pursue reasons in \Cref{sec:Strange GPU Speedup in LP Computation} instead of digressing here.
     
     \section{Conclusion} \label{sec:Conclusion}
     Our models for the Identification and the Pricing Problem outperformed previously studied ones \cite{Xue2016Avi2} and other baseline comparisons. For the Identification Problem, the average loss value was 14\% lower than the previous 2-layered model, and 12\% better than the 4-layered model, giving us better results than any other tested model. While we did not test deeper networks, we contend that using more hidden layers will only aggravate overfitting and won't provide better results - as is the case with the 4-layered network. The Pricing Problem's model also delivered at least 3x lower loss values than other baseline comparisons for reward distribution. Clearly, our model outperformed other models in both problems.
@@ -730,19 +732,19 @@
     \subsection{Interesting Inferences}
     One may also notice compelling reflections from the results. Although some models perform better than others, they bring out similar, interesting inferences:
     \begin{itemize}
-        \item One interesting observation in Table \ref{tab:Loss Values Calculated from Different Sets of Rewards} is that the Loss Value from the Proportional Distribution (0.161\%) and Random Initialization (0.160\%) are very close, highlighting that the set of weights obtained from the Identification Problem are dependent on other factors ($\matr{f}, \matr{D}$) as well and not just rewards. In other words, incentivizing under-sampled locations more is as good as random distribution of rewards - as agents don't get more heavily influenced by rewards than any other factor to visit locations.\\
+        \item One interesting observation in Table \Cref{tab:Loss Values Calculated from Different Sets of Rewards} is that the Loss Value from the Proportional Distribution (0.161\%) and Random Initialization (0.160\%) are very close, highlighting that the set of weights obtained from the Identification Problem are dependent on other factors ($\matr{f}, \matr{D}$) as well and not just rewards. In other words, incentivizing under-sampled locations more is as good as random distribution of rewards - as agents don't get more heavily influenced by rewards than any other factor to visit locations.\\
         Moreover, by looking at the model's generated rewards, one can infer that the model chooses to place large rewards in 
     \end{itemize}
 
     \subsection{Further Research}
     There exist numerous possibilities for solving the problems better and faster - from more complex models to better preprocessing. Some important suggestions are listed below:
     
-    \paragraph{Choice of Gradient-Descent Algorithm} Figure \ref{fig:Plot for 3-layered Model} shows how the choice of Adam's algorithm \cite{Adam} for \textsc{Gradient-Descent}($\cdot$) helps the model to learn quickly. However, we also witness long periods of saturation after few epochs. This was the case for several other algorithms (SGD \cite{SGD} and Adagrad \cite{Adagrad}), but with different paces of learning. Since the organizers would want to further optimize the set of weights even, research could be done on avoiding the long, unchanging saturation phase. This may involve using other techniques for \textsc{Gradient-Descent}($\cdot$) (Algorithm \ref{alg:Algorithm for the Identification Problem}) and/or altering the loss function $Z_P(\matr{w_1}, \matr{w_2})$ (Equation \ref{eq:iden_problem}).
+    \paragraph{Choice of Gradient-Descent Algorithm} Figure \Cref{fig:Plot for 3-layered Model} shows how the choice of Adam's algorithm \cite{Adam} for \textsc{Gradient-Descent}($\cdot$) helps the model to learn quickly. However, we also witness long periods of saturation after few epochs. This was the case for several other algorithms (SGD \cite{SGD} and Adagrad \cite{Adagrad}), but with different paces of learning. Since the organizers would want to further optimize the set of weights even, research could be done on avoiding the long, unchanging saturation phase. This may involve using other techniques for \textsc{Gradient-Descent}($\cdot$) (Algorithm \Cref{alg:Algorithm for the Identification Problem}) and/or altering the loss function $Z_P(\matr{w_1}, \matr{w_2})$ (Equation \Cref{eqn:iden_problem}).
     
-    \paragraph{Modeling LP Differently to Reduce Runtimes} LP is a simple tool for optimizing different problems, with various algorithms for solving LPs - Simplex, Criss-Cross and other Interior Point techniques. While it gives optimal results, it can be computationally expensive if the matrices are large (as depicted in Figure \ref{fig:Finding Rewards - Time taken by the LP}). One can try several approaches to reduce computation time here:
+    \paragraph{Modeling LP Differently to Reduce Runtimes} LP is a simple tool for optimizing different problems, with various algorithms for solving LPs - Simplex, Criss-Cross and other Interior Point techniques. While it gives optimal results, it can be computationally expensive if the matrices are large (as depicted in Figure \Cref{fig:Finding Rewards - Time taken by the LP}). One can try several approaches to reduce computation time here:
     \begin{itemize}
         \item Implement GPU Support for the LP. Good CUDA backend support did not exist during our study, forcing us to use SciPy's Optimize Module, which only supported NumPy matrices on the CPU.
-        \item Constrain Rewards differently (\cref{sec:Constraining Rewards}). We were unsuccessful in implementing a dual version of the LP, interspersed with the neural network. Nonetheless, constraining rewards using a neural network would drastically improve performance as the current LP accounts for $\approx$ 90 \% of the total runtime.
+        \item Constrain Rewards differently (\Cref{sec:Constraining Rewards}). We were unsuccessful in implementing a dual version of the LP, interspersed with the neural network. Nonetheless, constraining rewards using a neural network would drastically improve performance as the current LP accounts for $\approx$ 90 \% of the total runtime.
     \end{itemize}
 
     \bibliographystyle{IEEEtran}

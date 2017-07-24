@@ -1,0 +1,83 @@
+\section{Experiment Specifications} \label{sec:Experiment Specifications}
+We define GPU Speedup as:
+\begin{mydef} \label{def:GPU Speedup}
+    GPU Speedup: Ratio of model's \underline{execution} time with GPU ``set'' and that with CPU ``set''. The script's data preprocessing runtime is ignored, but the time taken to transfer data from CPU to GPU is included in calculating GPU ``set'' time elapsed. (Speedup = $\frac{CPU-time}{GPU-time\; +\; Transfer-time}$)
+\end{mydef}
+
+To test both our models, we conducted several tests for optimization and GPU Speedup. After initializing all parameters randomly (with specific seeds for reproduction and uniformity between tests), the models were run for 1000 or 10000 epochs depending on the complexity of the model.
+
+\subsection{Datasets} \label{sec:Datasets}
+We conducted two types of tests: \textbf{optimization tests on original datasets} and \textbf{GPU Speedup tests on randomly generated datasets}. Data was loaded as Floating Point 32 (FP32) units, but was stored with less precision (up to 15 significant figures) to reduce secondary memory usage.
+
+For the GPU Speedup runs, two random datasets of 173 time units ($T$) were generated beforehand using NumPy (without any seed):
+\begin{enumerate} 
+    \item 116 locations - for Identification Problem
+    \item 232 locations - for Pricing Problem
+\end{enumerate}
+
+We used more locations for the Pricing Problem's model because its 2-layered network was less complex and time consuming than Identification Problem's 3-layered network. Additionally, this decision emerged after initially testing the Pricing Problem on 116 locations, which did not help us identify the trend (more in \Cref{sec:PriProbRes - GPU}). We believe that speedup tests on original datasets would give similar results, though we used randomly generated datasets because it was easier to scale and build random datasets of different batch-sizes for testing. The models were timed for the executed operations in a neural network and the LP, including transfer times of tensors between the RAM and GPU's internal memory. Time taken for preprocessing was ignored. 
+
+\subsection{Test-Machine Configuration} \label{sec:Test-Machine Configuration}
+Hardware specifications and software versions used for the experiments are listed in \Cref{tab:Hardware Specifications and Software Versions Used for Experiments}. We restricted (not eliminated) extraneous computing usage by background processes on the test-machine by switching off X (Graphical User Interface for Ubuntu OS) and performing tests in CLI (Command Line Interface), and ending user processes. However, we should point out that other experiments can give varying runtimes (\Cref{sec:Results}), which may differ based on other running processes and threads. However, one should obtain similar GPU Speedup results when repeating the experiments.
+\begin{table}[!htbp]
+    \centering
+    \caption{Hardware Specifications and Software Versions Used for Experiments}
+    \label{tab:Hardware Specifications and Software Versions Used for Experiments}
+    \begin{tabular}{|c|c|}
+        \hline
+        \multicolumn{2}{c}{\textbf{Hardware}}\\
+        \hline
+        \textbf{Type} & \textbf{Unit/Specs}\\
+        \hline
+        Desktop & Dell Precision Tower 3620\\
+        CPU & Intel Core i7-7700K\\
+        RAM & 16GB\\
+        GPU & NVIDIA Quadro P4000\\
+        \hline
+    \end{tabular}\quad
+    \begin{tabular}{|c|c|}
+        \hline
+        \multicolumn{2}{c}{\textbf{Software}}\\
+        \hline
+        \textbf{Library/Package} & \textbf{Version}\\
+        \hline
+        Ubuntu OS & 16.04.2 LTS\\
+        CUDA & 8.0\\
+        cuDNN & 5.1.10\\
+        MKL & 2017.0.3\\
+        Python & 2.7.13 (Anaconda)\\
+        Pytorch & 0.1.12\textunderscore2\\
+        NumPy & 1.12.1\\
+        SciPy & 0.19.0\\
+        \hline
+    \end{tabular}
+\end{table}
+
+\paragraph{GPU ``set'' and CPU ``set'' Clarification} By GPU ``set'' we mean \textit{distributing} operations in the scripts between CPU and GPU, while by CPU ``set'' we mean that the operations were executed \textit{only} on the CPU. Since GPUs are inferior than CPUs at handling most operations other than simple arithmetic matrix ones due to parallelism (see \Cref{sec:Computation Using GPUs}), we used - and recommend using - both the CPU and the GPU in the former case (GPU ``set'') to handle operations each is superior at. However, since the models in \Cref{alg:Algorithm for the Identification Problem,alg:Solving the Pricing Problem} (not the full scripts) are primarily arithmetic operations on  tensors, it is clear that they were executed on the GPU when it was ``set'' and on the CPU when the CPU was ``set''. Other than this optimization, we did not specifically design any parallelized algorithm for either configurations, relying on the Pytorch's and NumPy-SciPy's inbuilt implementation.
+
+\subsection{Algorithm Choice} \label{sec:Algorithm Choice}
+On the algorithm side, we used Adam's algorithm for \textsc{Gradient-Descent}($\cdot$), after testing performances of several algorithms\footnote{Pytorch lets you choose the corresponding function/module} including but not limited to Stochastic Gradient Descent (SGD) \cite{SGD}, Adam's Algorithm \cite{Adam} and Adagrad \cite{Adagrad}. In \Cref{sec:Results} (Results), we only discuss and show tests using the Adam's algorithm, since it was found to work best with both models over all test runs.
+
+\subsection{Running the Identification Problem's Model} \label{sec:Running the Identification Problem's Model}
+\subsubsection{Optimizing the Original Dataset} \label{sec:Identification Problem-Optimizing the Original Dataset}
+The 3-layered neural network was run for 10000 epochs on the original dataset, which was split 80:20 for training and testing sets, with different learning rates = $\{10^{-2}, 10^{-3}, 10^{-4}, 10^{-5}\}$. Since we were aiming for optimization, we ran multiple tests (5 different seeds with each learning rate) of the model only with the GPU ``set''.
+
+To compare this model's optimization results with other model structures, the previously studied 2-layered network \cite{Xue2016Avi2} and a 4-layered neural network were used. The 4-layered network had another hidden layer with reLU, equivalent to the hidden layer in the current 3-layered network in \Cref{fig:3-dimensional view of the network slice taking in Fv}. The results from the 2-layered network were obtained from the previous study, and those from the 4-layered network were attained on the same original dataset with same parameter values (learning rates, epochs etc.).
+
+\subsubsection{Testing GPU Speedup on the Random Dataset} \label{sec:Identification Problem-Testing GPU Speedup on the Random Dataset}
+After generating a random dataset and splitting it 80:20 for training and testing to predict performance on the original dataset, we ran our 3-layered model with different batch-sizes $T = 17, 51, 85, 129, 173$ ($J = 116$) and different seeds with both GPU and CPU ``set'', logging the elapsed time for model execution. The total time elapsed was averaged for a batch-size on a device, which were used to generate scatter/line plots (see \Cref{sec:IdProbRes - GPU}).
+
+\subsection{Running the Pricing Problem's Model} \label{sec:Running the Pricing Problem's Model}
+\subsubsection{Optimizing the Original Dataset} \label{sec:Pricing Problem-Optimizing the Original Dataset}
+After obtaining the set of weights $\matr{w_1}$ and $\matr{w_2}$ optimized using different seeds, we tested to find the best rewards (with the lowest loss - \Cref{eqn:pricing_problem}) with random $\vect{r}$ initiation. To obtain the best rewards, the model was run on all sets of weights obtained from the Identification Problem for 1000 epochs with different learning rates. In search for the best rewards with the minimum loss, we took this approach:
+\begin{enumerate}
+    \item Run differently seeded rewards on all sets of weights (obtained from the Identification Problem) and identify a set of weights which performed better than the others (low $Z_I$ - \Cref{eqn:pricing_problem}) on average. The learning rate was fixed to $10^{-3}$ in this case.
+    \item Use that set of weights to run a number of tests with varying seeds and learning rates = $\{10^{-2}, 5 \times 10^{-3}, 10^{-3}, 5 \times 10^{-4}, 10^{-4}, 5 \times 10^{-5}, 10^{-5}\}$, and choose the rewards which gave the lowest loss value $Z_I$ anytime during execution.\footnote{This means that we selected the rewards before completion if the loss at that epoch was lower than that in the end.} 
+\end{enumerate}
+
+Two sets of rewards were tested for loss values as baseline comparisons to our model - a randomly generated set, and another with elements inversely proportional to the number of visits at each location. While the former was a random baseline, the latter captured the idea of allocating higher rewards to relatively under-sampled locations. The best loss values were compared for all tests with the baselines.
+
+\subsubsection{Testing GPU Speedup on the Random Dataset} \label{sec:Pricing Problem-Testing GPU Speedup on the Random Dataset}
+Initially, we ran the Pricing Problem's model with different batch-sizes $J = 11, 35, 55, 85, 116$ ($T = 173$) and different seeds with both GPU and CPU ``set''. Since we couldn't find a clear trend, we tested on more locations $J = 145, 174, 203, 232$.
+
+We relied on SciPy's Optimize Module to solve our LP sub-problem (see \Cref{sec:Constraining Rewards}) because Pytorch does not provide a GPU-accelerated Simplex LP solver. Since SciPy's implementation does not utilize the GPU, we expected the LP problem to be executed on the CPU and thus deliver equal runtimes in both GPU and CPU ``set'' configurations.

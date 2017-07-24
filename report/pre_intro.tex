@@ -1,0 +1,33 @@
+\pagenumbering{roman}
+    \begin{titlepage}
+        \maketitle
+        \thispagestyle{empty}
+    \end{titlepage}
+    
+    % nomenclature
+    \mbox{}
+    % symbols
+    \nomenclature[S]{$J$}{Number of locations in the dataset}
+    \nomenclature[S]{$T$}{Number of time units for which data is available}
+    \nomenclature[S]{$n_F$}{Number of features in the dataset $\matr{F}$ (length of $\matr{F}[v][u]$)}
+    
+    % functions
+    \nomenclature[F]{softmax($\cdot$)}{Defined as softmax($z_i$) = $\frac{\exp(z_i)}{\sum_{i} \exp(z_i)}$}
+    \nomenclature[F]{reLU($\cdot$)}{Rectified Linear Unit; defined as reLU($z$) = max(0, $z$)}
+    \nomenclature[F]{batch-multiply($\cdot$)}{Operates on $m \times n \times p$ and $m \times p \times q$ tensors to give a $m \times n \times q$ tensor.}
+    
+    % terms
+    \nomenclature[T]{Epoch}{One training/testing period; iteration}
+    \nomenclature[T]{CPU ``set''}{\textit{All} operations done on the CPU}
+    \nomenclature[T]{GPU ``set''}{\textit{Only Matrix/Tensor} operations done on the GPU, rest on the CPU}
+    \nomenclature[T]{LP}{Linear Programming}
+    \nomenclature[T]{LP Standard Format}{Arrangement of objective function and constraints operated on by library LP solvers - minimize [$\vect{c}^T \vect{x}$]; subject to [$\matr{A} \vect{x} \leq \vect{b}, \, x_i \geq 0$]}
+    \nomenclature[T]{Tensor}{Multi-dimensional (usually more than 2 dimensions) array}
+    \printnomenclature[1.5in]
+    \cleardoublepage
+    
+    \tableofcontents
+    \listoftables
+    \listoffigures
+    \cleardoublepage
+    \pagenumbering{arabic}

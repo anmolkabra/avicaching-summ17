@@ -260,6 +260,20 @@ def combine_lp_time_log(outfile, cpu_set, gpu_set, onlylp):
                 (e, float(cline.split(",")[1]), float(gline.split(",")[1]), float(oline.split(",")[1])))
             e += 1
 
+def combine_lp_time_log_threads(outfile, thread1, thread3, thread5, thread7):
+    """
+    combines lp runtime logs for tex-tikz input
+    """
+    with open(thread1, "r") as t1, open(thread3, "r") as t3, open(thread5) as t5,\
+        open(thread7, "r") as t7, open(outfile, "w") as out:
+        out.write("epoch,t1,t3,t5,t7\n")
+        e = 1
+        for t1line, t3line, t5line, t7line in zip(t1,t3,t5,t7):
+            out.write("%d,%.6f,%.6f,%.6f,%.6f\n" % \
+                (e, float(t1line.split(",")[1]), float(t3line.split(",")[1]), \
+                    float(t5line.split(",")[1]), float(t7line.split(",")[1])))
+            e += 1
+
 def extract_python_processes(outfile, infile):
     with open(infile, "r") as i, open(outfile, "w") as o:
         e = 1

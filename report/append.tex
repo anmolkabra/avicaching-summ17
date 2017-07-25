@@ -205,14 +205,96 @@
     
     \paragraph{Main Memory Usage} GPU ``set'' was using 10 times as much main memory as CPU ``set'' or `Only LP', in addition to storing and operating on tensors in the GPU's internal memory. Not only this is weird, but it is also opposite of what we expected to happen - CPU ``set'' using more main memory and hampering LP performance. It is ironic that the LP performs better (even as good as `Only LP') on GPU ``set'' even when the configuration uses a lot more main memory than CPU ``set''. Clearly, main memory usage cannot be a criterion for assessing LP performance on different configurations.
     
-    \subsection{Inexplicable Behavior} \label{app:Inexplicable Behavior}
+    \subsection{Parallelism Doesn't Always Help: Thread Synchronization Delays} \label{app:Parallelism Doesn't Always Help}
     Now that we had determined that multi-processing/threading might be the root of the strange GPU Speedup, we asked why. Were the simultaneous threads gobbling up valuable CPU resources or were the neural network threads causing latency due to prolonged process synchronization?
     
     Testing the first possibility was trivial enough - manually run LPs simultaneously on different threads (in 4 available hyper-threaded cores) and see if they impact each other's performance. If they didn't, multi-threading would prove independent in terms of CPU resources, and there would be no reason to believe that simultaneous threads would eat up each other's CPU resources. Running several instances of the LP on multiple threads and cores, we found no impact of multi-processed scripts on each other when it came to CPU resources. The scripts were unaffected by any other processes on other cores of CPU. One might very well argue that the independence of the LPs in these tests does not highlight the dependence of the LP to neural network in the Pricing Problem, and that these tests are wrongly based. Well, we contend that the argument pertains to the second possibility and not the first one. 
     
-    CPU ``set'' was utilizing more than half of the available 8 threads, and we were concerned if there was latency due to thread synchronization. Since we used \texttt{scipy.optimize.linprog()}'s Simplex solver for the LP, which was distinct from Pytorch, this led to a `Fork and Join' task-synchronization requirement after the neural network was complete. We suspected this causing latency as the LP waited for the neural network to finish. To test this hunch, we ran the scripts with restricted access to CPU threads. Using the \texttt{taskset} command in Ubuntu, we manually forced the script to use specific CPU threads. If CPU ``set'' slowed down even after restriction, then there would not been synchronization delays - the script wasn't heavily threaded. Whereas, a gradual increase in execution time with the number of available threads would infer that more simultaneous threads for the neural network creating delays in LP's execution.
+    CPU ``set'' was utilizing more than half of the available 8 threads, and we were concerned if there was latency due to thread synchronization. Since we used \texttt{scipy.optimize.linprog()}'s Simplex solver, which was distinct from Pytorch, this led to a `Fork and Join' task-synchronization requirement \cite[Section 2.2]{IssuesMP} after the neural network was complete. We suspected this causing latency as the LP waited for the neural network to finish. To test this hunch, we ran the scripts with restricted access to CPU threads. Using the \texttt{taskset} command in Ubuntu, we manually forced the script to use specific CPU threads. If CPU ``set'' slowed down even after restriction, then there would not been synchronization delays - the script wasn't heavily threaded. Whereas, a gradual increase in execution time with the number of available threads would show that more threads for the neural network create delays in LP's execution.
+    \begin{figure}[!htbp]
+        \centering
+        \begin{tikzpicture}
+        \begin{axis}[
+        width=\textwidth,
+        height=8cm,
+        xlabel=Epochs,
+        ylabel=Time/s,
+        scaled y ticks = false,
+        grid=both,
+        every axis plot/.append style={very thick},
+        ]
+        \addplot[red] table [col sep=comma,x=epoch, y=t1]{datafiles/lp_time_logs_threads.csv};
+        \addlegendentry{1 Thread}
+        
+        \addplot[blue] table [col sep=comma,x=epoch, y=t3]{datafiles/lp_time_logs_threads.csv};
+        \addlegendentry{3 Threads}
+        
+        \addplot[brown] table [col sep=comma,x=epoch, y=t5]{datafiles/lp_time_logs_threads.csv};
+        \addlegendentry{5 Threads}
+        
+        \addplot[black] table [col sep=comma,x=epoch, y=t7]{datafiles/lp_time_logs_threads.csv};
+        \addlegendentry{7 Threads}
+        
+        \end{axis}
+        \end{tikzpicture}
+        \caption[LP Runtime Example with Restricted Thread Access]{LP Runtime Example with Restricted Thread Access: With only 1 thread accessible to the whole script (neural network and LP), the LP performs as good as `Only LP' setting (\Cref{app:LP Slowing Down or Speeding Up?}). We start seeing erratic synchronization delays for 3 threads, and constant delays with more threads.}
+        \label{fig:LP Runtime Example with Restricted Thread Access}
+    \end{figure}
     
-    On the other hand, CPU Usage logs do correspond with our LP runtime observations, but the former phenomenon is inexplicable, at least from our side. We believe that the neural network should stop executing and the threads should synchronize, before the LP starts. The LP on CPU ``set'' should then use just 1 thread, as with `Only LP' setting, forming high spikes in the CPU usage graph (top, Figure \ref{fig:CPU Usage by Different Configurations}). At odds with what we expect, the CPU Usage graph shows constant use of 4-5 threads with tiny spikes, which are natural, indicating that the neural network's threads were running \textit{along with} the LP. While this would have targeted the model's correctness on CPU ``set'' config., the results we obtained are same as those with GPU ``set''.
-    
-    Therefore, while CPU usage logs for the configurations might explain the strange GPU Speedup, CPU usage for CPU ``set'' is itself strange and inexplicable. Additionally, main memory usage in GPU ``set'' is inexplicably high. Although both these behaviors could be caused by Pytorch's implementation specifics, we cannot ensure this possibility. Further research and suggestions are welcome.
+    \Cref{fig:LP Runtime Example with Restricted Thread Access} shows how the access to CPU's threads affected the LP's runtime. Clearly, restricting access to a single thread avoids synchronization delays in the Fork and Join task, allowing the LP to run faster on all epochs. Based on this finding, we restricted the Pricing Problem model's access to the all CPU threads, giving us better CPU ``set'' performance (\Cref{sec:PriProbRes - GPU}) and removing the unexpected GPU Speedup (\Cref{fig:Restricted Finding Rewards - Time taken by the LP,fig:Restricted Finding Rewards - Speedup for LP}).
+    \begin{figure}[!htbp]
+        \centering
+        \begin{tikzpicture}
+        \begin{axis}[
+        width=.9\textwidth,
+        height=8cm,
+        xtick=data,
+        xlabel={Batch-Size $J$},
+        ylabel={Time/s},
+        enlarge y limits=0.15,
+        enlarge x limits=0.05,
+        y tick label style={/pgf/number format/1000 sep=},
+        extra y tick style={grid=major, tick label style={xshift=-1cm}},
+        legend style={at={(0.02,.98)},
+            anchor=north west},
+        nodes near coords,
+        every node near coord/.append style={yshift=-0.7cm}
+        ]
+        \addplot+ [mark=*,
+        nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit
+        ] coordinates {
+            (11,1.15) +- (0.10,0.10)
+            (35,1.75) +- (0.05,0.05)
+            (55,2.46) +- (0.01,0.01)
+            (85,4.74) +- (0.03,0.03)
+            (116,10.11) +- (0.26,0.26)
+            (145,12.61) +- (0.20,0.20)
+            (174,15.20) +- (0.32,0.32)
+            (203,20.50) +- (0.15,0.15)
+            (232,24.81) +- (0.82,0.82)
+        };  % no restriction
+        \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
+            (11,0.69) +- (0.004,0.004)
+            (35,1.18) +- (0.002,0.002)
+            (55,1.80) +- (0.01,0.01)
+            (85,3.24) +- (0.03,0.03)
+            (116,5.63) +- (0.14,0.14)
+            (145,7.83) +- (0.22,0.22)
+            (174,10.54) +- (0.03,0.03)
+            (203,14.29) +- (0.48,0.48)
+            (232,18.11) +- (0.17,0.17)
+        };  % restricted to 1thread
+        \legend{Access to all threads,Restricted to 1 thread}
+        \end{axis}
+        \end{tikzpicture}
+        \caption[Neural Network's Performance (CPU ``set'') with and without Thread Access Restrictions]{Neural Network's Performance (CPU ``set'') with and without Thread Access Restrictions: Data from the Pricing Problem Tests in \Cref{sec:PriProbRes - GPU}. Contrary to one's expectation, fewer threads decreases the network's execution time.}
+        \label{fig:Neural Network's Performance (CPU ``set'') with and without Thread Access Restrictions}
+    \end{figure}
+
+    Well, does it reduce the neural network's performance (higher runtime due to lower parallelism)? Shockingly, it does the opposite: increase the performance. Explaining this phenomena requires in-depth understanding of Pytorch's implementation with OpenMP, but there can be some possibilities:
+    \begin{itemize}
+        \item More parallelism could result in competition between threads for Main Memory access \cite[Section 2.1]{IssuesMP}.
+        \item There could still be inconspicuous synchronization requirements in the network, caused due to our algorithm's structure.
+    \end{itemize}
+    We cannot ensure one of them nor deny any other possibility. This area requires further research and we are open to suggestions. As for the results, we use the restricted access results for CPU ``set'' to calculate GPU Speedups in \Cref{sec:PriProbRes - Optimization}.
 \end{appendices}

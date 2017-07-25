@@ -154,7 +154,7 @@ Running on batches of sizes $T = 17, 51, 85, 129, 173$ on a randomly generated d
 
 \subsection{Pricing Problem's Results} \label{sec:Pricing Problem's Results}
 \subsubsection{Optimization Results} \label{sec:PriProbRes - Optimization}
-Taking the approach mentioned in \Cref{sec:Pricing Problem-Optimizing the Original Dataset}, we obtained consistent loss values for each set of weights (even with differently seeded rewards). The best performing set of weights was set-2, using which the average loss value for the Pricing Problem hovered around $0.0079\%$. Next, running differently seeded rewards with different learning rates on set-2 of weights, we obtained the lowest loss value of $\textbf{0.0068\%}$.
+Taking the approach mentioned in \Cref{sec:Pricing Problem-Optimizing the Original Dataset}, we obtained consistent loss values for each set of weights (even with differently seeded rewards). The best performing set of weights was set-2, using which the average loss value for the Pricing Problem hovered around $0.0079\%$. Next, running differently seeded rewards with different learning rates on set-2 of weights, we obtained the lowest loss value of $\textbf{0.0069\%}$.
 %    \begin{figure}[!htbp]
 %        \centering
 %        \begin{tikzpicture}
@@ -191,7 +191,7 @@ Compared to the proportional reward distribution (loss values calculated using s
         \hline
         \textbf{Rewards Obtained From} & \textbf{Best Loss Values (In \%)}\\
         \hline
-        Model's Prediction & 0.0068\\
+        Model's Prediction & 0.0069\\
         Random Initialization & 0.0331\\
         Proportional Distribution & 0.0235\\
         \hline
@@ -304,15 +304,15 @@ After running on different batch-sizes $J = 11, 35, 55, 85, 116, 145, 174, 203, 
 Since the the low GPU Speedup was uncanny, we looked for operations that were causing the program to slow down on the GPU. Since the 2-layered network was quite small, we suspected the LP problem (\Cref{eqn:lp_math_constrain_rewards,eqn:lp_code_constrain_rewards}) to influence the runtimes. Thus, we recorded execution times for both the neural network and the LP separately. As we suspected, the LP did impact the runtime more than the neural networks did, and accounted for $\approx 90 \%$ of the total model runtime (\Cref{fig:Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPU ``set'' Separately}). However, the GPU Speedup in LP runtime was unusual.
 
 \paragraph{Strange GPU Speedup in LP Computation}
-The Speedup is exceptional as we intentionally transferred the needed matrices/tensors to the CPU for solving the LP using Simplex. Since SciPy's Optimize Module uses a single CPU core and does not utilize the GPU, we expected similar runtimes for both configurations. Our efforts to determine the reasons are collected in \Cref{app:Strange GPU Speedup in LP Computation} instead of digressing here. As stated later in this section, we disregard the old GPU Speedup results for finding rewards and use the more correct ones.
+The Speedup is exceptional as we intentionally transferred the needed matrices/tensors to the CPU for solving the LP using Simplex. Since SciPy's Optimize Module uses a single CPU core and does not utilize the GPU, we expected similar runtimes for both configurations. Our efforts to determine the reasons are collected in \Cref{app:Strange GPU Speedup in LP Computation} instead of digressing here. As stated later in this section, we disregard the old GPU Speedup results for finding rewards and use the more suited ones.
 
-We found that the LP in CPU ``set'' was slower than normal because of latency in thread/multi-processing synchronization\footnote{Pytorch uses OpenMP \cite{PTDocs,OpenMP} when the CPU is ``set'', multi-processing the 2-layered network.} (\Cref{app:Strange GPU Speedup in LP Computation}). Since \Cref{alg:Solving the Pricing Problem} performs operations sequentially (Calculate loss $\rightarrow$ Gradient-Descent and Update $\vect{r}$ $\rightarrow$ Constrain using LP), we suggest these possibilities:
+We found that the LP in CPU ``set'' was slower than normal because of latency in thread synchronization\footnote{Pytorch uses OpenMP \cite{PTDocs,OpenMP} when the CPU is ``set'', which threads the 2-layered network.} (\Cref{app:Strange GPU Speedup in LP Computation}). Since \Cref{alg:Solving the Pricing Problem} performs operations sequentially (Calculate loss $\rightarrow$ Gradient-Descent and Update $\vect{r}$ $\rightarrow$ Constrain using LP), we suggest these possibilities:
 \begin{enumerate}
     \item The 2-layered network is parallelized but \texttt{scipy.optimize}'s LP solver is not. Since both sub-problems are solved by independent frameworks, we could not thread the whole algorithm without implementing back-end OpenMP \cite{OpenMP} back-end manually and allowing multiple copies of the script to run simultaneously. Currently, the LP problem acts as a shared resource, requiring all network threads to synchronize before processing, causing time lag before all elements/matrices are available.
     \item The simultaneously running threads downgrade the LP solver's performance. We do not endorse this possibility because the CPU resources are independent when using multi-processing over CPU's cores. We checked if the same script running simultaneously on another core hampered the performance of the original copy, but did not witness any dependence.
 \end{enumerate}
 
-We believe the first possibility to be the reason. While one might contend the lack of this behavior in GPU ``set'' even though it needs thread synchronization before starting the LP solver, we reiterate that we intentionally transfer the matrices to the CPU after the network has been executed. This is not case with CPU ``set'' because the network remains in execution in other cores while the LP has started. Therefore, when we restrict the script's access to a single CPU core, we do not witness any GPU Speedup in LP runtime. This only affects CPU ``set'' performance because the GPU ``set'' configuration independently executes the network on the GPU.
+We believe the first possibility to be the reason (elaborated in \Cref{app:Strange GPU Speedup in LP Computation}). While one might contend the lack of this behavior in GPU ``set'' even though it needs thread synchronization before starting the LP solver, we reiterate that we intentionally transfer the matrices to the CPU after the network has been executed, adding the time elapsed in the network's time logs. This is not case with CPU ``set'' because the network remains in execution in other cores while the LP has started. Therefore, when we restrict the script's access to a single CPU core, we do not witness any GPU Speedup in LP runtime. This only affects CPU ``set'' performance because the GPU ``set'' configuration independently executes the network on the GPU.
 \begin{figure}[!htbp]
     \centering
     \begin{subfigure}{\textwidth}

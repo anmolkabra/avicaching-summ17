@@ -30,7 +30,7 @@ Hardware specifications and software versions used for the experiments are liste
         \textbf{Type} & \textbf{Unit/Specs}\\
         \hline
         Desktop & Dell Precision Tower 3620\\
-        CPU & Intel Core i7-7700K\\
+        CPU & Intel Core i7-7700K\footnotemark\\
         RAM & 16GB\\
         GPU & NVIDIA Quadro P4000\\
         \hline
@@ -41,7 +41,7 @@ Hardware specifications and software versions used for the experiments are liste
         \hline
         \textbf{Library/Package} & \textbf{Version}\\
         \hline
-        Ubuntu OS & 16.04.2 LTS\\
+        Ubuntu OS & 16.04.2 LTS x86\textunderscore64\\
         CUDA & 8.0\\
         cuDNN & 5.1.10\\
         MKL & 2017.0.3\\
@@ -53,7 +53,7 @@ Hardware specifications and software versions used for the experiments are liste
     \end{tabular}
 \end{table}
 
-\paragraph{GPU ``set'' and CPU ``set'' Clarification} By GPU ``set'' we mean \textit{distributing} operations in the scripts between CPU and GPU, while by CPU ``set'' we mean that the operations were executed \textit{only} on the CPU. Since GPUs are inferior than CPUs at handling most operations other than simple arithmetic matrix ones due to parallelism (see \Cref{sec:Computation Using GPUs}), we used - and recommend using - both the CPU and the GPU in the former case (GPU ``set'') to handle operations each is superior at. However, since the models in \Cref{alg:Algorithm for the Identification Problem,alg:Solving the Pricing Problem} (not the full scripts) are primarily arithmetic operations on  tensors, it is clear that they were executed on the GPU when it was ``set'' and on the CPU when the CPU was ``set''. Other than this optimization, we did not specifically design any parallelized algorithm for either configurations, relying on the Pytorch's and NumPy-SciPy's inbuilt implementation.
+\paragraph{GPU ``set'' and CPU ``set'' Clarification} \footnotetext{hyper-threaded with 4 cores, 8 threads @ 4.20 GHz} By GPU ``set'' we mean \textit{distributing} operations in the scripts between CPU and GPU, while by CPU ``set'' we mean that the operations were executed \textit{only} on the CPU. Since GPUs are inferior than CPUs at handling most operations other than simple arithmetic matrix ones due to parallelism (see \Cref{sec:Computation Using GPUs}), we used - and recommend using - both the CPU and the GPU in the former case (GPU ``set'') to handle operations each is superior at. However, since the models in \Cref{alg:Algorithm for the Identification Problem,alg:Solving the Pricing Problem} (not the full scripts) are primarily arithmetic operations on  tensors, it is clear that they were executed on the GPU when it was ``set'' and on the CPU when the CPU was ``set''. Other than this optimization, we did not specifically design any parallelized algorithm for either configurations, relying on the Pytorch's and NumPy-SciPy's inbuilt implementation.
 
 \subsection{Algorithm Choice} \label{sec:Algorithm Choice}
 On the algorithm side, we used Adam's algorithm for \textsc{Gradient-Descent}($\cdot$), after testing performances of several algorithms\footnote{Pytorch lets you choose the corresponding function/module} including but not limited to Stochastic Gradient Descent (SGD) \cite{SGD}, Adam's Algorithm \cite{Adam} and Adagrad \cite{Adagrad}. In \Cref{sec:Results} (Results), we only discuss and show tests using the Adam's algorithm, since it was found to work best with both models over all test runs.

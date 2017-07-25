@@ -10,6 +10,8 @@ parser.add_argument("--no-cuda", action="store_true", default=False,
     help="disables CUDA training")
 parser.add_argument("--epochs", type=int, default=100, metavar="E",
     help="inputs the number of epochs to train for")
+parser.add_argument("--threads", type=int, metavar="T",
+    help="inputs the number of threads to run NN on")
 
 args = parser.parse_args()
 # assigning cuda check and test check to single variables
@@ -116,7 +118,7 @@ def train(net, optimizer):
     # the first J outputs are the new rewards
     lp_res = lp.run_lp(lp_A, lp_c, J, r_on_cpu, 1.0)
     lp_time = time.time() - start_lp_time
-    print(lp_time)
+    # print(lp_time)
     net.R.data = torchten(lp_res.x[:J]).unsqueeze(dim=0)
 
     if args.cuda:
@@ -141,7 +143,7 @@ lp_A, lp_c = lp.build_A(J), lp.build_c(J)
 total_lp_time = 0
 lp_time_log = []
 total_time = go_forward(net)
-print(loss.data[0])
+print(torch.get_num_threads())
 for e in xrange(1, args.epochs + 1):
     train_t = train(net, optimizer)
     curr_loss = loss.data[0]
@@ -156,5 +158,5 @@ if args.cuda:
     file_pre = "gpu, "
 else:
     file_pre = "cpu, "
-fname = "epochs=%d, time=%.0f" % (args.epochs, time.time())
+fname = "threads=%d, epochs=%d, time=%.0f" % (args.threads, args.epochs, time.time())
 np.savetxt("./stats/" + file_pre + fname + ".txt", lp_time_log, fmt="%.6f", delimiter=",")

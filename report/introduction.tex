@@ -22,7 +22,9 @@ Once our model starts delivering better results than the previously devised mode
 The use of GPUs has changed drastically in the last decade - from rendering superior graphics on monitors to parallelizing general matrix operations, speeding up matrix-based algorithms. Companies like NVIDIA are now providing General Purpose GPUs (GPGPUs) that are capable of executing parallel algorithms using thousands of cores and threads. Furthermore, by working with dedicated for parallel programming APIs like CUDA, one can handle a GPU's threads more efficiently and optimize an task's datapath. To give an overview of GPUs, we briefly describe an NVIDIA GPU's architecture, instruction set and best practices for optimization. Although we do not implement the CUDA backend manually and use Pytorch's implementation, understanding the basics of the processor can be helpful for designing our models.
 
 \subsection{GPU Architecture}
-
+For simplicity, we describe the structure of an NVIDIA GPU. These devices are multi-threaded multi-processors for executing fine-grained threads efficiently \cite[Appendix B.4]{PattersonARM}. These threads are organized into ``warps'', which are further organized into ``blocks'', dedicated to execute a single instruction in multiple threads simultaneously. A normal device can have tens of threads in a warp, which is the basic unit of execution \cite{wong2010demystifying}.These This is possible by arranging threads into distinct ``blocks'', which are assigned a single instruction to execute. Briefly, 
+\subsubsection{sadkfjgh}
+GPUs are based on Single Instruction, Multiple Thread (SIMT) architecture. Unlike traditional CPUs, which have Single Instruction Multiple Data (SIMD) architecture, and clusters, which have Multiple Instruction Multiple Data (MIMD) architecture, GPUs provide multiple threads to execute a thread-based instruction. 
 
 \subsection{Avoiding Specific Instructions in GPUs}
 %\subsubsection{}

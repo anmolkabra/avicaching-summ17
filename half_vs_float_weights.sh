@@ -11,10 +11,10 @@ for T in 17 51 85 129 173
 do
     for s in 1 2 3
     do
-        python nnAvicaching_find_weights.py --rand --no-plots --epochs 1000 --time $T --seed $s
+        # sed -i 's/HalfTensor/FloatTensor/g' nnAvicaching_find_weights.py
+        # python nnAvicaching_find_weights.py --rand --no-plots --epochs 1000 --time $T --seed $s
         sed -i 's/FloatTensor/HalfTensor/g' nnAvicaching_find_weights.py
         python nnAvicaching_find_weights.py --rand --no-plots --epochs 1000 --time $T --seed $s
-        sed -i 's/HalfTensor/FloatTensor/g' nnAvicaching_find_weights.py
     done
 done
 

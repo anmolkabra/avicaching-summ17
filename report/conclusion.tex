@@ -1,9 +1,9 @@
-\section{Conclusion} \label{sec:Conclusion}
+\chapter{Conclusion} \label{sec:Conclusion}
 Our models for the Identification and the Pricing Problem outperformed previously studied ones \cite{Xue2016Avi2} and other baseline comparisons (\Cref{sec:IdProbRes - Optimization,sec:PriProbRes - Optimization,tab:Loss Values Calculated for Different Models for Identification Problem,tab:Loss Values Calculated from Different Sets of Rewards}). For the Identification Problem, the average loss value was $14\%$ lower than the previous 2-layered model, and $12\%$ better than the 4-layered model, giving us better results than any other tested model. While we did not test deeper networks, we contend that using more hidden layers will only aggravate overfitting and won't provide better results - as is partly the case with the 4-layered network. The Pricing Problem's model also delivered at least $3\times$ lower loss values than other baseline comparisons for reward distribution. Clearly, our model outperformed other models in both problems.
 
 On the other hand, we can definitively conclude that the Identification Problem ran $\approx 9\times$ faster on the GPU than the CPU, mainly because the model was based on tensors and a neural network, accelerated by a GPU and NVIDIA's APIs. With an approximate GPU Speedup of $9.06$ for the Identification Problem, we can scale to large datasets more efficiently on the GPU than the CPU. The Pricing Problem's neural network only performed better with higher batch-sizes, with transfer times hampering performance on smaller datasets. Although the Pricing Problem's full model merely delivered a speedup of $\approx 0.97$ (with the LP problem heavily impacting the runtime), the 2-layered network for finding rewards gave a speedup of $1.41\pm0.76$ (mean over all tested batch-sizes). This shows that neural network are inherently quick to optimize on a GPU only if the batch-sizes are large enough. This preference to operate on bigger datasets is also discussed in \Cref{sec:Computation Using GPUs} and recent literature \cite[Appendix B]{PattersonARM}. Extending this research project, using faster GPUs like NVIDIA Quadro GP100 and CPUs will most likely decrease the models' runtimes. There still exists enormous scope for improvement on both fronts - optimized results and faster computation.
 
-\subsection{Interesting Inferences}
+\section{Interesting Inferences}
 One may also notice compelling reflections from the results:
 \begin{itemize}
     \item One interesting observation in \Cref{tab:Loss Values Calculated from Different Sets of Rewards} is that the loss value from the Proportional Distribution ($0.0235\%$) and Random Initialization ($0.331\%$) are very close, highlighting that the set of weights obtained from the Identification Problem are dependent on other factors ($\matr{f}, \matr{D}$) as well. In other words, incentivizing under-sampled locations more is as good as random distribution of rewards - as environmental features and distances between locations count as well as rewards.\\
@@ -11,7 +11,7 @@ One may also notice compelling reflections from the results:
 \end{itemize}
 \begin{table}[!htbp]
     \centering
-    \caption[Example Rewards Prediction by the Pricing Problem's Model]{Example Rewards Prediction by the Pricing Problem's Model: The prediction is relatively sparse and non-uniform. Parameters: $\mathcal{R} = 1000$, Loss value = $0.0068\%$, Epochs = 1000, Learning Rate = $5 \times 10^{-5}$, Weights: Set-2.}
+    \caption[Example Rewards Prediction by the Pricing Problem's Model]{Example Rewards Prediction by the Pricing Problem's Model: The prediction is relatively sparse and non-uniform. Parameters: $\mathcal{R} = 1000$, Loss value = $0.0068\%$, Epochs = 1000, Learning Rate = $5 \times 10^{-5}$, Weights: Set-2. (values rounded)}
     \label{tab:Example Rewards Prediction by the Pricing Problem's Model}
     \setlength\tabcolsep{2pt}
     \begin{tabular}{|*{15}{c}|}
@@ -27,12 +27,14 @@ One may also notice compelling reflections from the results:
     \end{tabular}
 \end{table}
 
-\subsection{Further Research}
+\section{Further Research}
 There exist numerous possibilities for solving the problems better and faster - from more complex models to better preprocessing. Some important suggestions are listed below:
 
-\paragraph{Choice of Gradient-Descent Algorithm} Figure \Cref{fig:Plot for 3-layered Model} shows how the choice of Adam's algorithm \cite{Adam} for \textsc{Gradient-Descent}($\cdot$) helps the model to learn quickly. However, we also witness long periods of saturation after few epochs. This was the case for several other algorithms (SGD \cite{SGD} and Adagrad \cite{Adagrad}), but with different paces of learning. Since the organizers would want to further optimize the set of weights even, research could be done on avoiding the long, unchanging saturation phase. This may involve using other techniques for \textsc{Gradient-Descent}($\cdot$) (Algorithm \Cref{alg:Algorithm for the Identification Problem}) and/or altering the loss function $Z_P(\matr{w_1}, \matr{w_2})$ (Equation \Cref{eqn:iden_problem}).
+\subsection{Choice of Gradient-Descent Algorithm}
+Figure \Cref{fig:Plot for 3-layered Model} shows how the choice of Adam's algorithm \cite{Adam} for \textsc{Gradient-Descent}($\cdot$) helps the model to learn quickly. However, we also witness long periods of saturation after few epochs. This was the case for several other algorithms (SGD \cite{SGD} and Adagrad \cite{Adagrad}), but with different paces of learning. Since the organizers would want to further optimize the set of weights even, research could be done on avoiding the long, unchanging saturation phase. This may involve using other techniques for \textsc{Gradient-Descent}($\cdot$) (Algorithm \Cref{alg:Algorithm for the Identification Problem}) and/or altering the loss function $Z_P(\matr{w_1}, \matr{w_2})$ (Equation \Cref{eqn:iden_problem}).
 
-\paragraph{Modeling LP Differently to Reduce Runtimes} LP is a simple tool for optimizing different problems, with various algorithms for solving LPs - Simplex, Criss-Cross and other Interior Point techniques. While it gives optimal results, it can be computationally expensive if the matrices are large (as depicted in Figure \Cref{fig:Finding Rewards - Time taken by the LP}). One can try several approaches to reduce computation time here:
+\subsection{Modeling LP Differently to Reduce Runtimes}
+LP is a simple tool for optimizing different problems, with various algorithms for solving LPs - Simplex, Criss-Cross and other Interior Point techniques. While it gives optimal results, it can be computationally expensive if the matrices are large (as depicted in Figure \Cref{fig:Finding Rewards - Time taken by the LP}). One can try several approaches to reduce computation time here:
 \begin{itemize}
     \item Implement GPU Support for the LP. Good CUDA backend support did not exist during our study, forcing us to use SciPy's Optimize Module, which only supported NumPy matrices on the CPU.
     \item Constrain Rewards differently (\Cref{sec:Constraining Rewards}). We were unsuccessful in implementing a dual version of the LP, interspersed with the neural network. Nonetheless, constraining rewards using a neural network would drastically improve performance as the current LP accounts for $\approx$ 90\% of the total runtime.

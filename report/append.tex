@@ -1,13 +1,13 @@
 \begin{appendices}
     \crefalias{section}{appsec}
-    \section{Implementation} \label{app:Implementation}
+    \chapter{Implementation} \label{app:Implementation}
     The code can be found here[]. \\
     Both the Identification and the Pricing Problem were programmed in Python 2.7 using NumPy 1.12.1, SciPy 0.19.1 and Pytorch 0.1.12 modules [web cites] \cite{SCPOptimizeDocs}\cite{NPDocs}. [Results from Python plotted in Matplotlib 2.0.2] With some code optimizations, the input dataset $\matr{F}$ was built using NumPy's \texttt{ndarray} and Pytorch's \texttt{tensor} functions. Since Pytorch offers NumPy-like code base but with dedicated neural network functions and submodules, Pytorch's \texttt{relu} and \texttt{softmax} functions were used along with other matrix operations.\\
     
-    \subsection{Specific Implementation Details for the Pricing Problem}
+    \section{Specific Implementation Details for the Pricing Problem}
     Among all the code optimizations in both models, some in that for the Pricing Problem are worth discussing, as they drastically differ from Algorithm \ref{alg:Solving the Pricing Problem} or are intricate. Most optimizations relevant to the Identification Problem are trivial and relate directly to those for the Pricing Problem. Therefore, only those in the Pricing Problem model are discussed.
     
-    \subsubsection{Building the Dataset $\matr{F}$}
+    \subsection{Building the Dataset $\matr{F}$}
     Notice that we build the dataset $\matr{F}$ and batch-multiply it with $\matr{w_1}$ on each iteration/epoch (lines 2-3 of Algorithm \ref{alg:Solving the Pricing Problem}). Doing these steps are repetitive as most elements of $\matr{F}$, distances $\matr{D}$ and environmental feature vector $\vect{f}$, do not change unlike rewards $\vect{r}$. Moreover since $\matr{w_1}$ is fixed, Algorithm \ref{alg:Solving the Pricing Problem} would repetitively multiply the $\vect{f}$ and $\matr{D}$ components of $\matr{F}$ with $\matr{w_1}$. To avoid these unnecessary computations, we preprocessed most of $\matr{F}$ by batch-multiplying with $\matr{w_1}$ and only multiplied $\vect{r}$ with the corresponding elements of $\matr{w_1}$. Figure \ref{fig:Splitting and Batch Multiplying F and w1} describes the process graphically.\\
     \begin{figure}[!htbp]
         \centering
@@ -17,7 +17,7 @@
     \end{figure}    
     Although this preprocessing might seem applicable for the model in Identification Problem too, it does not apply fully. Since the weights $\matr{w_1}$ are updated on each iteration/epoch, we cannot multiply them with parts of $\matr{F}$ beforehand (Algorithm \ref{alg:Algorithm for the Identification Problem}). However, we can combine $\matr{D}$ and $\vect{f}$ in the preprocessing stage and simply append $\vect{r}[t]$ on each iteration, saving computation time.
     
-    \subsubsection{Modeling the Linear Programming Problem in the Standard Format}
+    \subsection{Modeling the Linear Programming Problem in the Standard Format}
     The \texttt{scipy.optimize} module's \texttt{linprog} function requires that the arguments are in standard LP format. As discussed in \cref{sec:Calculating Rewards}, Equation \ref{eqn:lp_code_constrain_rewards} resembles the standard format more closely than \ref{eqn:lp_math_constrain_rewards}, but it may not be clear how so.\\
     
     Considering $\vect{u}$ and $\vect{r'}$ as variables $\vect{x}$, Equation \ref{eqn:lp_code_constrain_rewards} translates into Equation \ref{eqn:lp_matrix_rewards} ($J$ is the number of locations).
@@ -51,10 +51,10 @@
     \end{aligned}
     \end{equation}
     
-    \section{Strange GPU Speedup in LP Computation} \label{app:Strange GPU Speedup in LP Computation}
+    \chapter{GPU Speedup in LP Computation} \label{app:GPU Speedup in LP Computation}
     Even though we intentionally transferred the rewards vector to and constrained it using \texttt{scipy.optimize} module's \texttt{linprog} function on the CPU, we obtained an unexpected GPU Speedup in the LP runtimes (see \cref{sec:PriProbRes - GPU} and Figure \ref{fig:Finding Rewards - Time taken by the LP}). Confounded by this weird behavior, we wanted to pinpoint the reason(s). It was clear that \texttt{scipy.optimize.linprog()} could not have differentiated between the configurations and delivered different results. However, since this was not our study's prime motive, we did not take a strong quantitative approach in determining the cause(s).
     
-    \subsection{Possible Reasons for GPU Speedup} \label{app:Possible Reasons for GPU Speedup}
+    \section{Possible Reasons for GPU Speedup} \label{app:Possible Reasons for GPU Speedup}
     There could have been many reasons for this bizarre behavior, including but not limited to:
     \begin{enumerate}
         \item SciPy's Optimize module differentiating between configurations. This can be ruled out because the module could not have known the configuration during which it was called. This is because only Pytorch's tensors were executable on the GPU, whereas NumPy tensors were only operable on the CPU\footnote{We didn't mind SciPy.Optimize using MKL, BLAS or any other linear algebra libraries. Even if it had, there wouldn't be a distinction between CPU and GPU ``set'' configurations!} \cite{PTDocs,NPDocs,SCPOptimizeDocs}. SciPy's Optimize Module identifying the configurations is just supernatural.
@@ -62,7 +62,7 @@
         \item Neural network in CPU ``set'' using more CPU threads than that in GPU ``set''. The Intel i7-7700K processor is quad-core with 8 threads. Since Pytorch uses OpenMP \cite{PTDocs,OpenMP}, a parallel processing API for CPUs, we fancied the neural network to run on simultaneous processors/threads, thus allowing less available threads for the LP to run/taking up CPU's resources/causing latency due to synchronization locks\footnote{\Cref{alg:Solving the Pricing Problem} for the Pricing Problem is sequential in that calculated tensors have to be fully available before LP starts - a `Fork and Join' synchronization task \cite[Section 2.2]{IssuesMP}.}.
     \end{enumerate}
 
-    \subsection{LP Slowing Down or Speeding Up?} \label{app:LP Slowing Down or Speeding Up?}
+    \section{LP Slowing Down or Speeding Up?} \label{app:LP Slowing Down or Speeding Up?}
     First we determined whether the LP runtime was being sped up in GPU ``set'' or slowed down in CPU ``set''. To test this, we created a copy of our Pricing Problem's model, which focused only on logging LP runtimes at each epoch. For a baseline comparison, we scripted the same LP without the neural network, which gave us the \underline{true} runtimes for the LP (`Only LP' setting), without any involvement of Pytorch modules or functions. 
     
     Comparing the former runtimes (CPU and GPU ``set'') with `Only LP' runtime, we observed that the LP in the CPU ``set'' configuration took longer to execute than that in `Only LP' setting during each epoch (\Cref{fig:LP Runtime Example for Different Configurations}). We also noticed little to no interaction between the neural network in GPU ``set'' with the LP, as the runtimes of LP in GPU ``set'' were similar to those of LP in `Only LP' setting. This confirmed that CPU ``set'' was slowing down the LP and GPU ``set'' was not speeding it up. But why?
@@ -93,10 +93,11 @@
         \label{fig:LP Runtime Example for Different Configurations}
     \end{figure}
     
-    \subsection{CPU and Main Memory Usage} \label{app:CPU and Main Memory Usage}
+    \section{CPU and Main Memory Usage} \label{app:CPU and Main Memory Usage}
     While logging the LP runtimes in \Cref{app:LP Slowing Down or Speeding Up?}, we also recorded an estimate of the amount of computer resources both configurations were using. Using the \texttt{top} package in Ubuntu, we polled the resource monitor every 0.1 seconds while the python script was running\footnote{\label{foo:logs not epochs} Running processes were polled every 0.1 seconds - contributing to a `log'. The longer the script ran, the more logs collected.}. \Cref{fig:CPU Usage by Different Configurations,fig:Main Memory Usage by Different Configurations} shows how much main memory and CPU resource each setting was using.
     
-    \paragraph{CPU Usage} We see that CPU ``set'' constantly used more than 4 out of 8 available threads during execution, i.e., $>400\%$ CPU usage, while GPU ``set'' only used a single thread. Also, since we polled at every 0.1 second, and the LP took a minimum of 0.14 seconds (\Cref{fig:LP Runtime Example for Different Configurations}), the data plotted in \Cref{fig:CPU Usage by Different Configurations} must show resource use \textit{while} the LP was running. Considering that the LP in `Only LP' setting only used a single thread ($100\%$), it makes sense that GPU ``set'' would use 1 thread for execution - the neural network operations were performed on the GPU, leaving the CPU empty for management and LP. 
+    \subsection{CPU Usage}
+    We see that CPU ``set'' constantly used more than 4 out of 8 available threads during execution, i.e., $>400\%$ CPU usage, while GPU ``set'' only used a single thread. Also, since we polled at every 0.1 second, and the LP took a minimum of 0.14 seconds (\Cref{fig:LP Runtime Example for Different Configurations}), the data plotted in \Cref{fig:CPU Usage by Different Configurations} must show resource use \textit{while} the LP was running. Considering that the LP in `Only LP' setting only used a single thread ($100\%$), it makes sense that GPU ``set'' would use 1 thread for execution - the neural network operations were performed on the GPU, leaving the CPU empty for management and LP. 
     \begin{figure}[!htbp]
         \centering
         \begin{minipage}{.49\textwidth}
@@ -203,9 +204,10 @@
 
     On the other hand, it is apparent that CPU ``set'' had multi-threaded operations running simultaneously (\#3 in \Cref{app:Possible Reasons for GPU Speedup}). Since we know from the `Only LP' setting that the LP only used a single thread, the other threads in CPU ``set'' must have been the neural network. Although this counters our reasoning that the neural network threads should have fully synchronized and terminated before the LP started, it seems that those threads were still active. Therefore, Pytorch and OpenMP continued calculating for the neural network even after the LP had started. Nevertheless, this activity does not impact correctness, as found from optimization tests on CPU ``set''\footnote{CPU ``set'' tests were done for optimization on original datasets to check this. Since we got the same results as for GPU ``set'' optimization tests \Cref{sec:PriProbRes - Optimization}, the results are not shown in the report.} (same optimization figures as obtained for GPU ``set'' - \Cref{sec:PriProbRes - Optimization}).
     
-    \paragraph{Main Memory Usage} GPU ``set'' was using 10 times as much main memory as CPU ``set'' or `Only LP', in addition to storing and operating on tensors in the GPU's internal memory. Not only this is weird, but it is also opposite of what we expected to happen - CPU ``set'' using more main memory and hampering LP performance. It is ironic that the LP performs better (even as good as `Only LP') on GPU ``set'' even when the configuration uses a lot more main memory than CPU ``set''. Clearly, main memory usage cannot be a criterion for assessing LP performance on different configurations.
+    \subsection{Main Memory Usage}
+    GPU ``set'' was using 10 times as much main memory as CPU ``set'' or `Only LP', in addition to storing and operating on tensors in the GPU's internal memory. Not only this is weird, but it is also opposite of what we expected to happen - CPU ``set'' using more main memory and hampering LP performance. It is ironic that the LP performs better (even as good as `Only LP') on GPU ``set'' even when the configuration uses a lot more main memory than CPU ``set''. Clearly, main memory usage cannot be a criterion for assessing LP performance on different configurations.
     
-    \subsection{Parallelism Doesn't Always Help: Thread Synchronization Delays} \label{app:Parallelism Doesn't Always Help}
+    \section{Parallelism Doesn't Always Help: Thread Synchronization Delays} \label{app:Parallelism Doesn't Always Help}
     Now that we had determined that multi-processing/threading might be the root of the strange GPU Speedup, we asked why. Were the simultaneous threads gobbling up valuable CPU resources or were the neural network threads causing latency due to prolonged process synchronization?
     
     Testing the first possibility was trivial enough - manually run LPs simultaneously on different threads (in 4 available hyper-threaded cores) and see if they impact each other's performance. If they didn't, multi-threading would prove independent in terms of CPU resources, and there would be no reason to believe that simultaneous threads would eat up each other's CPU resources. Running several instances of the LP on multiple threads and cores, we found no impact of multi-processed scripts on each other when it came to CPU resources. The scripts were unaffected by any other processes on other cores of CPU. One might very well argue that the independence of the LPs in these tests does not highlight the dependence of the LP to neural network in the Pricing Problem, and that these tests are wrongly based. Well, we contend that the argument pertains to the second possibility and not the first one. 

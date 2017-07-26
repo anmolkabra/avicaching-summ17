@@ -1,6 +1,6 @@
-\section{Results} \label{sec:Results}
-\subsection{Identification Problem's Results} \label{sec:Identification Problem's Results}
-\subsubsection{Optimization Results} \label{sec:IdProbRes - Optimization}
+\chapter{Results} \label{sec:Results}
+\section{Identification Problem's Results} \label{sec:Identification Problem's Results}
+\subsection{Optimization Results} \label{sec:IdProbRes - Optimization}
 Running the 3-layered network with the GPU ``set'' with different learning rates on different seeds (to calculate average performance of each learning rate) for 10000 epochs showed that the model was performing constantly giving lower loss values ($Z_I$ - \Cref{eqn:iden_problem}) with learning rate = $10^{-3}$. 
 
 We observed that higher learning rates ($>10^{-2}$) could only decrease the loss function to a limit, after which the updates in the weights caused the loss function to oscillate and increase. This phenomena is exemplified in \Cref{fig:Test Loss Plots of Different Learning Rates to Find Weights}, which are plots of different models with the same seed but different learning rates. On the other side of $10^{-3}$, lower learning rates took too long to train. Runtime for the model on 10000 epochs was 1232.56 seconds (average over 20 runs = 5 seeds $\times$ 4 learning rates), and models with learning rates less than $10^{-3}$ did not perform better than those with learning rate = $10^{-3}$ on \textit{any} run. Although the decrease in test losses were constant for learning rates less than $10^{-3}$, we feel that they may be computationally expensive and temporally inconvenient to train.
@@ -85,7 +85,7 @@ To check if the model was overfitting at learning rate = $10^{-3}$, we plotted l
     \label{fig:Train & Test Loss Values' Plots of Different Models}
 \end{figure}
 
-\subsubsection{GPU Speedup Results} \label{sec:IdProbRes - GPU}
+\subsection{GPU Speedup Results} \label{sec:IdProbRes - GPU}
 Running on batches of sizes $T = 17, 51, 85, 129, 173$ on a randomly generated dataset for 1000 epochs with both GPU and CPU ``set'' separately, we obtained information on full execution runtimes (both training and testing runtimes combined). The average results (over 3 different seeds for each batch) are plotted in \Cref{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}, which show promising GPU Speedup over CPU figures for any batch size; the GPU Speedup averaged over all tested batch-sizes is $\textbf{9.06}\pm\textbf{0.45}$.
 \begin{figure}[!htbp]
     \centering
@@ -152,8 +152,8 @@ Running on batches of sizes $T = 17, 51, 85, 129, 173$ on a randomly generated d
     \label{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}
 \end{figure}
 
-\subsection{Pricing Problem's Results} \label{sec:Pricing Problem's Results}
-\subsubsection{Optimization Results} \label{sec:PriProbRes - Optimization}
+\section{Pricing Problem's Results} \label{sec:Pricing Problem's Results}
+\subsection{Optimization Results} \label{sec:PriProbRes - Optimization}
 Taking the approach mentioned in \Cref{sec:Pricing Problem-Optimizing the Original Dataset}, we obtained consistent loss values for each set of weights (even with differently seeded rewards). The best performing set of weights was set-2, using which the average loss value for the Pricing Problem hovered around $0.0079\%$. Next, running differently seeded rewards with different learning rates on set-2 of weights, we obtained the lowest loss value of $\textbf{0.0069\%}$.
 %    \begin{figure}[!htbp]
 %        \centering
@@ -198,7 +198,7 @@ Compared to the proportional reward distribution (loss values calculated using s
     \end{tabular}
 \end{table}
 
-\subsubsection{GPU Speedup Results} \label{sec:PriProbRes - GPU}
+\subsection{GPU Speedup Results} \label{sec:PriProbRes - GPU}
 After running on different batch-sizes $J = 11, 35, 55, 85, 116, 145, 174, 203, 232$, we \textbf{did not observe drastic GPU speedup} for the full model. \Cref{fig:Finding Rewards - Time Taken by the Full Model} shows the Speedup trend: GPU Speedup for the full model was a mere \textbf{1.53 $\pm$ 0.10}.
 \begin{figure}[!htbp]
     \centering
@@ -303,7 +303,7 @@ After running on different batch-sizes $J = 11, 35, 55, 85, 116, 145, 174, 203, 
 
 Since the the low GPU Speedup was uncanny, we looked for operations that were causing the program to slow down on the GPU. Since the 2-layered network was quite small, we suspected the LP problem (\Cref{eqn:lp_math_constrain_rewards,eqn:lp_code_constrain_rewards}) to influence the runtimes. Thus, we recorded execution times for both the neural network and the LP separately. As we suspected, the LP did impact the runtime more than the neural networks did, and accounted for $\approx 90 \%$ of the total model runtime (\Cref{fig:Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPU ``set'' Separately}). However, the GPU Speedup in LP runtime was unusual.
 
-\paragraph{Strange GPU Speedup in LP Computation}
+\subsubsection{Strange GPU Speedup in LP Computation}
 The Speedup is exceptional as we intentionally transferred the needed matrices/tensors to the CPU for solving the LP using Simplex. Since SciPy's Optimize Module uses a single CPU core and does not utilize the GPU, we expected similar runtimes for both configurations. Our efforts to determine the reasons are collected in \Cref{app:Strange GPU Speedup in LP Computation} instead of digressing here. As stated later in this section, we disregard the old GPU Speedup results for finding rewards and use the more suited ones.
 
 We found that the LP in CPU ``set'' was slower than normal because of latency in thread synchronization\footnote{Pytorch uses OpenMP \cite{PTDocs,OpenMP} when the CPU is ``set'', which threads the 2-layered network.} (\Cref{app:Strange GPU Speedup in LP Computation}). Since \Cref{alg:Solving the Pricing Problem} performs operations sequentially (Calculate loss $\rightarrow$ Gradient-Descent and Update $\vect{r}$ $\rightarrow$ Constrain using LP), we suggest these possibilities:
@@ -560,6 +560,7 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:Stran
     \label{fig:Restricted Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPUa ``set'' Separately}
 \end{figure}
 
-\paragraph{Final Results} The results after restricting script's access to a single CPU cores are plotted in \Cref{fig:Restricted Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPUa ``set'' Separately}. We prefer using these results (over previous results - \Cref{fig:Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPU ``set'' Separately}) after restricting access, as it gives the better performance for CPU ``set''. The time elapsed for the Neural Network includes time taken to transfer tensors to and from the GPU, which results in overhead - as seen in higher runtimes for smaller datasets (lower batch-size) in \Cref{fig:Restricted Finding Rewards - Time taken by the Neural Network,fig:Restricted Finding Rewards - Speedup for the Neural Network}. However, as the batch-size increases, we see the computation dominating over the transfer time, resulting in higher CPU ``set'' runtimes; the GPU ``set'' runtimes almost grow linearly for the tested batch-sizes.
+\subsubsection{Final Results}
+The results after restricting script's access to a single CPU cores are plotted in \Cref{fig:Restricted Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPUa ``set'' Separately}. We prefer using these results (over previous results - \Cref{fig:Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPU ``set'' Separately}) after restricting access, as it gives the better performance for CPU ``set''. The time elapsed for the Neural Network includes time taken to transfer tensors to and from the GPU, which results in overhead - as seen in higher runtimes for smaller datasets (lower batch-size) in \Cref{fig:Restricted Finding Rewards - Time taken by the Neural Network,fig:Restricted Finding Rewards - Speedup for the Neural Network}. However, as the batch-size increases, we see the computation dominating over the transfer time, resulting in higher CPU ``set'' runtimes; the GPU ``set'' runtimes almost grow linearly for the tested batch-sizes.
 
 Moreover, the LP subproblem highly impacts the full model, accounting for more than $90\%$ of the total runtime. Therefore, even though the Neural Network gets sped up at bigger datasets, the GPU Speedup is not reflected in the full model.

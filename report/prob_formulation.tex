@@ -1,7 +1,7 @@
-\section{Problem Formulation} \label{sec:Problem Formulation}
+\chapter{Problem Formulation} \label{sec:Problem Formulation}
 Our models strongly draws from the previous studies \cite{Xue2016Avi1, Xue2016Avi2}, with modifications directed at reducing computation time, as well as getting better results. Since GPUs enable faster computation on tensors, both the Identification and the Pricing Problem are formulated as tensor-based 3-layered and 2-layered neural networks respectively using the Pytorch library \cite{PTDocs}. Recognizing that NVIDIA GPUs easily pair with Pytorch \cite{PTDocs}, accelerating tensor operations using CUDA and cuDNN \cite{cuDNNPaper, NVIDIA}, we aim to maximize parallel operations and minimize thread synchronization.
 
-\subsection{Identification Problem} \label{sec:Identification Problem}
+\section{Identification Problem} \label{sec:Identification Problem}
 As discussed in \Cref{sec:Introduction}, the model should learn parameters that caused the change in agents' behavior when a certain set of rewards was applied to locations in the experiment region. Learning those parameters will help us understand how agents behave with a fixed reward distribution, and will enable organizers to redistribute rewards based on that behavior.
 
 Specifically, given datasets $\vect{y_t}$ and $\vect{x_t}$ of agents' visit densities at time $t$, before and after the rewards $\vect{r_t}$ were placed, we want to find weights $\matr{w_1}$ and $\matr{w_2}$ that caused the change from $\vect{x_t}$ to $\vect{y_t}$, considering possible influence from environmental factors $\matr{f}$ and distances between locations $\matr{D}$. Although the original model proposed to learn a single set of weights $\matr{w}$ \cite{Xue2016Avi2}, our proposed model considers two sets of weights $\matr{w_1}$ and $\matr{w_2}$ as it may theoretically result into higher accuracy and lower loss value. Mathematically, the model can be formulated as:
@@ -18,7 +18,7 @@ p_{u, v} = \frac{\exp(\vect{\Theta_2} \cdot \text{reLU} (\matr{\Theta_1} \cdot [
 
 To optimize the loss value $Z_I(\matr{w_1}, \matr{w_2})$, the neural network learns the set of weights through multiple epochs of backpropagating the loss using gradient descent. Furthermore, the program preprocesses the dataset to avoid unnecessary sub-epoch iterations and to promote batch operations on tensors.
 
-\subsubsection{Structure of Input Dataset for Identifying Weights} \label{sec:Structure of Input Dataset for Identifying Weights}
+\subsection{Structure of Input Dataset for Identifying Weights} \label{sec:Structure of Input Dataset for Identifying Weights}
 \begin{figure}[!htbp]
     \begin{subfigure}{.64\textwidth}
         \centering
@@ -55,7 +55,7 @@ Another advantage of building the dataset as a tensor comes with the Pytorch lib
     \end{algorithmic}
 \end{algorithm}
 
-\subsubsection{Minimizing Loss for the Identification Problem} \label{sec:Minimizing Loss for the Identification Problem}
+\subsection{Minimizing Loss for the Identification Problem} \label{sec:Minimizing Loss for the Identification Problem}
 As shown in \Cref{fig:Neural network designed for the Identification Problem}, the neural network is made of 3 fully connected layers - the input layer, the hidden layer with rectified Linear Units (reLU), and the output layer with softmax$(\cdot)$ function units. The network can also be visualized as a stack of 1-dimensional layers (\Cref{fig:Side view of the network}), with the softmax$(\cdot)$ calculated on the stack's output.
 \begin{figure}[!htbp]
     \centering
@@ -98,7 +98,7 @@ It is important to clarify that the network in \Cref{fig:3-dimensional view of t
     \end{algorithmic}
 \end{algorithm}
 
-\subsection{Pricing Problem} \label{sec:Pricing Problem}
+\section{Pricing Problem} \label{sec:Pricing Problem}
 After learning the set of weights $\matr{w_1}$ and $\matr{w_2}$ highlighting the change in agents' behavior to collect observations, the Pricing Problem aims to redistribute rewards to the all locations such that the predicted behavior of agents influenced by the new set of rewards is homogeneous. Thus, given a budget of rewards $\mathcal{R}$, this optimization problem can be expressed as:
 \begin{equation} \label{eqn:pricing_problem}
     \begin{aligned}
@@ -114,12 +114,12 @@ where elements of $\matr{P}$ are defined as in \Cref{eqn:puv_equation}.
 
 To allocate the rewards $\vect{r}$ optimally, the calculations for the pricing problem are akin to that for the Identification Problem (see \Cref{sec:Identification Problem}). However, since only 1 set of rewards need to be optimized, we use an altered 2-layer (input and output layers) network instead of the 3-layered network used for the Identification Problem. While \Cref{eqn:pricing_problem} looks like a typical Linear Programming problem, only a part of the formulation uses LP to constrain the rewards. We calculate $\matr{P}$ using a 2-layered network that minimizes the loss function $Z_P(\vect{r})$ using gradient descent, and constrain the rewards using linear programming. Fundamental processes are described below, whereas specific implementation details, with code optimizations and more data preprocessing, are described in \Cref{app:Implementation}.
 
-\subsubsection{Input Dataset for Finding Rewards}
+\subsection{Input Dataset for Finding Rewards}
 Since it is the set of rewards $\vect{r}$ that need to be optimized, they must serve as the ``weights'' of the network (``weights'' here refer to the weighted edges of this network and not to the set of calculated weights $\matr{w_1}$ and $\matr{w_2}$). Therefore, the rewards $\vect{r}$ are no longer fed into the network but are its characteristic. Instead, the calculated weights $\matr{w_1}$ are fed into the network, and are ``weighted'' by the rewards.
 
 The observation density datasets, $\matr{x}$ and $\matr{y}$, are also aggregated for all agents such that they give information in terms of locations $u$ only. This is also why rewards vector $\vect{r}$ does not depend on $t$ - we want a generalized set of rewards for all time $t$ per location $u$. Therefore, the algorithm for constructing $\matr{F}$ (see \Cref{sec:Structure of Input Dataset for Identifying Weights}) is same as \Cref{alg:Constructing the Input Dataset} but with a change - $\vect{r_t}$ replaced by $\vect{r}$.
 
-\subsubsection{Calculating Rewards} \label{sec:Calculating Rewards}
+\subsection{Calculating Rewards} \label{sec:Calculating Rewards}
 \Cref{alg:Solving the Pricing Problem} for finding $\matr{P}$ is very similar to \Cref{alg:Algorithm for the Identification Problem}'s first few steps but without any epochs of $t$. Also, since the model would predict $\vect{y}$, it does not need labels $\vect{y}$ as a dataset. Although \Cref{alg:Solving the Pricing Problem}'s logic flow may seem arcane, it is straight-forward - as displayed in \Cref{fig:Logic Flow of Algorithm Pricing Problem}.
 \begin{figure}[!htbp]
     \centering
@@ -154,7 +154,7 @@ The observation density datasets, $\matr{x}$ and $\matr{y}$, are also aggregated
     \end{algorithmic}
 \end{algorithm}
 
-\subsubsection{Constraining Rewards} \label{sec:Constraining Rewards}
+\subsection{Constraining Rewards} \label{sec:Constraining Rewards}
 After updating the rewards, the program constrains them using LP($\cdot$) such that $\sum_{i}r_i \leq \mathcal{R}$ and $r_i \geq 0$. To do so, the LP($\cdot$) finds another set of rewards $\vect{r'}$ such that the absolute difference between new and old rewards ($\sum_{i}|r'_i - r_i|$) is minimum. The mathematical formulation is given in \Cref{eqn:lp_math_constrain_rewards}, which was implemented using SciPy's Optimize Module \cite{SCPOptimizeDocs}. Since the module supports a standard format for doing linear programming, \Cref{eqn:lp_code_constrain_rewards} is used (see \Cref{app:Implementation}), which is mathematically equivalent to \Cref{eqn:lp_math_constrain_rewards}.
 \begin{multicols}{2}
     \begin{equation} \label{eqn:lp_math_constrain_rewards}

@@ -70,7 +70,7 @@ Comparing the former runtimes (CPU and GPU ``set'') with `Only LP' runtime, we o
     \centering
     \begin{tikzpicture}
     \begin{axis}[
-        width=\textwidth,
+        width=.9\textwidth,
         height=8cm,
         xlabel=Epochs,
         ylabel=Time/s,
@@ -207,7 +207,7 @@ On the other hand, it is apparent that CPU ``set'' had multi-threaded operations
 \subsubsection{Main Memory Usage}
 GPU ``set'' was using 10 times as much main memory as CPU ``set'' or `Only LP', in addition to storing and operating on tensors in the GPU's internal memory. Not only this is weird, but it is also opposite of what we expected to happen: CPU ``set'' using more main memory and hampering LP performance. It is contradictory that the LP performs better (even as good as `Only LP') on GPU ``set'' if we consider RAM usage as the reason -- GPU ``set'' uses a lot more main memory than CPU ``set''. Clearly, main memory usage cannot be a criterion for assessing LP performance on different configurations.
 
-\section{Parallelism Doesn't Always Help: Thread Synchronization Delays} \label{app:Parallelism Doesn't Always Help}
+\section{Parallelism Doesn't Always Help} \label{app:Parallelism Doesn't Always Help}
 Now that we had determined that multi-processing/threading might be the root of the strange GPU Speedup, we asked why. Were the simultaneous threads gobbling up valuable CPU resources or were the neural network threads causing latency due to prolonged synchronization delays?
 
 Testing the first possibility was trivial enough - manually run LPs simultaneously on different threads (in 4 available hyper-threaded cores) and see if they impact each other's performance. If they didn't, multi-threading would prove independent in terms of CPU resources, and there would be no reason to believe that simultaneous threads would eat up each other's CPU resources. Running several instances of the LP on multiple threads and cores, we found no impact of multi-processed scripts on each other when it came to CPU resources. The scripts were unaffected by any other processes on other cores of CPU. One might very well argue that the independence of the LPs in these tests does not highlight the dependence of the LP to neural network in the Pricing Problem, and that these tests are wrongly based. Well, we contend that the argument pertains to the second possibility and not the first one. 
@@ -217,7 +217,7 @@ CPU ``set'' was utilizing more than half of the available 8 threads, and we were
     \centering
     \begin{tikzpicture}
     \begin{axis}[
-    width=\textwidth,
+    width=.9\textwidth,
     height=8cm,
     xlabel=Epochs,
     ylabel=Time/s,

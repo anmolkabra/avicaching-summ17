@@ -1,9 +1,16 @@
 \chapter{Results} \label{sec:Results}
 \section{Identification Problem's Results} \label{sec:Identification Problem's Results}
 \subsection{Optimization Results} \label{sec:IdProbRes - Optimization}
-Running the 3-layered network with the GPU ``set'' with different learning rates on different seeds (to calculate average performance of each learning rate) for 10000 epochs showed that the model was performing constantly giving lower loss values ($Z_I$ - \Cref{eqn:iden_problem}) with learning rate = $10^{-3}$. 
+Running the 3-layered network with the GPU ``set'' with different learning rates on different seeds (to calculate average performance of each learning rate) for 10000 epochs showed that the model was constantly giving lower loss values (\Cref{eqn:iden_problem}) with learning rate = $10^{-3}$. 
 
-We observed that higher learning rates ($>10^{-2}$) could only decrease the loss function to a limit, after which the updates in the weights caused the loss function to oscillate and increase. This phenomena is exemplified in \Cref{fig:Test Loss Plots of Different Learning Rates to Find Weights}, which are plots of different models with the same seed but different learning rates. On the other side of $10^{-3}$, lower learning rates took too long to train. Runtime for the model on 10000 epochs was 1232.56 seconds (average over 20 runs = 5 seeds $\times$ 4 learning rates), and models with learning rates less than $10^{-3}$ did not perform better than those with learning rate = $10^{-3}$ on \textit{any} run. Although the decrease in test losses were constant for learning rates less than $10^{-3}$, we feel that they may be computationally expensive and temporally inconvenient to train.
+We observed that higher learning rates ($>10^{-2}$) could only decrease the loss function to a limit, after which the updates in the weights caused the loss function to oscillate and increase. This phenomena is exemplified in \Cref{fig:Test Loss Plots of Different Learning Rates to Find Weights}, which are plots of different runs with the same seed but different learning rates. On the other side of $10^{-3}$, lower learning rates took too long to train. Runtime for the model on 10000 epochs was 1232.56 seconds (average over 20 runs = 5 seeds $\times$ 4 learning rates), and models with learning rates less than $10^{-3}$ did not perform better than those with learning rate = $10^{-3}$ on \textit{any} run. Although the decrease in test losses were constant for learning rates less than $10^{-3}$, we feel that they may be computationally expensive and temporally inconvenient to train.
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=16cm, height=10cm]{test_losses_diff_lr_plot}
+    \caption[Test Loss Plots of Different Learning Rates to Find Weights]{Test Loss Plots of Different Learning Rates to Find Weights: Learning rates lower than $10^{-3}$ couldn't reach the loss value attained by the model at learning rate = $10^{-3}$ even after 10000 epochs.}
+    \label{fig:Test Loss Plots of Different Learning Rates to Find Weights}
+\end{figure}
+
 \begin{table}[!htbp]
     \centering
     \caption[Loss Values Calculated for Different Models for Identification Problem]{Loss Values Calculated for Different Models for Identification Problem: For both the 3- and the 4-layered models, learning rate = $10^{-3}$ outperformed other learning rates. Consequently, that learning rate is used in comparison with other models in \Cref{fig:Comparison of Loss Values from Different Models of the Identification Problem}.}
@@ -21,52 +28,45 @@ We observed that higher learning rates ($>10^{-2}$) could only decrease the loss
     \end{tabular}
 \end{table}
 
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=16cm, height=10cm]{test_losses_diff_lr_plot}
-    \caption{Test Loss Plots of Different Learning Rates to Find Weights}
-    \label{fig:Test Loss Plots of Different Learning Rates to Find Weights}
-\end{figure}
+Observing that the average test loss values of learning rate = $10^{-3}$ is the lowest, we compare its results with the previous study's 2-layered network, historical data \cite[Table~1]{Xue2016Avi2}, and the 4-layered network with learning rate = $10^{-3}$ (see \Cref{sec:Identification Problem-Optimizing the Original Dataset}). As depicted in \Cref{fig:Comparison of Loss Values from Different Models of the Identification Problem}, our 3-layered neural network outperformed the 2-layered model by \textbf{0.14 units (14\% more closer to Ground Truth -- $\matr{y}$)} \cite[Table~1]{Xue2016Avi2}, and also produced much better results ($12\%$ more closer to Ground Truth) than the 4-layered model.
 \begin{figure}[!htbp]
     \centering
     \begin{minipage}{.48\textwidth}
         \centering
         \begin{tikzpicture}
-            \begin{axis}[
-                ybar,
-                width=.98\textwidth,
-                enlarge x limits=0.15,
-                legend style={at={(0.02,0.98)},
-                    anchor=north west,legend columns=1},
-                ylabel={Loss Value},
-                symbolic x coords={2-layer,3-layer,4-layer, Historical},
-                xtick=data,
-                nodes near coords,
-                nodes near coords align={vertical},
-                every node near coord/.style={/pgf/number format/fixed},
-                xlabel={Models},
-            ]
-            \addplot coordinates {(2-layer,0.26) (3-layer,0.12) (4-layer,0.23) (Historical, 0.36)};% test set
-            \addplot coordinates {(3-layer,0.03) (4-layer,0.06)};% training set
-            \legend{Test Set,Training Set}
-            \end{axis}
+        \begin{axis}[
+        ybar,
+        width=.98\textwidth,
+        enlarge x limits=0.15,
+        legend style={at={(0.02,0.98)},
+            anchor=north west,legend columns=1},
+        ylabel={Loss Value},
+        symbolic x coords={2-layer,3-layer,4-layer, Historical},
+        xtick=data,
+        nodes near coords,
+        nodes near coords align={vertical},
+        every node near coord/.append style={/pgf/number format/fixed},
+        xlabel={Models},
+        ]
+        \addplot coordinates {(2-layer,0.26) (3-layer,0.12) (4-layer,0.23) (Historical, 0.36)};% test set
+        \addplot coordinates {(3-layer,0.03) (4-layer,0.06)};% training set
+        \legend{Test Set,Training Set}
+        \end{axis}
         \end{tikzpicture}
-        \caption[Comparison of Loss Values from Different Models of the Identification Problem]{Comparison of Loss Values from Different Models of the Identification Problem: Loss values for the training set are inevitably lower than that for the test set, which should be the basis for comparison}
+        \caption[Comparison of Loss Values from Different Models of the Identification Problem]{Comparison of Loss Values from Different Models of the Identification Problem: Loss values for the training set are inevitably lower than that for the test set, which is the basis for comparison.}
         \label{fig:Comparison of Loss Values from Different Models of the Identification Problem}
     \end{minipage}\hfill
     \begin{minipage}{.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{weights_map_plot_3}
-        \caption[Predicted Probabilities of Agents Visiting Each Location Plotted on a Map (Latitude, Longitude) Representing Tompkins and Cortland Counties, NY]{Predicted Probabilities of Agents Visiting Each Location Plotted on a Map (Latitude, Longitude) Representing Tompkins and Cortland Counties, NY: Dark dots represent high prediction of visits. This can be compared to the plots for the 2-layered network and other models \cite[Figure 3]{Xue2016Avi2}.}
+        \caption[Predicted Probabilities of Agents Visiting Each Location Plotted on a Map (Latitude, Longitude) Representing Tompkins and Cortland Counties, NY]{Predicted Probabilities of Agents Visiting Each Location Plotted on a Map (Latitude, Longitude) Representing Tompkins and Cortland Counties, NY: Dark dots represent high prediction of visits. This can be compared to the plots for the 2-layered network and other models \cite[Figure~3]{Xue2016Avi2}.}
         \label{fig:Predicted Probabilities of Agents Visiting Each Location Plotted on a Map}
     \end{minipage}
 \end{figure}
 
-Observing that the average test loss values of learning rate = $10^{-3}$ is the lowest, we compare its results with the previous study's 2-layered network, historical data \cite[Table 1]{Xue2016Avi2}, and the 4-layered network with learning rate = $10^{-3}$ (see \Cref{sec:Identification Problem-Optimizing the Original Dataset}). As depicted in \Cref{fig:Comparison of Loss Values from Different Models of the Identification Problem}, our 3-layered neural network outperformed the previous 2-layered model by \textbf{0.14 units (14\% more closer to Ground Truth - $\matr{y}$)} \cite[Table 1]{Xue2016Avi2}, and also produced much better results (12\% more closer to Ground Truth) than the 4-layered model.
-
 We also generated the predicted probabilities of the agents in the Test Set, visiting each location ($\matr{P}\matr{x}$), and plotted it onto maps marked by the locations' latitudes and longitudes. \Cref{fig:Predicted Probabilities of Agents Visiting Each Location Plotted on a Map} shows such a plot generated by the 3-layered network, where each dot represents a location.
 
-To check if the model was overfitting at learning rate = $10^{-3}$, we plotted loss values at the end of each epoch for all tests. Although there remained $\approx$ 9\% difference (0.09 loss units) in the values of training and testing set, the 3-layered model was not drastically overfitting as an average \textit{end} difference of $8.76 \pm 1.59$\% persisted for many epochs, instead of increasing and tuning more to the training set. Even though one would expect overfitting with more tuned parameters, the 4-layered model also  produced an average \textit{end} difference of $16.77 \pm 4.73\%$, which persisted during the run. \Cref{fig:Train & Test Loss Values' Plots of Different Models} shows the results of a randomly selected experiment with plots of loss values at each epoch for the both networks.
+To check if the model was overfitting at learning rate = $10^{-3}$, we plotted loss values at the end of each epoch for all tests. Although there remained $\approx 9\%$ difference (0.09 loss units) in the values of training and testing set, the 3-layered model was not drastically overfitting as an average \textit{end} difference of $8.76 \pm 1.59$\% persisted for many epochs, instead of increasing and tuning more to the training set. Even though one would expect overfitting with more tuned parameters, the 4-layered model also  produced an average \textit{end} difference of $16.77 \pm 4.73\%$, which persisted during the run. \Cref{fig:Train & Test Loss Values' Plots of Different Models} shows the results of a randomly selected experiment with plots of loss values at each epoch for the both networks.
 \begin{figure}[!htbp]
     \centering
     \begin{subfigure}{.49\textwidth}
@@ -81,12 +81,12 @@ To check if the model was overfitting at learning rate = $10^{-3}$, we plotted l
         \caption{Plot for 4-layered Model // todo}
         \label{fig:Plot for 4-layered Model}
     \end{subfigure}
-    \caption[Train and Test Loss Values' Plots of Different Models]{Train and Test Loss Values' Plots of Different Models: Both networks learn the set of weights quickly, as displayed in the steep descent in loss values before $\approx$ 1000 epochs. This quick learning is due to the choice of \textsc{Gradient-Descent}($\cdot$) function - Adam's algorithm \cite{Adam}. Other algorithms like SGD \cite{SGD} and Adagrad \cite{Adagrad} learn relatively slowly.}
+    \caption[Train and Test Loss Values' Plots of Different Models]{Train and Test Loss Values' Plots of Different Models: Both networks learn the set of weights quickly, as displayed in the steep descent in loss values before $\approx 1000$ epochs. This quick learning is due to the choice of \textsc{Gradient-Descent}($\cdot$) function -- Adam's algorithm \cite{Adam}. Other algorithms like SGD \cite{SGD} and Adagrad \cite{Adagrad} learn relatively slowly.}
     \label{fig:Train & Test Loss Values' Plots of Different Models}
 \end{figure}
 
 \subsection{GPU Speedup Results} \label{sec:IdProbRes - GPU}
-Running on batches of sizes $T = 17, 51, 85, 129, 173$ on a randomly generated dataset for 1000 epochs with both GPU and CPU ``set'' separately, we obtained information on full execution runtimes (both training and testing runtimes combined). The average results (over 3 different seeds for each batch) are plotted in \Cref{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}, which show promising GPU Speedup over CPU figures for any batch size; the GPU Speedup averaged over all tested batch-sizes is $\textbf{9.06}\pm\textbf{0.45}$.
+Running on batches of sizes $T = 17, 51, 85, 129, 173$ on a randomly generated dataset for 1000 epochs with both GPU and CPU ``set'' separately, we obtained information on full execution runtimes (combining training and testing runtimes). The average results (over 3 seeds for each batch) are plotted in \Cref{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}, which show promising GPU Speedup figures for any batch size; the GPU Speedup averaged over all tested batch-sizes is $\textbf{9.06}\pm\textbf{0.45}$.
 \begin{figure}[!htbp]
     \centering
     \begin{subfigure}{.59\textwidth}
@@ -103,6 +103,7 @@ Running on batches of sizes $T = 17, 51, 85, 129, 173$ on a randomly generated d
         legend style={at={(0.02,.98)},
             anchor=north west},
         nodes near coords,
+        every node near coords/.append style={/pgf/number format/.cd,fixed zerofill,precision=2},
         ]
         \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
             (17,118.23) +- (1.77, 1.77)
@@ -148,41 +149,15 @@ Running on batches of sizes $T = 17, 51, 85, 129, 173$ on a randomly generated d
             \end{axis}
         \end{tikzpicture}
     \end{subfigure}
-    \caption[Finding Weights - Execution Times of Different Batch-Sizes $T$ with GPU and CPU ``set'' Separately]{Finding Weights - Execution Times of Different Batch-Sizes $T$ with GPU and CPU ``set'' Separately: The GPU delivers faster computation than CPU even as the datasets' sizes grow - the average speedup is $9.06\pm0.45$. Also, the error bars are indiscernible because they are too small ($< 1\%$)}.
+    \caption[Finding Weights -- Execution Times of Different Batch-Sizes $T$ with GPU and CPU ``set'' Separately]{Finding Weights -- Execution Times of Different Batch-Sizes $T$ with GPU and CPU ``set'' Separately: The GPU delivers faster computation than CPU even as the datasets' sizes grow -- the average speedup is $9.06 \pm 0.45$. Also, the error bars are indiscernible because they are too small ($< 1\%$)}.
     \label{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}
 \end{figure}
 
 \section{Pricing Problem's Results} \label{sec:Pricing Problem's Results}
 \subsection{Optimization Results} \label{sec:PriProbRes - Optimization}
 Taking the approach mentioned in \Cref{sec:Pricing Problem-Optimizing the Original Dataset}, we obtained consistent loss values for each set of weights (even with differently seeded rewards). The best performing set of weights was set-2, using which the average loss value for the Pricing Problem hovered around $0.0079\%$. Next, running differently seeded rewards with different learning rates on set-2 of weights, we obtained the lowest loss value of $\textbf{0.0069\%}$.
-%    \begin{figure}[!htbp]
-%        \centering
-%        \begin{tikzpicture}
-%        \begin{axis}[
-%        ybar,
-%        width=.6\textwidth,
-%        height=7cm,
-%        enlarge x limits=0.15,
-%        ylabel={Loss Value (in\%)},
-%        symbolic x coords={Set-1,Set-2,Set-3,Set-4,Set-5},
-%        xtick=data,
-%        nodes near coords,
-%        nodes near coords align={vertical},
-%        xlabel={Models},
-%        xlabel style={yshift=-.5cm}
-%        ]
-%        \addplot+ [error bars/.cd, y dir=both, y explicit] coordinates {
-%            (Set-1, 0.0152) +- (0.0001, 0.0001)
-%            (Set-2, 0.0079) +- (0.0005, 0.0005)
-%            (Set-3, 0.0139) +- (0.0003, 0.0003)
-%            (Set-4, 0.0129) +- (0.0002, 0.0002)
-%            (Set-5, 0.0155) +- (0.0002, 0.0002)
-%        };
-%        \end{axis}
-%        \end{tikzpicture}
-%    \end{figure}
 
-Compared to the proportional reward distribution (loss values calculated using set-2 of weights), our model's set of rewards produced loss value $\approx$ \textbf{3 times} lower. We again clarify that we compare the best loss values, as the organizer expects to find a distribution that is as optimal as possible.  \Cref{tab:Loss Values Calculated from Different Sets of Rewards} lists the best loss values obtained on each type of reward allocation (model's predicted, random and proportional - \Cref{sec:Pricing Problem-Optimizing the Original Dataset}).
+Compared to the proportional reward distribution (loss values calculated using set-2 of weights), our model's set of rewards produced loss value $\approx$ \textbf{3 times} lower. \Cref{tab:Loss Values Calculated from Different Sets of Rewards} lists the best loss values obtained on each type of reward allocation (model's predicted, random and proportional -- \Cref{sec:Pricing Problem-Optimizing the Original Dataset}).
 \begin{table}[!htbp]
     \centering
     \caption[Loss Values Calculated from Different Sets of Rewards]{Loss Values Calculated from Different Sets of Rewards: The values are small because the loss function $Z_P(\vect{r})$ (\Cref{eqn:pricing_problem}) is averaged over the number of locations}
@@ -218,7 +193,7 @@ After running on different batch-sizes $J = 11, 35, 55, 85, 116, 145, 174, 203, 
             legend style={at={(0.02,.98)},
                 anchor=north west},
             nodes near coords,
-            every node near coord/.append style={yshift=-0.7cm}
+            every node near coord/.append style={yshift=-0.7cm,/pgf/number format/.cd,fixed zerofill,precision=2},
             ]
             \addplot+ [mark=*,
             nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit
@@ -265,7 +240,7 @@ After running on different batch-sizes $J = 11, 35, 55, 85, 116, 145, 174, 203, 
             legend style={at={(0.02,.98)},
                 anchor=north west},
             nodes near coords,
-            every node near coord/.append style={yshift=-0.7cm}
+            every node near coord/.append style={yshift=-0.7cm,/pgf/number format/.cd,fixed zerofill,precision=2},
             ]
             \addplot+ [mark=*,
             nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit
@@ -294,25 +269,25 @@ After running on different batch-sizes $J = 11, 35, 55, 85, 116, 145, 174, 203, 
             \legend{CPU ``set'',GPU ``set''}
             \end{axis}
         \end{tikzpicture}
-        \caption[Time taken by the LP]{Time taken by the LP: GPU Speedup over all batch-sizes is only \textbf{1.56 $\pm$ 0.08}. As discussed in \Cref{sec:PriProbRes - GPU,app:Strange GPU Speedup in LP Computation}, we shouldn't have witnessed this speedup as both configurations' LPs were computed on the CPU. Hence, we expected the GPU Speedup value for LP to be $\approx$ 1. }
+        \caption[Time taken by the LP]{Time taken by the LP: GPU Speedup over all batch-sizes is only \textbf{1.56 $\pm$ 0.08}. As discussed in \Cref{sec:PriProbRes - GPU,app:GPU Speedup in LP Computation}, we shouldn't have witnessed this speedup as both configurations' LPs were computed on the CPU. Hence, we expected the GPU Speedup value for LP to be $\approx$ 1. }
         \label{fig:Finding Rewards - Time taken by the LP}
     \end{subfigure}
-    \caption{Finding Rewards - Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately}
+    \caption{Finding Rewards -- Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately}
     \label{fig:Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPU ``set'' Separately}
 \end{figure}
 
-Since the the low GPU Speedup was uncanny, we looked for operations that were causing the program to slow down on the GPU. Since the 2-layered network was quite small, we suspected the LP problem (\Cref{eqn:lp_math_constrain_rewards,eqn:lp_code_constrain_rewards}) to influence the runtimes. Thus, we recorded execution times for both the neural network and the LP separately. As we suspected, the LP did impact the runtime more than the neural networks did, and accounted for $\approx 90 \%$ of the total model runtime (\Cref{fig:Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPU ``set'' Separately}). However, the GPU Speedup in LP runtime was unusual.
+As the the low GPU Speedup was disappointing, we looked for operations that were causing the program to slow down on the GPU. Since the 2-layered network was quite small, we suspected the LP problem (\Cref{eqn:lp_math_constrain_rewards,eqn:lp_code_constrain_rewards}) to influence the runtimes. Thus, we recorded execution times for both the neural network and the LP separately. As we suspected, the LP did impact the runtime more than the neural networks did, and accounted for $\approx 90 \%$ of the total model runtime (\Cref{fig:Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPU ``set'' Separately}). However, the GPU Speedup in LP runtime was unusual.
 
 \subsubsection{Strange GPU Speedup in LP Computation}
-The Speedup is exceptional as we intentionally transferred the needed matrices/tensors to the CPU for solving the LP using Simplex. Since SciPy's Optimize Module uses a single CPU core and does not utilize the GPU, we expected similar runtimes for both configurations. Our efforts to determine the reasons are collected in \Cref{app:Strange GPU Speedup in LP Computation} instead of digressing here. As stated later in this section, we disregard the old GPU Speedup results for finding rewards and use the more suited ones.
+The Speedup is exceptional as we intentionally transferred the needed matrices/tensors to the CPU for solving the LP using Simplex. Since SciPy's Optimize Module uses a single CPU core and does not utilize the GPU, we expected similar runtimes for both configurations. Our efforts to determine the reasons are collected in \Cref{app:GPU Speedup in LP Computation} instead of digressing here. As stated later in this section, we disregard the old GPU Speedup results for finding rewards and use the more suited ones.
 
-We found that the LP in CPU ``set'' was slower than normal because of latency in thread synchronization\footnote{Pytorch uses OpenMP \cite{PTDocs,OpenMP} when the CPU is ``set'', which threads the 2-layered network.} (\Cref{app:Strange GPU Speedup in LP Computation}). Since \Cref{alg:Solving the Pricing Problem} performs operations sequentially (Calculate loss $\rightarrow$ Gradient-Descent and Update $\vect{r}$ $\rightarrow$ Constrain using LP), we suggest these possibilities:
+We found that the LP in CPU ``set'' was slower than normal because of latency in thread synchronization\footnote{Pytorch uses OpenMP \cite{PTDocs,OpenMP} when the CPU is ``set'', which threads the 2-layered network.} (\Cref{app:Parallelism Doesn't Always Help}). Since \Cref{alg:Solving the Pricing Problem} performs operations sequentially (Calculate loss $\rightarrow$ Gradient-Descent and Update $\vect{r}$ $\rightarrow$ Constrain using LP), we suggest these possibilities:
 \begin{enumerate}
-    \item The 2-layered network is parallelized but \texttt{scipy.optimize}'s LP solver is not. Since both sub-problems are solved by independent frameworks, we could not thread the whole algorithm without implementing back-end OpenMP \cite{OpenMP} back-end manually and allowing multiple copies of the script to run simultaneously. Currently, the LP problem acts as a shared resource, requiring all network threads to synchronize before processing, causing time lag before all elements/matrices are available.
+    \item The 2-layered network is parallelized but \texttt{scipy.optimize}'s LP solver is not. Since both sub-problems are solved by independent frameworks, we could not thread the whole algorithm without implementing OpenMP \cite{OpenMP} back-end manually and allowing multiple copies of the script to run simultaneously. Currently, the LP problem acts as a shared resource, requiring all network threads to synchronize before processing, causing time lag before all elements/matrices are available.
     \item The simultaneously running threads downgrade the LP solver's performance. We do not endorse this possibility because the CPU resources are independent when using multi-processing over CPU's cores. We checked if the same script running simultaneously on another core hampered the performance of the original copy, but did not witness any dependence.
 \end{enumerate}
 
-We believe the first possibility to be the reason (elaborated in \Cref{app:GPU Speedup in LP Computation}). While one might contend the lack of this behavior in GPU ``set'' even though it needs thread synchronization before starting the LP solver, we reiterate that we intentionally transfer the matrices to the CPU after the network has been executed, adding the time elapsed in the network's time logs. This is not case with CPU ``set'' because the network remains in execution in other cores while the LP has started. Therefore, when we restrict the script's access to a single CPU core, we do not witness any GPU Speedup in LP runtime. This only affects CPU ``set'' performance because the GPU ``set'' configuration independently executes the network on the GPU.
+We believe the first possibility to be the reason (elaborated in \Cref{app:GPU Speedup in LP Computation}). While one might contend the lack of this behavior in GPU ``set'' even though it needs thread synchronization before starting the LP solver, we reiterate that we intentionally impose a synchronization barrier when transferring the matrices to the CPU after the network has been executed, adding the time elapsed in the network's time logs. This is not case with CPU ``set'' because the network remains in execution in other cores while the LP has started. Therefore, when we restrict the script's access to a single CPU core, we do not witness any GPU Speedup in LP runtime. This only affects CPU ``set'' performance because the GPU ``set'' configuration independently executes the network on the GPU.
 \begin{figure}[!htbp]
     \centering
     \begin{subfigure}{\textwidth}
@@ -331,7 +306,7 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         legend style={at={(0.02,.98)},
             anchor=north west},
         nodes near coords,
-        every node near coord/.append style={yshift=-0.7cm}
+        every node near coord/.append style={yshift=-0.7cm,/pgf/number format/.cd,fixed zerofill,precision=2},
         ]
         \addplot+ [mark=*,
         nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit
@@ -360,7 +335,7 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         \legend{CPU ``set'',GPU ``set''}
         \end{axis}
         \end{tikzpicture}
-        \caption{Time Taken by the Full Model: GPU Speedup over all batch-sizes is only $\textbf{0.97}\pm\textbf{0.04}$ - heavily impacted by LP runtimes.}
+        \caption{Time Taken by the Full Model: GPU Speedup over all batch-sizes is only $\textbf{0.97}\pm\textbf{0.04}$ -- heavily impacted by LP runtimes.}
         \label{fig:Restricted Finding Rewards - Time Taken by the Full Model}
     \end{subfigure}\vspace*{1em}
     \begin{subfigure}{\textwidth}
@@ -378,10 +353,9 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         legend style={at={(0.02,.98)},
             anchor=north west},
         nodes near coords,
-        every node near coord/.append style={yshift=-0.7cm}
+        every node near coord/.append style={yshift=-0.7cm,/pgf/number format/.cd,fixed zerofill,precision=2}
         ]
-        \addplot+ [mark=*,
-        nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit
+        \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit
         ] coordinates {
             (11,7.09) +- (0.04,0.04)
             (35,30.56) +- (0.32,0.32)
@@ -393,7 +367,7 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
             (203,488.71) +- (5.74,5.74)
             (232,649.55) +- (5.93,5.93)
         };  % cpu
-        \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
+        \addplot+ [mark=*,nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit] coordinates {
             (11,7.15) +- (0.04,0.04)
             (35,31.27) +- (0.30,0.30)
             (55,56.25) +- (0.13,0.13)
@@ -429,7 +403,7 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         legend style={at={(0.02,.98)},
             anchor=north west},
         nodes near coords,
-        every node near coord/.append style={yshift=-1.25cm}
+        every node near coord/.append style={yshift=-1.25cm,/pgf/number format/.cd,fixed zerofill,precision=2}
         ]
         \addplot+ [mark=*,
         nodes near coords=\raisebox{1.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit] coordinates {
@@ -457,7 +431,7 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         \legend{CPU ``set'',GPU ``set''}
         \end{axis}
         \end{tikzpicture}
-        \caption{Time taken by the Neural Network: GPU Speedup over all batch-sizes is $\textbf{1.41}\pm\textbf{0.76}$ - as transfer time between RAM and GPU's internal memory dominates for smaller datasets. However, as batch-size increases, computation time dominates over transfer time - GPU ``set'' performs better than CPU ``set''.}
+        \caption{Time taken by the Neural Network: GPU Speedup over all batch-sizes is $\textbf{1.41}\pm\textbf{0.76}$ -- as transfer time between RAM and GPU's internal memory dominates for smaller datasets. However, as batch-size increases, computation time dominates over transfer time -- GPU ``set'' performs better than CPU ``set''.}
         \label{fig:Restricted Finding Rewards - Time taken by the Neural Network}
     \end{subfigure}\vspace*{1em}
     \begin{subfigure}{0.3\textwidth}
@@ -475,6 +449,7 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         xmax=1.5,
         enlarge y limits=0.15,
         nodes near coords,
+        every node near coord/.append style={/pgf/number format/.cd,fixed zerofill,precision=2},
         ]
         \addplot+ coordinates {
             (0.81,11)
@@ -507,6 +482,7 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         xmax=1.5,
         enlarge y limits=0.15,
         nodes near coords,
+        every node near coord/.append style={/pgf/number format/.cd,fixed zerofill,precision=2},
         ]
         \addplot+ coordinates {
             (0.99,11)
@@ -521,7 +497,7 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         };
         \end{axis}
         \end{tikzpicture}
-        \caption{Speedup for LP}
+        \caption{Speedup for the LP}
         \label{fig:Restricted Finding Rewards - Speedup for LP}
     \end{subfigure}\hfill
     \begin{subfigure}{0.4\textwidth}
@@ -539,6 +515,7 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         xmax=3.5,
         enlarge y limits=0.15,
         nodes near coords,
+        every node near coord/.append style={/pgf/number format/.cd,fixed zerofill,precision=2},
         ]
         \addplot+ coordinates {
             (0.28,11)
@@ -556,11 +533,11 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         \caption{Speedup for the Neural Network}
         \label{fig:Restricted Finding Rewards - Speedup for the Neural Network}
     \end{subfigure}
-    \caption[Finding Rewards After Restricing Script's Access to CPU Cores - Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately]{Finding Rewards After Restricing Script's Access to CPU Cores - Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately: Scaling is strongly hampered by the LP solver. Comparing the contributions of LP and Neural Network to total runtime on GPU ``set'', LP accounts for $\textbf{94.57}\pm\textbf{5.01}\%$ of the total time.}
+    \caption[Finding Rewards After Restricing Script's Access to CPU Cores -- Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately]{Finding Rewards After Restricing Script's Access to CPU Cores -- Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately: Scaling is strongly hampered by the LP solver. Comparing the contributions of LP and Neural Network to total runtime on GPU ``set'', LP accounts for $\textbf{94.57}\pm\textbf{5.01}\%$ of the total time.}
     \label{fig:Restricted Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPUa ``set'' Separately}
 \end{figure}
 
 \subsubsection{Final Results}
-The results after restricting script's access to a single CPU cores are plotted in \Cref{fig:Restricted Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPUa ``set'' Separately}. We prefer using these results (over previous results - \Cref{fig:Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPU ``set'' Separately}) after restricting access, as it gives the better performance for CPU ``set''. The time elapsed for the Neural Network includes time taken to transfer tensors to and from the GPU, which results in overhead - as seen in higher runtimes for smaller datasets (lower batch-size) in \Cref{fig:Restricted Finding Rewards - Time taken by the Neural Network,fig:Restricted Finding Rewards - Speedup for the Neural Network}. However, as the batch-size increases, we see the computation dominating over the transfer time, resulting in higher CPU ``set'' runtimes; the GPU ``set'' runtimes almost grow linearly for the tested batch-sizes.
+The results after restricting script's access to a single CPU cores are plotted in \Cref{fig:Restricted Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPUa ``set'' Separately}. We prefer using the results after restricting access (over previous results -- \Cref{fig:Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPU ``set'' Separately}), as it gives the better performance for CPU ``set''. The time elapsed for the Neural Network includes time taken to transfer tensors to and from the GPU, which results in overhead -- as seen in higher runtimes for smaller datasets (lower batch-size) in \Cref{fig:Restricted Finding Rewards - Time taken by the Neural Network,fig:Restricted Finding Rewards - Speedup for the Neural Network}. However, as the batch-size increases, we see the computation dominating over the transfer time, resulting in higher CPU ``set'' runtimes; the GPU ``set'' runtimes almost grow linearly for the tested batch-sizes.
 
 Moreover, the LP subproblem highly impacts the full model, accounting for more than $90\%$ of the total runtime. Therefore, even though the Neural Network gets sped up at bigger datasets, the GPU Speedup is not reflected in the full model.

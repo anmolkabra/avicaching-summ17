@@ -259,7 +259,7 @@ CPU ``set'' was utilizing more than half of the available 8 threads, and we were
     legend style={at={(0.02,.98)},
         anchor=north west},
     nodes near coords,
-    every node near coord/.append style={yshift=-0.7cm}
+    every node near coord/.append style={yshift=-0.7cm,/pgf/number format/.cd,fixed zerofill,precision=2}
     ]
     \addplot+ [mark=*,
     nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit

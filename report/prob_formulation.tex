@@ -37,7 +37,7 @@ To optimize the loss value $Z_I(\matr{w_1}, \matr{w_2})$, the neural network lea
 \end{figure}
 Since preprocessing the dataset reduces data operations during model execution, the input dataset, comprising of distance between locations $\matr{D}$, environmental features $\vect{f}$ and given rewards $\vect{r_t}$ (all normalized), is built into a tensor (\Cref{fig:A Tensor representing the complete Input Dataset}) such that operations can be performed on batches of slices $\tens{F}[v]$.
 
-Another advantage of building the dataset as a tensor comes with the PyTorch library, which provides convenient handling and transfer of tensors residing on the Main Memory and GPUs' internal global memory \cite{PTDocs}. \Cref{alg:Constructing the Input Dataset} describes the steps to construct this dataset.
+Another advantage of building the dataset as a tensor comes with the PyTorch library, which provides convenient handling and transfer of tensors residing on the Main Memory and GPUs' internal global memory \cite{PTDocs}. \Cref{alg:Constructing the Input Dataset} describes the steps to construct this dataset. During implementation, we preprocess the $\tens{F}$ dataset to reduce computation time during model runs (\Cref{app:Building the Dataset F}).
 \begin{algorithm}[!htbp]
     \caption{Constructing the Input Dataset} \label{alg:Constructing the Input Dataset}
     \begin{algorithmic}[1]
@@ -50,7 +50,7 @@ Another advantage of building the dataset as a tensor comes with the PyTorch lib
                 \State $\tens{F}[v][u] \gets [\matr{D}[v][u], \vect{f}[u], \vect{r_t}[u]]$ \Comment{As depicted in \Cref{fig:Zoomed-in contents of Fvu}}
              \EndFor
         \EndFor
-        \State \Return $\matr{F}$
+        \State \Return $\tens{F}$
         \EndFunction
     \end{algorithmic}
 \end{algorithm}
@@ -62,7 +62,7 @@ As shown in \Cref{fig:Neural network designed for the Identification Problem}, t
     \begin{subfigure}{\textwidth}
         \centering
         \includegraphics[width=\textwidth]{weights_net}
-        \caption{3-dimensional View of the Network Slice, Taking in $\matr{F}[v]$}
+        \caption{3-dimensional View of the Network Slice, Taking in $\tens{F}[v]$}
         \label{fig:3-dimensional view of the network slice taking in Fv}
     \end{subfigure}
     \begin{subfigure}{.75\textwidth}
@@ -75,7 +75,7 @@ As shown in \Cref{fig:Neural network designed for the Identification Problem}, t
     \label{fig:Neural network designed for the Identification Problem}
 \end{figure}
 
-It is important to clarify that the network in \Cref{fig:3-dimensional view of the network slice taking in Fv}, which takes in $\matr{F}[v]$ as shown, is a slice of the original network, which takes in the complete tensor $\matr{F}$ and computes the complete result $\matr{P}^{T}$  per iteration of $t$ (implementation elaborated in \Cref{app:Implementation}). In other words, the input and the hidden layers are 3-dimensional, and the output layer is 2-dimensional. Since it is difficult to visualize the complete network on paper, slices of the network are depicted in \Cref{fig:3-dimensional view of the network slice taking in Fv}. \Cref{alg:Algorithm for the Identification Problem} details the steps for learning the parameters $\matr{w_1}$ and $\matr{w_2}$ based on \Cref{eqn:iden_problem,eqn:puv_equation}.
+It is important to clarify that the network in \Cref{fig:3-dimensional view of the network slice taking in Fv}, which takes in $\tens{F}[v]$ as shown, is a slice of the original network, which takes in the complete tensor $\tens{F}$ and computes the complete result $\matr{P}^{T}$  per iteration of $t$ (implementation elaborated in \Cref{app:Implementation}). In other words, the input and the hidden layers are 3-dimensional, and the output layer is 2-dimensional. Since it is difficult to visualize the complete network on paper, slices of the network are depicted in \Cref{fig:3-dimensional view of the network slice taking in Fv}. \Cref{alg:Algorithm for the Identification Problem} details the steps for learning the parameters $\matr{w_1}$ and $\matr{w_2}$ based on \Cref{eqn:iden_problem,eqn:puv_equation}.
 
 \begin{algorithm}[!htbp]
     \caption{Algorithm for the Identification Problem} \label{alg:Algorithm for the Identification Problem}
@@ -85,8 +85,8 @@ It is important to clarify that the network in \Cref{fig:3-dimensional view of t
         \For{$e = 1, 2, \dots, \text{Epochs}$}
             \State $loss \gets 0$
             \For{$t = 1, 2, \dots, T$}
-                \State $\matr{F} \gets \Call{Build-Dataset}{\matr{D}, \matr{f}, \matr{r}[t]}$\Comment{Defined in Algorithm \Cref{alg:Constructing the Input Dataset}}
-                \State $\matr{H} \gets  \text{reLU}(\Call{Batch-Multiply}{\matr{F}, \matr{w_1}})$
+                \State $\tens{F} \gets \Call{Build-Dataset}{\matr{D}, \matr{f}, \matr{r}[t]}$\Comment{Defined in \Cref{alg:Constructing the Input Dataset}}
+                \State $\matr{H} \gets  \text{reLU}(\Call{Batch-Multiply}{\tens{F}, \matr{w_1}})$
                 \State $\matr{O} \gets \text{softmax}(\Call{Batch-Multiply}{\matr{H}, \matr{w_2}})$
                 \State $\matr{P} \gets \matr{O}^T$
                 \State $loss \gets loss + (\omega[t](\matr{y}[t] - \matr{P} \cdot \matr{x}[t]))^2$
@@ -117,7 +117,7 @@ To allocate the rewards $\vect{r}$ optimally, the calculations for the pricing p
 \subsection{Input Dataset for Finding Rewards}
 Since it is the set of rewards $\vect{r}$ that need to be optimized, they must serve as the ``weights'' of the network (``weights'' here refer to the weighted edges of this network and not to the set of calculated weights $\matr{w_1}$ and $\matr{w_2}$). Therefore, the rewards $\vect{r}$ are no longer fed into the network but are its characteristic. Instead, the calculated weights $\matr{w_1}$ are fed into the network, and are ``weighted'' by the rewards.
 
-The observation density datasets, $\matr{x}$ and $\matr{y}$, are also aggregated for all agents such that they give information in terms of locations $u$ only. This is also why rewards vector $\vect{r}$ does not depend on $t$ - we want a generalized set of rewards for all time $t$ per location $u$. Therefore, the algorithm for constructing $\matr{F}$ (see \Cref{sec:Structure of Input Dataset for Identifying Weights}) is same as \Cref{alg:Constructing the Input Dataset} but with a change -- $\vect{r_t}$ replaced by $\vect{r}$.
+The observation density datasets, $\matr{x}$ and $\matr{y}$, are also aggregated for all agents such that they give information in terms of locations $u$ only. This is also why rewards vector $\vect{r}$ does not depend on $t$ - we want a generalized set of rewards for all time $t$ per location $u$. Therefore, the algorithm for constructing $\tens{F}$ (see \Cref{sec:Structure of Input Dataset for Identifying Weights}) is same as \Cref{alg:Constructing the Input Dataset} but with a change -- $\vect{r_t}$ replaced by $\vect{r}$.
 
 \subsection{Calculating Rewards} \label{sec:Calculating Rewards}
 \Cref{alg:Solving the Pricing Problem} for finding $\matr{P}$ is very similar to \Cref{alg:Algorithm for the Identification Problem}'s first few steps but without any epochs of $t$. Also, since the model would predict $\vect{y}$, it does not need labels $\vect{y}$ as a dataset. Although \Cref{alg:Solving the Pricing Problem}'s logic flow may seem arcane, it is straight-forward - as displayed in \Cref{fig:Logic Flow of Algorithm Pricing Problem}.
@@ -131,8 +131,8 @@ The observation density datasets, $\matr{x}$ and $\matr{y}$, are also aggregated
     \caption{Solving the Pricing Problem} \label{alg:Solving the Pricing Problem}
     \begin{algorithmic}[1]
         \Function{Forward}{$\matr{D}, \matr{f}, \vect{r}, \matr{w_1}, \matr{w_2}, \vect{x}$}
-            \State $\matr{F} \gets \Call{Build-Dataset}{\matr{D}, \matr{f}, \vect{r}}$\Comment{Defined in  \Cref{alg:Constructing the Input Dataset}}
-            \State $\matr{O}_1 \gets \text{reLU}(\Call{Batch-Multiply}{\matr{F}, \matr{w_1}})$
+            \State $\tens{F} \gets \Call{Build-Dataset}{\matr{D}, \matr{f}, \vect{r}}$\Comment{Defined in  \Cref{alg:Constructing the Input Dataset}}
+            \State $\matr{O}_1 \gets \text{reLU}(\Call{Batch-Multiply}{\tens{F}, \matr{w_1}})$
             \State $\matr{O}_2 \gets \text{softmax}(\Call{Batch-Multiply}{\matr{O}_1, \matr{w_2}})$
             \State $\matr{P} \gets \matr{O}_2^T$
             \State $\vect{y} \gets \matr{P} \cdot \vect{x}$
@@ -155,7 +155,7 @@ The observation density datasets, $\matr{x}$ and $\matr{y}$, are also aggregated
 \end{algorithm}
 
 \subsection{Constraining Rewards} \label{sec:Constraining Rewards}
-After updating the rewards, the program constrains them using LP($\cdot$) such that $\sum_{i}r_i \leq \mathcal{R}$ and $r_i \geq 0$. To do so, the LP($\cdot$) finds another set of rewards $\vect{r'}$ such that the absolute difference between new and old rewards ($\sum_{i}|r'_i - r_i|$) is minimum. The mathematical formulation is given in \Cref{eqn:lp_math_constrain_rewards}, which was implemented using SciPy's Optimize Module \cite{SCPOptimizeDocs}. Since the module supports a standard format for doing linear programming, \Cref{eqn:lp_code_constrain_rewards} is used (see \Cref{app:Implementation}), which is mathematically equivalent to \Cref{eqn:lp_math_constrain_rewards}.
+After updating the rewards, the program constrains them using LP($\cdot$) such that $\sum_{i}r_i \leq \mathcal{R}$ and $r_i \geq 0$. To do so, the LP($\cdot$) finds another set of rewards $\vect{r'}$ such that the absolute difference between new and old rewards ($\sum_{i}|r'_i - r_i|$) is minimum. The mathematical formulation is given in \Cref{eqn:lp_math_constrain_rewards}, which was implemented using SciPy's Optimize Module \cite{SCPOptimizeDocs}. Since the module supports a standard format for doing linear programming, \Cref{eqn:lp_code_constrain_rewards} is used (see \Cref{app:Modeling the Linear Programming Problem in the Standard Format}), which is mathematically equivalent to \Cref{eqn:lp_math_constrain_rewards}.
 \begin{multicols}{2}
     \begin{equation} \label{eqn:lp_math_constrain_rewards}
         \begin{aligned}

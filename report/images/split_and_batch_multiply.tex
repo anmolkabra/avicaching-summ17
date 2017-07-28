@@ -1,4 +1,4 @@
-\documentclass[margin=2mm,convert={density=300,size=1920x1080,outext=.png}]{standalone}
+\documentclass[margin=2mm,convert={outext=.png}]{standalone}
 
 \usepackage{tikz}
 \usepackage{xcolor}
@@ -14,6 +14,7 @@
 \newcommand{\sidecolor}{black!45!white}
 
 \begin{document}
+    \begin{tabular}{c}
     % 1st box
     \begin{tikzpicture}[x=(0:2cm), y=(90:2cm), z=(330:2cm), >=stealth]
     \coordinate (O) at (0, 0, 0);
@@ -82,7 +83,7 @@
     \draw [|-|, line width=2pt] (0, \bre, \hei+.5) -- (0, 0, \hei+.5) node [midway, right, scale=3] {$J$};
     
     \node [scale=10] at (\wlen+3, \bre/2, \hei/2) {$=$};
-    \end{tikzpicture}
+    \end{tikzpicture}\\
     % 3rd box
     \begin{tikzpicture}[x=(0:2cm), y=(90:2cm), z=(330:2cm), >=stealth]
     \coordinate (backO) at (0, 0, 0);
@@ -193,7 +194,7 @@
         \node [scale=3, rotate=0] at (\splitw+1.5, -.5, \hei) {$\mathbf{w_1}$ for $\mathbf{r}$};
         
         \node [scale=10] at (\wlen+3, \bre/2, \hei/2) {$=$};
-    \end{tikzpicture}
+    \end{tikzpicture}\\
     % 5th box
     \begin{tikzpicture}[x=(0:2cm), y=(90:2cm), z=(330:2cm), >=stealth]
     \coordinate (O) at (0, 0, 0);
@@ -226,6 +227,6 @@
     \draw [|-|, line width=2pt] (0, \bre+.5, \hei) -- (\len, \bre+.5, \hei) node [midway, above, scale=3] {$J$};
     \draw [|-|, line width=2pt] (0, \bre+.5, 0) -- (0, \bre+.5, \hei) node [midway, above, scale=3] {$n$};
     \draw [|-|, line width=2pt] (0, \bre, \hei+.5) -- (0, 0, \hei+.5) node [midway, right, scale=3] {$J$};
-    \end{tikzpicture}
-    asdf
+    \end{tikzpicture}\\
+    \end{tabular}
 \end{document}

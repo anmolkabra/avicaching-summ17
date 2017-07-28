@@ -1,10 +1,10 @@
 \chapter{Problem Formulation} \label{sec:Problem Formulation}
-Our models strongly draws from the previous studies \cite{Xue2016Avi1, Xue2016Avi2}, with modifications directed at reducing computation time, as well as getting better results. Since GPUs enable faster computation on tensors, both the Identification and the Pricing Problem are formulated as tensor-based 3-layered and 2-layered neural networks respectively using the Pytorch library \cite{PTDocs}. Recognizing that NVIDIA GPUs easily pair with Pytorch \cite{PTDocs}, accelerating tensor operations using CUDA and cuDNN \cite{cuDNNPaper, NVIDIA}, we aim to maximize parallel operations and minimize thread synchronization.
+Our models strongly draw from the previous studies \cite{Xue2016Avi2, Xue2016Avi1}, with modifications directed at reducing computation time, as well as getting better results. Since GPUs enable faster computation on tensors (see \Cref{sec:Gpu's Strengths}), both the Identification and the Pricing Problem are formulated as tensor-based 3-layered and 2-layered neural networks respectively using the PyTorch library \cite{PTDocs}. Recognizing that NVIDIA GPUs easily pair with PyTorch \cite{PTDocs}, accelerating tensor operations using NVIDIA's APIs -- CUDA and cuDNN \cite{CUDADocs, cuDNNPaper}, we aim to maximize parallel operations and minimize our models' computation time.
 
 \section{Identification Problem} \label{sec:Identification Problem}
 As discussed in \Cref{sec:Introduction}, the model should learn parameters that caused the change in agents' behavior when a certain set of rewards was applied to locations in the experiment region. Learning those parameters will help us understand how agents behave with a fixed reward distribution, and will enable organizers to redistribute rewards based on that behavior.
 
-Specifically, given datasets $\vect{y_t}$ and $\vect{x_t}$ of agents' visit densities at time $t$, before and after the rewards $\vect{r_t}$ were placed, we want to find weights $\matr{w_1}$ and $\matr{w_2}$ that caused the change from $\vect{x_t}$ to $\vect{y_t}$, considering possible influence from environmental factors $\matr{f}$ and distances between locations $\matr{D}$. Although the original model proposed to learn a single set of weights $\matr{w}$ \cite{Xue2016Avi2}, our proposed model considers two sets of weights $\matr{w_1}$ and $\matr{w_2}$ as it may theoretically result into higher accuracy and lower loss value. Mathematically, the model can be formulated as:
+Specifically, given datasets $\vect{x_t}$ and $\vect{y_t}$ of agents' visit densities at time $t$, before and after the rewards $\vect{r_t}$ were placed respectively, we want to find the weights that caused the change from $\vect{x_t}$ to $\vect{y_t}$, considering possible influence from environmental factors $\matr{f}$ and distances between locations $\matr{D}$. Although the previous study proposed to learn a single set of weights $\matr{w}$ \cite{Xue2016Avi2}, our proposed model considers two sets of weights $\matr{w_1}$ and $\matr{w_2}$ as it may theoretically result into higher accuracy and lower loss value. Mathematically, the model can be formulated as:
 \begin{equation} \label{eqn:iden_problem}
     \begin{aligned}
         & \underset{\matr{w_1}, \matr{w_2}}{\text{minimize}}
@@ -32,12 +32,12 @@ To optimize the loss value $Z_I(\matr{w_1}, \matr{w_2})$, the neural network lea
         \caption{Contents of $\tens{F}[v][u]$: This vector (length $n_F$) contains quantified causes for the change in agents' behavior from $\matr{x_t}$ to $\matr{y_t}$}
         \label{fig:Zoomed-in contents of Fvu}
     \end{subfigure}
-    \caption{Visual representation of the Input Dataset}
-    \label{fig:Visual representation of the Input Dataset}
+    \caption{Visual representation of the Identification Problem's Input Dataset}
+    \label{fig:Visual representation of the Identification Problem's Input Dataset}
 \end{figure}
 Since preprocessing the dataset reduces data operations during model execution, the input dataset, comprising of distance between locations $\matr{D}$, environmental features $\vect{f}$ and given rewards $\vect{r_t}$ (all normalized), is built into a tensor (\Cref{fig:A Tensor representing the complete Input Dataset}) such that operations can be performed on batches of slices $\tens{F}[v]$.
 
-Another advantage of building the dataset as a tensor comes with the Pytorch library, which provides convenient handling and transfer of tensors residing on the Main Memory and GPUs' internal global memory \cite{PTDocs}. \Cref{alg:Constructing the Input Dataset} describes the steps to construct this dataset.
+Another advantage of building the dataset as a tensor comes with the PyTorch library, which provides convenient handling and transfer of tensors residing on the Main Memory and GPUs' internal global memory \cite{PTDocs}. \Cref{alg:Constructing the Input Dataset} describes the steps to construct this dataset.
 \begin{algorithm}
     \caption{Constructing the Input Dataset} \label{alg:Constructing the Input Dataset}
     \begin{algorithmic}[1]
@@ -75,7 +75,7 @@ As shown in \Cref{fig:Neural network designed for the Identification Problem}, t
     \label{fig:Neural network designed for the Identification Problem}
 \end{figure}
 
-It is important to clarify that the network in \Cref{fig:3-dimensional view of the network slice taking in Fv}, which takes in $\matr{F}[v]$ as shown, is a slice of the original network, which takes in the complete tensor $\matr{F}$ and computes the complete result $\matr{P}^{T}$  per iteration of $t$. In other words, the input and the hidden layers are 3-dimensional, and the output layer is 2-dimensional. Since it is difficult to visualize the complete network on paper, slices of the network are depicted in \Cref{fig:3-dimensional view of the network slice taking in Fv}. \Cref{alg:Algorithm for the Identification Problem} details the steps for learning the parameters $\matr{w_1}$ and $\matr{w_2}$ based on \Cref{eqn:iden_problem,eqn:puv_equation}.
+It is important to clarify that the network in \Cref{fig:3-dimensional view of the network slice taking in Fv}, which takes in $\matr{F}[v]$ as shown, is a slice of the original network, which takes in the complete tensor $\matr{F}$ and computes the complete result $\matr{P}^{T}$  per iteration of $t$ (implementation elaborated in \Cref{app:Implementation}). In other words, the input and the hidden layers are 3-dimensional, and the output layer is 2-dimensional. Since it is difficult to visualize the complete network on paper, slices of the network are depicted in \Cref{fig:3-dimensional view of the network slice taking in Fv}. \Cref{alg:Algorithm for the Identification Problem} details the steps for learning the parameters $\matr{w_1}$ and $\matr{w_2}$ based on \Cref{eqn:iden_problem,eqn:puv_equation}.
 
 \begin{algorithm}
     \caption{Algorithm for the Identification Problem} \label{alg:Algorithm for the Identification Problem}

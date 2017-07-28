@@ -599,7 +599,7 @@ if __name__ == "__main__":
     # SET!!
     transfer_time = time.time()
     if args.cuda:
-        # transfer net and tensors to the gpu
+        # transfer tensors to the gpu
         net.cuda()
         trainX, trainY, trainR = trainX.cuda(), trainY.cuda(), trainR.cuda()
         testX, testY, testR = testX.cuda(), testY.cuda(), testR.cuda()
@@ -613,22 +613,22 @@ if __name__ == "__main__":
         file_pre_gpu = "expandedR, " + file_pre_gpu
 
     # scalar + tensor currently not supported in pytorch
-    train_loss_normalizer = (torch.mv(torch.t(trainY - \
-        torch.mean(trainY).expand_as(trainY)).data, u_train)).pow(2).sum()
-
+    # formula = (u(Y-mean(Y)))^2
+    train_loss_normalizer = (torch.mv(torch.t(trainY \
+        - torch.mean(trainY).expand_as(trainY)).data, u_train)).pow(2).sum()
     if args.should_test:
-        test_loss_normalizer = (torch.mv(torch.t(testY - \
-            torch.mean(testY).expand_as(testY)).data, u_test)).pow(2).sum()
+        test_loss_normalizer = (torch.mv(torch.t(testY \
+            - torch.mean(testY).expand_as(testY)).data, u_test)).pow(2).sum()
     
     # GO!!
     train_time_loss, test_time_loss, total_time = [], [], transfer_time
     for e in xrange(1, args.epochs + 1):
         # train
         train_res = train(net, optimizer, train_loss_normalizer, u_train)
-        train_time_loss.append(train_res[0:2])
+        train_time_loss.append(train_res[0:2])  # the third element is not logged
         total_time += (train_res[0])
 
-        # print results
+        # print results, some quirky arguments to print for nice console printing
         if e % 20 == 0:
             print("e= %2d, loss=%.8f" % (e, train_res[1]), end="")
 
@@ -643,25 +643,27 @@ if __name__ == "__main__":
             print("\n", end="")
 
         if e == args.epochs:
-            # NN's final prediction
+            # Network's final prediction
             y_pred = test_res[2] if args.should_test else train_res[2]
         
     # FINISH!!
     # log and plot the results: epoch vs loss
+
+    # define file names
     if args.rand:
         file_pre = "randXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
         lat_long = ad.read_lat_long_from_Ffile(randF_file, J)
     else:
         file_pre = "origXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
-        lat_long = ad.read_lat_long_from_Ffile("./data/loc_feature_with_avicaching_combined.csv", J)
-
+        lat_long = ad.read_lat_long_from_Ffile(
+            "./data/loc_feature_with_avicaching_combined.csv", J)
     log_name = "train=%3.0f%%, lr=%.3e, time=%.4f sec" % (
         args.train_percent * 100, args.lr, total_time)
-    
     epoch_data = np.arange(1, args.epochs + 1)
     fname = file_pre_gpu + file_pre + log_name
     # save amd plot data
-    save_log("./stats/find_weights/logs/1_" + fname + ".txt", epoch_data, 
+    save_log(
+        "./stats/find_weights/logs/1_" + fname + ".txt", epoch_data, 
         [train_time_loss, test_time_loss], log_name)
     with open("./stats/find_weights/weights/1_" + fname + ".txt", "w") as f:
         # save w1
@@ -676,9 +678,12 @@ if __name__ == "__main__":
         f.write('# w2 shape: {0}\n'.format(w2.shape))
         np.savetxt(f, w2, fmt="%.15f", delimiter=" ")
     if not args.no_plots:
-        save_plot("./stats/find_weights/plots/1_" + fname + ".png", epoch_data, 
+        # should plot
+        save_plot(
+            "./stats/find_weights/plots/1_" + fname + ".png", epoch_data, 
             [train_time_loss, test_time_loss], "epoch", "loss", log_name)
-        plot_predicted_map("./stats/find_weights/map_plots/1_" + fname + ".png",
+        plot_predicted_map(
+            "./stats/find_weights/map_plots/1_" + fname + ".png", 
             lat_long, y_pred, log_name)
     
     print("---> " + fname + " DONE")

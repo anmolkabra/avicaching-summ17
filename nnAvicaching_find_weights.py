@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import argparse, time, math, os, sys, numpy as np, matplotlib
+import argparse
+import time
+import math
+import os
+import sys
+import numpy as np
+import matplotlib
 try:
     os.environ["DISPLAY"]
 except KeyError as e:
@@ -9,50 +15,55 @@ except KeyError as e:
 import matplotlib.pyplot as plt
 import avicaching_data as ad
 # import torch packages
-import torch, torch.nn as nn, torch.nn.functional as torchfun, torch.optim as optim
+import torch, torch.nn as nn
+import torch.nn.functional as torchfun
+import torch.optim as optim
 from torch.autograd import Variable
-matplotlib.rcParams.update({'font.size': 14})
+matplotlib.rcParams.update({'font.size': 14})   # font-size for plots
 
 # =============================================================================
-# training specs
+# training options
 # =============================================================================
 parser = argparse.ArgumentParser(description="NN Avicaching model for finding weights")
+# training parameters
 parser.add_argument("--lr", type=float, default=0.001, metavar="LR",
     help="inputs learning rate of the network (default=0.001)")
 parser.add_argument("--no-cuda", action="store_true", default=False,
     help="disables CUDA training")
 parser.add_argument("--epochs", type=int, default=10, metavar="E",
     help="inputs the number of epochs to train for")
-parser.add_argument("--locations", type=int, default=116, metavar="J",
-    help="inputs the number of locations (default=116)")
-parser.add_argument("--time", type=int, default=173, metavar="T",
-    help="inputs total time of data collection; number of weeks (default=173)")
-parser.add_argument("--eta", type=float, default=10.0, metavar="F",
-    help="inputs parameter eta in the model (default=10.0)")
-parser.add_argument("--lambda-L1", type=float, default=10.0, metavar="LAM",
-    help="inputs the L1 regularizing coefficient")
-parser.add_argument("--rand", action="store_true", default=False,
-    help="uses random xyr data")
-parser.add_argument("--log-interval", type=int, default=1, metavar="I",
-    help="prints training information at I epoch intervals (default=1)")
-parser.add_argument("--hide-loss-plot", action="store_true", default=False,
-    help="hides the loss plot, which is only saved")
-parser.add_argument("--hide-map-plot", action="store_true", default=False,
-    help="hides the map plot, which is only saved")
-parser.add_argument("--expand-R", action="store_true", default=False,
-    help="expands the reward vectors into matrices with distributed rewards")
-parser.add_argument("--no-plots", action="store_true", default=False,
-    help="skips generating plot maps")
+# data options
 parser.add_argument("--train-percent", type=float, default=0.8, metavar="T",
     help="breaks the data into T percent training and rest testing (default=0.8)")
 parser.add_argument('--seed', type=int, default=1, metavar='S',
     help='random seed (default=1)')
+parser.add_argument("--locations", type=int, default=116, metavar="J",
+    help="inputs the number of locations (default=116)")
+parser.add_argument("--time", type=int, default=173, metavar="T",
+    help="inputs total time of data collection; number of weeks (default=173)")
+parser.add_argument("--rand", action="store_true", default=False,
+    help="uses random xyr data")
+# plot options
+parser.add_argument("--no-plots", action="store_true", default=False,
+    help="skips generating plot maps")
+parser.add_argument("--hide-loss-plot", action="store_true", default=False,
+    help="hides the loss plot, which is only saved")
+parser.add_argument("--hide-map-plot", action="store_true", default=False,
+    help="hides the map plot, which is only saved")
+# deprecated options -- not deleting if one chooses to use them
+parser.add_argument("--expand-R", action="store_true", default=False,
+    help="expands the reward vectors into matrices with distributed rewards")
+parser.add_argument("--eta", type=float, default=10.0, metavar="F",
+    help="inputs parameter eta in the model (default=10.0)")
+parser.add_argument("--lambda-L1", type=float, default=10.0, metavar="LAM",
+    help="inputs the L1 regularizing coefficient")
 
 args = parser.parse_args()
 # assigning cuda check and test check to single variables
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 args.should_test = (args.train_percent != 1.0)
 
+# set the seeds
 torch.manual_seed(args.seed)
 np.random.seed(seed=args.seed)
 if args.cuda:
@@ -61,7 +72,8 @@ if args.cuda:
 # =============================================================================
 # constants and parameters
 # =============================================================================
-torchten = torch.FloatTensor
+# global values and datasets
+torchten = torch.FloatTensor    # change here to use diff containers
 J, T, numFeatures = args.locations, args.time, 0
 trainX, trainY, trainR, testX, testY, testR, F_DIST = [], [], [], [], [], [], []
 u_train, u_test = np.array([]), np.array([])
@@ -69,6 +81,7 @@ u_train, u_test = np.array([]), np.array([])
 num_train = int(math.floor(args.train_percent * T))
 num_test = T - num_train
 
+# random datasets locations assigned to variables
 randXYR_file = "./data/random/randXYR" + str(J) + ".txt"
 randXYR_weights_file = "./data/random/randXYR" + str(J) + "_weights.txt"
 randF_file = "./data/random/randF" + str(J) + ".csv"
@@ -79,7 +92,10 @@ randDIST_file = "./data/random/randDIST" + str(J) + ".txt"
 # =============================================================================
 def read_set_data():
     """
-    Reads and sets up the datasets
+    Reads Datasets X, Y, R, f, D from the files using avicaching_data 
+    module's functions. f and D are then combined into F_DIST as preprocessed 
+    tensor. All datasets are normalized, expanded, averaged as required, 
+    leaving as torch tensors at the end of the function.
     """
     global trainX, trainY, trainR, testX, testY, testR, F_DIST, numFeatures
     global u_train, u_test
@@ -90,22 +106,26 @@ def read_set_data():
     # - net.w2: J x numF x 1
     # - F_DIST: J x J x numF
 
-    # read f and dist datasets from file, operate on them
+    # read f and DIST datasets from file, operate on them
     if args.rand:
         F = ad.read_F_file(randF_file, J)
         DIST = ad.read_dist_file(randDIST_file, J)
     else:
-        F = ad.read_F_file("./data/loc_feature_with_avicaching_combined.csv", J)
-        DIST = ad.read_dist_file("./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
-    F, DIST = ad.normalize(F, along_dim=0, using_max=True), ad.normalize(DIST, using_max=True)  # normalize using max
+        F = ad.read_F_file(
+            "./data/loc_feature_with_avicaching_combined.csv", J)
+        DIST = ad.read_dist_file(
+            "./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", 
+            J)
+    F = ad.normalize(F, along_dim=0, using_max=True)    # normalize using max
+    DIST = ad.normalize(DIST, using_max=True)   # normalize using max
 
     # process data for the NN
-    numFeatures = len(F[0]) + 1     # distance included
+    numFeatures = len(F[0]) + 1     # compensating for the distance element
     F_DIST = torchten(ad.combine_DIST_F(F, DIST, J, numFeatures))
     numFeatures += 1                # for rewards later
 
-    X, Y, R = [], [], []
     # operate on XYR data
+    X, Y, R = [], [], []
     if args.rand:
         if not os.path.isfile(randXYR_file):
             # file doesn't exists, make random data, write to file
@@ -113,12 +133,15 @@ def read_set_data():
             ad.save_rand_XYR(randXYR_file, X, Y, R, J, T)
         X, Y, R = ad.read_XYR_file(randXYR_file, J, T)
     else:
-        X, Y, R = ad.read_XYR_file("./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
+        X, Y, R = ad.read_XYR_file(
+            "./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", 
+            J, T)
     
     u = np.sum(Y, axis=1)   # u weights for calculating losses
 
     # normalize X, Y using sum along rows
-    X, Y = ad.normalize(X, along_dim=1, using_max=False), ad.normalize(Y, along_dim=1, using_max=False)
+    X = ad.normalize(X, along_dim=1, using_max=False)
+    Y = ad.normalize(Y, along_dim=1, using_max=False)
     if not args.expand_R:
         R = ad.normalize(R, along_dim=0, using_max=False)
 
@@ -129,7 +152,7 @@ def read_set_data():
         trainX, testX = ad.split_along_dim(X[shuffle_order], num_train, dim=0)
         trainY, testY = ad.split_along_dim(Y[shuffle_order], num_train, dim=0)
         trainR, testR = ad.split_along_dim(R[shuffle_order], num_train, dim=0)
-        u_train, u_test = ad.split_along_dim(u[shuffle_order], num_train, dim=0)   
+        u_train, u_test = ad.split_along_dim(u[shuffle_order], num_train, dim=0)
     else:
         # no testing, split the data -> test Matrices are empty
         trainX, testX = ad.split_along_dim(X, num_train, dim=0)
@@ -158,19 +181,31 @@ def read_set_data():
 
 def make_rand_data(X_max=100.0, R_max=100.0):
     """
-    Creates random X and R and calculates Y based on random weights
+    Creates random X and R and calculates Y based on random weights. Also 
+    stores the weights in files before returning.F_DIST
+
+    Args:
+        X_max -- Maximum value of element in X dataset (default=100.0)
+        R_max -- Maximum value of element in R dataset (default=100.0)
+
+    Returns:
+        3-tuple -- (X, Y, R) (values are not de-normalized)
     """
-    # create random X and R and w
     global F_DIST
+    # create random X and R and w
     origX = np.floor(np.random.rand(T, J) * X_max)
     origR = np.floor(np.random.rand(T, J) * R_max)
     X = ad.normalize(origX, along_dim=1, using_max=False)
     R = torchten(ad.normalize(origR, along_dim=0, using_max=False))
     w1 = Variable(torch.randn(J, numFeatures, numFeatures).type(torchten))
     w2 = Variable(torch.randn(J, numFeatures, 1).type(torchten))
+
+    # convert to torch tensor and create placeholder for Y
     Y = np.empty([T, J])
-    X, Y = Variable(torchten(X), requires_grad=False), Variable(torchten(Y), requires_grad=False)
+    X = Variable(torchten(X), requires_grad=False)
+    Y = Variable(torchten(Y), requires_grad=False)
     if args.cuda:
+        # transfer to GPU
         X, Y, R, F_DIST = X.cuda(), Y.cuda(), R.cuda(), F_DIST.cuda()
         w1, w2 = w1.cuda(), w2.cuda()
     
@@ -183,14 +218,14 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         inp = Variable(inp)
         
         # feed in data
-        inp = torchfun.relu(torch.bmm(inp, w1)) # first layer
-        inp = torch.bmm(inp, w2).view(-1, J)
+        inp = torchfun.relu(torch.bmm(inp, w1)) # first weights
+        inp = torch.bmm(inp, w2).view(-1, J)    # second weights
         # add eta to inp[u][u]
         # eta_matrix = Variable(eta * torch.eye(J).type(torchten))
         # if args.cuda:
         #    eta_matrix = eta_matrix.cuda()
         # inp += eta_matrix
-        P = torchfun.softmax(inp).t()   # P is now weighted -> softmax
+        P = torchfun.softmax(inp).t()
         
         # calculate Y
         Y[t] = torch.mv(P, X[t])
@@ -214,8 +249,17 @@ def make_rand_data(X_max=100.0, R_max=100.0):
     return (X.data.cpu().numpy(), Y.data.cpu().numpy(), R.cpu().numpy())
 
 def test_given_data(X, Y, R, w1, w2, J, T, u):
-    loss_normalizer = (torch.mv(torch.t(Y - \
-        torch.mean(Y).expand_as(Y)).data, u)).pow(2).sum()
+    """
+    Tests a given set of datasets, printing the loss value after one 
+    forward propagation.
+
+    Args:
+        All arguments are self-explanatory
+    """
+    # loss_normalizer divides the calculated loss after feed forward
+    # formula = || ((u * (Y-mean(Y)))^2 ||
+    loss_normalizer = (torch.mv(torch.t(Y \
+        - torch.mean(Y).expand_as(Y)).data, u)).pow(2).sum()
     loss = 0
 
     for t in xrange(T):
@@ -226,21 +270,21 @@ def test_given_data(X, Y, R, w1, w2, J, T, u):
         inp = Variable(inp)
         
         # feed in data
-        inp = torchfun.relu(torch.bmm(inp, w1))
-        inp = torch.bmm(inp, w2).view(-1, J)
+        inp = torchfun.relu(torch.bmm(inp, w1)) # first weights
+        inp = torch.bmm(inp, w2).view(-1, J)    # second weights
         # add eta to inp[u][u]
         # eta_matrix = Variable(eta * torch.eye(J).type(torchten))
         # if args.cuda:
         #    eta_matrix = eta_matrix.cuda()
         # inp += eta_matrix
-        P = torchfun.softmax(inp).t()   # P is now weighted -> softmax
+        P = torchfun.softmax(inp).t()
         
         # calculate loss
         Pxt = torch.mv(P, X[t])
         loss += (u[t] * (Y[t] - Pxt)).pow(2).sum()
     # loss += args.lambda_L1 * torch.norm(net.w.data)
     loss /= loss_normalizer
-    print("Loss = %f" % loss.data[0])
+    print("Loss = %f\n" % loss.data[0], end="")
 
 # =============================================================================
 # MyNet class
@@ -248,21 +292,22 @@ def test_given_data(X, Y, R, w1, w2, J, T, u):
 class MyNet(nn.Module):
 
     def __init__(self):
-        """
-        Initializes MyNet
-        """
+        """Initializes MyNet, creates the sets of weights for the model."""
         super(MyNet, self).__init__()
-        self.w1 = nn.Parameter(torch.randn(J, numFeatures, numFeatures).type(torchten))
+        self.w1 = nn.Parameter(torch.randn(J, numFeatures, numFeatures).type(
+            torchten))
         self.w2 = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
 
     def forward(self, inp):
         """
-        Forward in the network; multiply the weights, take the relu and return
-        the softmax
-        """    
-        # weight -> relu -> weight -> softmax
-        inp = torchfun.relu(torch.bmm(inp, self.w1))
-        inp = torch.bmm(inp, self.w2).view(-1, J)
+        Goes forward in the network -- multiply the weights, apply relu, 
+        multiply weights again and apply softmax
+
+        Returns:
+            torch.Tensor -- result after going forward in the network.
+        """
+        inp = torchfun.relu(torch.bmm(inp, self.w1))    # first weights
+        inp = torch.bmm(inp, self.w2).view(-1, J)       # second weights
 
         # add eta to inp[u][u]
         # eta_matrix = Variable(eta * torch.eye(J).type(torchten))
@@ -276,7 +321,19 @@ class MyNet(nn.Module):
 # =============================================================================
 def train(net, optimizer, loss_normalizer, u):
     """
-    Trains the NN using MyNet
+    Trains the Neural Network using MyNet on the training set.
+
+    Args:
+        net -- MyNet instance
+        optimizer -- torch.optim instance of the Gradient-Descent function
+        loss_normalizer -- value to be divided stored in a Torch.Tensor 
+            variable
+        u -- weights to be multiplied when calculating the loss function, 
+            stored in a Torch.Tensor variable
+
+    Returns:
+        3-tuple -- (Execution Time, End loss value, 
+            Model's prediction after feed forward [Px])
     """
     loss, loop_time = 0, 0
     P_data = torch.zeros(num_train, J)
@@ -315,7 +372,18 @@ def train(net, optimizer, loss_normalizer, u):
 
 def test(net, loss_normalizer, u):
     """
-    Test the network using MyNet
+    Tests the Neural Network using MyNet on the test set.
+
+    Args:
+        net -- MyNet instance
+        loss_normalizer -- value to be divided stored in a Torch.Tensor 
+            variable
+        u -- weights to be multiplied when calculating the loss function, 
+            stored in a Torch.Tensor variable
+
+    Returns:
+        3-tuple -- (Execution Time, End loss value, 
+            Model's prediction after feed forward [Px])
     """
     loss, loop_time = 0, 0
     P_data = torch.zeros(num_test, J)
@@ -352,7 +420,11 @@ def test(net, loss_normalizer, u):
 # =============================================================================
 def build_input(rt):
     """
-    Builds the final input for the NN. Joins F_DIST and expanded R
+    Builds and returns the input for the neural network. Joins F_DIST and R, 
+    expanding R to fit the dimension.
+
+    Returns:
+        Torch.Tensor -- Input dataset for the neural network
     """
     if args.expand_R:
         return torch.cat([F_DIST, rt.repeat(J, 1, 1)], dim=2)
@@ -363,9 +435,18 @@ def build_input(rt):
 # =============================================================================
 def save_plot(file_name, x, y, xlabel, ylabel, title):
     """
-    Saves and shows the loss plot of train and test periods
+    Saves and (optionally) shows the loss plot of train and test periods.
+
+    Args:
+        file_name -- name of the file for saving
+        x -- data on the x-axis in a NumPy ndarray
+        y -- data on the y-axis, including time. The function extracts the 
+            required information. See the main function on how this is built
+        xlabel -- what else can it mean?
+        ylabel -- ditto
+        title -- title of the plot
     """
-    # get the losses from data
+    # get the loss values from data
     train_losses = [i for j in y[0] for i in j][1::2]
     test_losses = [i for j in y[1] for i in j][1::2]
     
@@ -392,12 +473,21 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
 
 def save_log(file_name, x, y, title):
     """
-    Saves the log of train and test periods to a file
+    Saves the log of train and test periods to a file.
+
+    Args:
+        file_name -- name of the file
+        x -- epoch data [1..number_of_epochs]
+        y -- data on the y-axis if this data was plotted using save_plot(), 
+            including time. The function extracts the required information. 
+            See the main function on how this is built
+        title -- first line of the file
     """
     with open(file_name, "wt") as f:
         f.write(title + "\n")
         f.write("J: %3d\t\tT: %3d\n-------------\n" % (J, T))
         for i in range(0, len(x), args.log_interval):
+            # it works as required
             f.write("epoch = %d\t\ttrainloss = %.4f, traintime = %.4f" % (
                 x[i], y[0][i][1], y[0][i][0]))
             if args.should_test:
@@ -407,36 +497,60 @@ def save_log(file_name, x, y, title):
 
 def find_idx_of_nearest_el(array, value):
     """
-    Helper function to plot_predicted_map(). Finds the index of the element in
+    Helper function to plot_predicted_map(). Returns the index of the element in
     array closest to value
+
+    Args:
+        array -- NumPy array of numbers
+        value -- closest number in array found for this number
+
+    Returns:
+        int -- index of the closest number to value in array
     """
     return (np.abs(array - value)).argmin()
 
 def plot_predicted_map(file_name, lat_long, point_info, title, plot_offset=0.05):
     """
-    Plots the a scatter plot of point_info on the map specified by the lats
-    and longs and saves to a file
+    [This is a strange function]
+    Plots the a scatter plot of point_info on the map specified by the latitudes
+    and longitudes and saves the plot to a image file
+
+    Args:
+        file_name -- (so far so good) file name of the plot
+        lat_long -- NumPy 2-d matrix of latitudes and longitudes of locations.
+            The first column contains latitudes, and the second column contains 
+            longitudes.
+        point_info -- NumPy array of Z values for all locations. The order of 
+            locations must be same as the order in lat_long
+        title -- (phew) title of the plot
+        plot_offset -- padding value for latitude and longitude in the plot
+            (default=0.05)
     """
-    # find the dimensions of the plot
-    lati = lat_long[:, 0]
-    longi = lat_long[:, 1]
+    # extract latitude and longitude
+    lati = lat_long[:,0]
+    longi = lat_long[:,1]
+    # calculate plot dimensions - select between latitude/longitude based on 
+    # their span over earth. The greater span is the basis
     lo_min, lo_max = min(longi) - plot_offset, max(longi) + plot_offset
     la_min, la_max = min(lati) - plot_offset, max(lati) + plot_offset
     plot_width = max(lo_max - lo_min, la_max - la_min)
     lo_max = lo_min + plot_width
     la_max = la_min + plot_width
 
-    lo_range = np.linspace(lo_min, lo_max, num=J + 10, retstep=True)
-    la_range = np.linspace(la_min, la_max, num=J + 10, retstep=True)
-
+    # create the mesh for pcolormesh, see its documentation
+    # retained step for convenience in testing
+    # J+10 values needed on each side, this can lead to rectangular dots
+    lo_range = np.linspace(lo_min, lo_max, num=J+10, retstep=True)
+    la_range = np.linspace(la_min, la_max, num=J+10, retstep=True)
     lo, la = np.meshgrid(lo_range[0], la_range[0])
 
     z = np.zeros([J + 10, J + 10])
     for k in xrange(J):
-        # find lati[k] in the mesh, longi[k] in the mesh
+        # for each location in latitude and longitude array, find the closest
+        # value in the mesh, i.e., lati[k] in the mesh, longi[k] in the mesh
         lo_k_mesh = find_idx_of_nearest_el(lo[0], longi[k])
         la_k_mesh = find_idx_of_nearest_el(la[:, 0], lati[k])
-        z[lo_k_mesh][la_k_mesh] = point_info[k]
+        z[lo_k_mesh][la_k_mesh] = point_info[k] # assign Z value in the matrix
 
     map_fig = plt.figure(2)
     plt.pcolormesh(lo, la, z, cmap=plt.cm.get_cmap('Greys'), vmin=0.0, vmax=0.01)
@@ -453,8 +567,16 @@ def plot_predicted_map(file_name, lat_long, point_info, title, plot_offset=0.05)
 # =============================================================================
 def expand_R(rt, R_max=15):
     """
-    Expands R into a matrix with each R[u] having R_max elements,
-    where the first R[u] columns are 1's and rest 0's
+    Expands rt into a matrix with each rt[u] having R_max number of elements,
+    where the first rt[u] elements are 1's and rest 0's. So if rt[u] is 7 and 
+    R_max is 15, rt[u] becomes [1 1 1 1 1 1 1 0 0 0 0 0 0 0 0].
+
+    Args:
+        rt -- Torch.Tensor vector of rewards
+        R_max -- Number of elements for expansion (default=15)
+
+    Returns:
+        Torch.Tensor -- Expanded R of size J x R_max
     """
     newrt = torchten(J, 15)
     if args.cuda:

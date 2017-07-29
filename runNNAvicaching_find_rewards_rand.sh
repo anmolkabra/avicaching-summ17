@@ -12,12 +12,12 @@
 # =============================================================================
 
 # specs for tests:
-# batch-size locations: 11, 35, 55, 85, 116, 145, 174, 203, 232
+# batch-size locations: 11, 37, 63, 90, 116, 145, 174, 203, 232
 # T: 173
 # lr: 0.001
 # epochs: 1000
 
-for J in 11 35 55 85 116 145 174 203 232
+for J in 11 37 63 90 116 145 174 203 232
 do
     for s in 1 2 3
     do
@@ -30,7 +30,7 @@ done
 # change to-be-saved file name
 sed -i 's%find_rewards/plots/%find_rewards/plots/1_%g' nnAvicaching_find_rewards.py
 sed -i 's%find_rewards/logs/%find_rewards/logs/1_%g' nnAvicaching_find_rewards.py
-for J in 11 35 55 85 116 145 174 203 232
+for J in 11 37 63 90 116 145 174 203 232
 do
     for s in 1 2 3
     do

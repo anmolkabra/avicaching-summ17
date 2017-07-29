@@ -1,5 +1,22 @@
 #!/usr/bin/env bash
 
+# =============================================================================
+# log_ram_usage_rewards.sh
+# Author: Anmol Kabra -- github: @anmolkabra
+# Project: Solving the Avicaching Game Faster and Better (Summer 2017)
+# -----------------------------------------------------------------------------
+# Purpose of the Script:
+#   Log CPU, RAM, GPU usage when the Pricing Problem is run. Tests may change 
+#   and script is dynamic.
+# -----------------------------------------------------------------------------
+# Required Dependencies/Software (others come pre-installed in Linux env):
+#   - taskset
+#   - nvidia-smi (GPU's poller)
+# -----------------------------------------------------------------------------
+# Required Local Files/Data/Modules:
+#   - ./test_lp_time.py
+# =============================================================================
+
 # only lp
 # echo "pid, cpu, mem, process" > ./stats/onlylp.txt
 # wait $(jobs -p)

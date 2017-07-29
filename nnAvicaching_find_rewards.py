@@ -1,35 +1,68 @@
 #!/usr/bin/env python
+
+# =============================================================================
+# nnAvicaching_find_weights.py
+# Author: Anmol Kabra -- github: @anmolkabra
+# Project: Solving the Avicaching Game Faster and Better (Summer 2017)
+# -----------------------------------------------------------------------------
+# Purpose of the Script:
+#   Refer to the Report (link) for detailed explanation. In a gist, this script 
+#   redistributes rewards in a budget over locations such that maximum 
+#   homogenity is achieved. This is the step after finding weights in the 
+#   Avicaching game. This model uses learned weights from the **3-layered 
+#   network only**.
+# -----------------------------------------------------------------------------
+# Required Dependencies/Software:
+#   - Python 2.x (obviously, Anaconda environment used originally)
+#   - PyTorch
+#   - NumPy
+#   - SciPy
+# -----------------------------------------------------------------------------
+# Required Local Files/Data/Modules:
+#   - ./data/*
+#   - ./avicaching_data.py
+#   - ./lp.py
+#   - learned weights stored in a file in the format specified in avicaching_data
+# =============================================================================
+
 from __future__ import print_function
-import torch, torch.nn as nn, torch.nn.functional as torchfun, torch.optim as optim
-from torch.autograd import Variable
-import numpy as np, argparse, time, os, sys
-import avicaching_data as ad, lp, matplotlib
+import numpy as np
+import argparse
+import time
+import os
+import sys
+import matplotlib
 try:
     os.environ["DISPLAY"]
 except KeyError as e:
     # working without X/GUI environment
     matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-matplotlib.rcParams.update({'font.size': 14})
+import avicaching_data as ad
+import lp
+# import torch modules
+import torch, torch.nn as nn
+import torch.nn.functional as torchfun
+import torch.optim as optim
+from torch.autograd import Variable
+matplotlib.rcParams.update({'font.size': 14})   # font-size for plots
 
 # =============================================================================
-# options
+# training options
 # =============================================================================
 parser = argparse.ArgumentParser(description="NN Avicaching model for finding rewards")
+# training parameters
 parser.add_argument("--lr", type=float, default=0.001, metavar="LR",
     help="inputs learning rate of the network (default=0.001)")
-parser.add_argument("--momentum", type=float, default=1.0, metavar="M",
-    help="inputs SGD momentum (default=1.0)")
 parser.add_argument("--no-cuda", action="store_true", default=False,
     help="disables CUDA training")
 parser.add_argument("--epochs", type=int, default=10, metavar="E",
     help="inputs the number of epochs to train for")
+# data options
 parser.add_argument("--locations", type=int, default=116, metavar="J",
     help="inputs the number of locations (default=116)")
 parser.add_argument("--time", type=int, default=173, metavar="T",
     help="inputs total time of data collection; number of weeks (default=173)")
-parser.add_argument("--eta", type=float, default=10.0, metavar="F",
-    help="inputs parameter eta in the model (default=10.0)")
 parser.add_argument("--rewards", type=float, default=1000.0, metavar="R",
     help="inputs the total budget of rewards to be distributed (default=1000.0)")
 parser.add_argument("--rand", action="store_true", default=False,
@@ -39,18 +72,24 @@ parser.add_argument("--weights-file", type=str,
     metavar="f", help="inputs the location of the file to use weights from")
 parser.add_argument("--test", type=str, default="", 
     metavar="t", help="inputs the location of the file to test rewards from")
-parser.add_argument("--log-interval", type=int, default=1, metavar="I",
-    help="prints training information at I epoch intervals (default=1)")
 parser.add_argument('--seed', type=int, default=1, metavar='S',
     help='seed (default=1)')
-
+# plot/log options
 parser.add_argument("--hide-loss-plot", action="store_true", default=False,
     help="hides the loss plot, which is only saved")
+parser.add_argument("--log-interval", type=int, default=1, metavar="I",
+    help="prints training information at I epoch intervals (default=1)")
+# deprecated options -- not deleting if one chooses to use them
+parser.add_argument("--eta", type=float, default=10.0, metavar="F",
+    help="[see script] inputs parameter eta in the model (default=10.0)")
+parser.add_argument("--momentum", type=float, default=1.0, metavar="M",
+    help="[see script] inputs SGD momentum (default=1.0)")   # if using SGD
 
 args = parser.parse_args()
 # assigning cuda check and test check to single variables
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
+# set the seeds
 torch.manual_seed(args.seed)
 np.random.seed(seed=args.seed)
 if args.cuda:
@@ -59,12 +98,16 @@ if args.cuda:
 # =============================================================================
 # parameters and constants
 # =============================================================================
-J, T, weights_file_name, totalR = args.locations, args.time, args.weights_file, args.rewards
-X, w1_for_r, w2, F_DIST_w1, numFeatures = [], [], [], [], 0
-torchten = torch.FloatTensor
+# global values and datasets
+torchten = torch.FloatTensor     # change here to use diff containers
+J, T, totalR, numFeatures = args.locations, args.time, args.rewards, 0
+weights_file_name = args.weights_file
+X, w1_for_r, w2, F_DIST_w1 = [], [], [], []
 lp_A, lp_c = [], []
 loss = 0
-locs_in_file = 232
+
+# random datasets locations assigned to variables
+locs_in_file = 232  # change this to use a diff random file
 randXYR_file = "./data/random/randXYR" + str(locs_in_file) + ".txt"
 randF_file = "./data/random/randF" + str(locs_in_file) + ".csv"
 randDIST_file = "./data/random/randDIST" + str(locs_in_file) + ".txt"
@@ -73,6 +116,13 @@ randDIST_file = "./data/random/randDIST" + str(locs_in_file) + ".txt"
 # data input
 # =============================================================================
 def read_set_data():
+    """
+    Reads Datasets X, Y, f, D, weights from the files using avicaching_data 
+    module's functions. f and D are then combined into F_DIST as preprocessed 
+    tensor, which is then multiplied with w1 as preprocessing. All datasets are 
+    normalized, expanded, averaged as required, leaving as torch tensors at the 
+    end of the function.
+    """
     global X, numFeatures, F_DIST_w1, w1_for_r, w2
     # shapes of datasets -- [] means expanded form:
     # - X, Y: J
@@ -83,57 +133,83 @@ def read_set_data():
     # - w2: J x numF [x 1]
     # - w1_for_r: J x 1 x numF
 
-    # read f and dist datasets from file, operate on them
+    # read f and DIST datasets from file, operate on them
     if args.rand:
         F = ad.read_F_file(randF_file, J)
         DIST = ad.read_dist_file(randDIST_file, J)
     else:
-        F = ad.read_F_file("./data/loc_feature_with_avicaching_combined.csv", J)
-        DIST = ad.read_dist_file("./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", J)
-
-    # process data for the NN
-    F, DIST = ad.normalize(F, along_dim=0, using_max=True), ad.normalize(DIST, using_max=True)  # normalize using max
-    numFeatures = len(F[0]) + 1     # distance included
+        F = ad.read_F_file(
+            "./data/loc_feature_with_avicaching_combined.csv", J)
+        DIST = ad.read_dist_file(
+            "./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", 
+            J)
+    F = ad.normalize(F, along_dim=0, using_max=True)    # normalize using max
+    DIST = ad.normalize(DIST, using_max=True)  # normalize using max
+    
+    # combine f and D for the NN
+    numFeatures = len(F[0]) + 1     # compensating for the distance element
     F_DIST = torchten(ad.combine_DIST_F(F, DIST, J, numFeatures))
-    numFeatures += 1                # for rewards later
+    numFeatures += 1                # for reward later
 
-    # read W and X
+    # read weights and X
     w1, w2 = ad.read_weights_file(weights_file_name, locs_in_file, J, numFeatures)
     w2 = np.expand_dims(w2, axis=2)
-
     if args.rand:
         X, _, _ = ad.read_XYR_file(randXYR_file, J, T)
     else:
-        X, _, _ = ad.read_XYR_file("./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
+        X, _, _ = ad.read_XYR_file(
+            "./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", 
+            J, T)
     
-    # split w1; multiply the fdist portion of w1 with F_DIST
+    # split w1; multiply the F_DIST portion of w1 with F_DIST
     w1_for_fdist, w1_for_r = ad.split_along_dim(w1, numFeatures - 1, dim=1)
-    F_DIST_w1 = Variable(torch.bmm(F_DIST, torchten(w1_for_fdist)), requires_grad=False)
+    F_DIST_w1 = Variable(torch.bmm(
+        F_DIST, torchten(w1_for_fdist)), requires_grad=False)
 
     # condense X along T into a single vector and normalize
     X = ad.normalize(X.sum(axis=0), using_max=False)
     
-    w1_for_r, X = Variable(torchten(w1_for_r), requires_grad=False), Variable(torchten(X), requires_grad=False)
+    w1_for_r = Variable(torchten(w1_for_r), requires_grad=False)
+    X = Variable(torchten(X), requires_grad=False)
     w2 = Variable(torchten(w2), requires_grad=False)
-    # w1_for_r shape J x 1 x numF
-    # w2 shape J x numF x 1
 
 # =============================================================================
 # MyNet class
 # =============================================================================
 class MyNet(nn.Module):
+    """
+    An instance of this class emulates the sub-model used in Pricing Problem to 
+    calculate the loss function and update rewards. Constraining not done here.
+    """
 
     def __init__(self):
+        """Initializes MyNet, creates the rewards dataset for the model."""
         super(MyNet, self).__init__()
-        # initiate R
+        # initialize R: distribute totalR reward points in J locations randomly
+        # self.r preserved for debugging, no real use in the script
         self.r = np.random.multinomial(totalR, [1 / float(J)] * J, size=1)
         normalizedR = ad.normalize(self.r, using_max=False)
         self.R = nn.Parameter(torchten(normalizedR))
 
     def forward(self, wt1, wt2):
-        # print(self.R.data * 1000)
+        """
+        Goes forward in the network -- multiply the weights, apply relu, 
+        multiply weights again and apply softmax
+
+        Returns:
+            torch.Tensor -- result after going forward in the network.
+        """
         repeatedR = self.R.repeat(J, 1).unsqueeze(dim=2)    # shape is J x J x 1
+        # multiply wt1 with r and add the resulting tensor with the already 
+        # calculated F_DIST_w1. Drastically improves performance. 
+        
+        # If you've trouble understanding why multiply and add, draw these 
+        # tensors on a paper and work out how the additions and multiplications 
+        # affect elements, i.e., which operations affect which sections of the 
+        # tensors 
         res = torch.bmm(repeatedR, wt1) + F_DIST_w1     # res is J x J x numF after
+        # forward propagation done, multiply remaining tensors (no tensors are 
+        # mutable after this point except res)
         res = torchfun.relu(res)
         res = torch.bmm(res, wt2).view(-1, J)    # res is J x J
         # add eta to inp[u][u]
@@ -144,6 +220,15 @@ class MyNet(nn.Module):
         return torchfun.softmax(res)
 
 def go_forward(net):
+    """
+    Feed forward the dataset in the model's network and calculate Y and loss.
+
+    Args:
+        net -- An instance of MyNet class
+
+    Returns:
+        float -- time taken to go complete all operations in the network
+    """
     global w1_for_r, w2, loss
     start_forward_time = time.time()
 
@@ -156,6 +241,17 @@ def go_forward(net):
     return time.time() - start_forward_time
 
 def train(net, optimizer):
+    """
+    Trains the Neural Network using MyNet on the training set.
+
+    Args:
+        net -- MyNet instance
+        optimizer -- torch.optim instance of the Gradient-Descent function
+        
+    Returns:
+        3-tuple -- (Execution Time, End loss value, 
+            Model's prediction after feed forward [Px])
+    """
     global lp_A, lp_c, loss
 
     # BACKPROPAGATE
@@ -165,9 +261,8 @@ def train(net, optimizer):
     loss.backward()         # calculate grad
     optimizer.step()        # update rewards
     
-    backprop_time = time.time() - start_backprop_time
-
     r_on_cpu = net.R.data.squeeze().cpu().numpy()   # transfer data for lp
+    backprop_time = time.time() - start_backprop_time
 
     start_lp_time = time.time()
     # CONSTRAIN -- LP
@@ -176,14 +271,16 @@ def train(net, optimizer):
     net.R.data = torchten(lp.run_lp(lp_A, lp_c, J, r_on_cpu, 1.0).x[:J]).unsqueeze(dim=0)
     lp_time = time.time() - start_lp_time
 
+    trans_time = time.time()
     if args.cuda:
         # transfer data
         net.R.data = net.R.data.cuda()
+    trans_time = time.time() - trans_time
     
     # FORWARD
     forward_time = go_forward(net)
 
-    return (backprop_time + lp_time + forward_time, lp_time)
+    return (backprop_time + lp_time + forward_time + trans_time, lp_time)
 
 # =============================================================================
 # logs and plots

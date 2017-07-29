@@ -36,7 +36,7 @@ except KeyError as e:
     matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import avicaching_data as ad
-# import torch packages
+# import torch modules
 import torch, torch.nn as nn
 import torch.nn.functional as torchfun
 import torch.optim as optim
@@ -76,11 +76,13 @@ parser.add_argument("--log-interval", type=int, default=1, metavar="I",
     help="prints training information at I epoch intervals (default=1)")
 # deprecated options -- not deleting if one chooses to use them
 parser.add_argument("--expand-R", action="store_true", default=False,
-    help="expands the reward vectors into matrices with distributed rewards")
+    help="[see script] expands the reward vectors into matrices with distributed rewards")
 parser.add_argument("--eta", type=float, default=10.0, metavar="F",
-    help="inputs parameter eta in the model (default=10.0)")
+    help="[see script] inputs parameter eta in the model (default=10.0)")
 parser.add_argument("--lambda-L1", type=float, default=10.0, metavar="LAM",
-    help="inputs the L1 regularizing coefficient")
+    help="[see script] inputs the L1 regularizing coefficient")
+parser.add_argument("--momentum", type=float, default=1.0, metavar="M",
+    help="[see script] inputs SGD momentum (default=1.0)")   # if using SGD
 
 args = parser.parse_args()
 # assigning cuda check and test check to single variables

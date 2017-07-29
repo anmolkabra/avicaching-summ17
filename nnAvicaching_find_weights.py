@@ -1,4 +1,26 @@
 #!/usr/bin/env python
+
+# =============================================================================
+# nnAvicaching_find_weights.py
+# Author: Anmol Kabra -- github: @anmolkabra
+# Project: Solving the Avicaching Game Faster and Better (Summer 2017)
+# -----------------------------------------------------------------------------
+# Purpose of the Script:
+#   Refer to the Report (link) for detailed explanation. In a gist, this script 
+#   learns the weights that highlight the change of eBird agents' behavior 
+#   after certain rewards are applied. The model uses a **3-layered** neural 
+#   network.
+# -----------------------------------------------------------------------------
+# Required Dependencies/Software:
+#   - Python 2.x (obviously, Anaconda environment used originally)
+#   - PyTorch
+#   - NumPy
+# -----------------------------------------------------------------------------
+# Required Local Files/Data/Modules:
+#   - ./data/*
+#   - ./avicaching_data.py
+# =============================================================================
+
 from __future__ import print_function
 import argparse
 import time
@@ -43,13 +65,15 @@ parser.add_argument("--time", type=int, default=173, metavar="T",
     help="inputs total time of data collection; number of weeks (default=173)")
 parser.add_argument("--rand", action="store_true", default=False,
     help="uses random xyr data")
-# plot options
+# plot/log options
 parser.add_argument("--no-plots", action="store_true", default=False,
     help="skips generating plot maps")
 parser.add_argument("--hide-loss-plot", action="store_true", default=False,
     help="hides the loss plot, which is only saved")
 parser.add_argument("--hide-map-plot", action="store_true", default=False,
     help="hides the map plot, which is only saved")
+parser.add_argument("--log-interval", type=int, default=1, metavar="I",
+    help="prints training information at I epoch intervals (default=1)")
 # deprecated options -- not deleting if one chooses to use them
 parser.add_argument("--expand-R", action="store_true", default=False,
     help="expands the reward vectors into matrices with distributed rewards")
@@ -122,7 +146,7 @@ def read_set_data():
     # process data for the NN
     numFeatures = len(F[0]) + 1     # compensating for the distance element
     F_DIST = torchten(ad.combine_DIST_F(F, DIST, J, numFeatures))
-    numFeatures += 1                # for rewards later
+    numFeatures += 1                # for reward later
 
     # operate on XYR data
     X, Y, R = [], [], []
@@ -177,12 +201,12 @@ def read_set_data():
         for t in xrange(num_test):
             testR_ext[t] = expand_R(testR[t], R_max=15)
         trainR, testR = trainR_ext, testR_ext
-        numFeatures += 14
+        numFeatures += 14   # 1 reward already added, adding the remaining 14
 
 def make_rand_data(X_max=100.0, R_max=100.0):
     """
     Creates random X and R and calculates Y based on random weights. Also 
-    stores the weights in files before returning.F_DIST
+    stores the weights in files before returning.
 
     Args:
         X_max -- Maximum value of element in X dataset (default=100.0)
@@ -290,6 +314,10 @@ def test_given_data(X, Y, R, w1, w2, J, T, u):
 # MyNet class
 # =============================================================================
 class MyNet(nn.Module):
+    """
+    An instance of this class emulates the model used for Identification 
+    Problem as a 3-layered network.
+    """
 
     def __init__(self):
         """Initializes MyNet, creates the sets of weights for the model."""
@@ -427,7 +455,9 @@ def build_input(rt):
         Torch.Tensor -- Input dataset for the neural network
     """
     if args.expand_R:
+        # supplied rt is a matrix
         return torch.cat([F_DIST, rt.repeat(J, 1, 1)], dim=2)
+    # else supplied rt is a vector
     return torch.cat([F_DIST, rt.repeat(J, 1)], dim=2)
 
 # =============================================================================
@@ -456,19 +486,21 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
     # plot details
     loss_fig = plt.figure(1)
     train_label, = plt.plot(x, train_losses, "r-", label="Train Loss") 
+    plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.grid(True, which="major", axis="both", color="k", ls="dotted", lw="1.0")
     plt.grid(True, which="minor", axis="y", color="k", ls="dotted", lw="0.5")
     plt.minorticks_on()
-    plt.xlabel(xlabel)
+    plt.title(title)
 
+    # check if testing was enabled
     if args.should_test:
         test_label, = plt.plot(x, test_losses, "b-", label="Test Loss")
         plt.legend(handles=[train_label, test_label])
     else:
         plt.legend(handles=[train_label])
     
-    plt.title(title)
+    # save and show
     loss_fig.savefig(file_name, bbox_inches="tight", dpi=200)
     if not args.hide_loss_plot:
         plt.show()
@@ -488,7 +520,7 @@ def save_log(file_name, x, y, title):
         f.write(title + "\n")
         f.write("J: %3d\t\tT: %3d\n-------------\n" % (J, T))
         for i in range(0, len(x), args.log_interval):
-            # it works as required
+            # write data at log_intervals
             f.write("epoch = %d\t\ttrainloss = %.4f, traintime = %.4f" % (
                 x[i], y[0][i][1], y[0][i][0]))
             if args.should_test:
@@ -574,12 +606,14 @@ def expand_R(rt, R_max=15):
 
     Args:
         rt -- Torch.Tensor vector of rewards
-        R_max -- Number of elements for expansion (default=15)
+        R_max -- Number of elements for expansion (default=15). When using orig 
+            data, R_max must be greater than 15. It's also the max reward in 
+            the rewards file
 
     Returns:
         Torch.Tensor -- Expanded R of size J x R_max
     """
-    newrt = torchten(J, 15)
+    newrt = torchten(J, R_max)
     if args.cuda:
         newrt = newrt.cuda()
     for u in xrange(J):
@@ -613,7 +647,7 @@ if __name__ == "__main__":
     if args.expand_R:
         file_pre_gpu = "expandedR, " + file_pre_gpu
 
-    # scalar + tensor currently not supported in pytorch
+    # scalar + tensor not supported in pytorch v0.12.2
     # formula = (u(Y-mean(Y)))^2
     train_loss_normalizer = (torch.mv(torch.t(trainY \
         - torch.mean(trainY).expand_as(trainY)).data, u_train)).pow(2).sum()

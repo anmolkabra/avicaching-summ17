@@ -1,6 +1,25 @@
 #!/usr/bin/env python
+
+# DEPRECATED -- doesn't work
+# =============================================================================
+# process_recovered_weights.py
+# Author: Anmol Kabra -- github: @anmolkabra
+# Project: Solving the Avicaching Game Faster and Better (Summer 2017)
+# -----------------------------------------------------------------------------
+# Purpose of the Script:
+#   Just ignore it
+# -----------------------------------------------------------------------------
+# Required Dependencies/Software:
+#   - Python 2.x (obviously, Anaconda environment used originally)
+#   - NumPy
+# -----------------------------------------------------------------------------
+# Required Local Files/Data/Modules:
+#   - ./stats/find_weights/logs/orig/*seed=5* (mutable)
+# =============================================================================
+
 from __future__ import print_function
-import os, numpy as np
+import os
+import numpy as np
 
 def read_first_k_lines(fname, k):
     w = []

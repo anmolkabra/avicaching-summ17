@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+
+# DEPRECATED -- model didn't work. Was trying to constrain rewards differently.
+# Beware -- lack of documentation. Refer to nnAvicaching_find_rewards.py for 
+# support
 from __future__ import print_function
 import torch, torch.nn as nn, torch.nn.functional as torchfun, torch.optim as optim
 from torch.autograd import Variable

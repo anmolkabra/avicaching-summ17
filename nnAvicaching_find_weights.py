@@ -440,8 +440,11 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
     Args:
         file_name -- name of the file for saving
         x -- data on the x-axis in a NumPy ndarray
-        y -- data on the y-axis, including time. The function extracts the 
-            required information. See the main function on how this is built
+        y -- data on the y-axis. Should be a 3-d array/tuple. y[0] should be 
+            train results, y[1] should be test results obtained from the 
+            functions. y[-][k] should be the results after the k+1 epoch 
+            such that y[-][k][0] is the execution time and y[-][k][1] is the 
+            end loss. See the main area of the script on how this is built.
         xlabel -- what else can it mean?
         ylabel -- ditto
         title -- title of the plot
@@ -478,9 +481,7 @@ def save_log(file_name, x, y, title):
     Args:
         file_name -- name of the file
         x -- epoch data [1..number_of_epochs]
-        y -- data on the y-axis if this data was plotted using save_plot(), 
-            including time. The function extracts the required information. 
-            See the main function on how this is built
+        y -- same as that of save_plot()
         title -- first line of the file
     """
     with open(file_name, "wt") as f:

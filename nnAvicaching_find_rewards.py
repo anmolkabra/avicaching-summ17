@@ -287,7 +287,13 @@ def train(net, optimizer):
 # =============================================================================
 def save_log(file_name, results, title, rewards=None):
     """
-    Saves the log of train and test periods to a file
+    Saves the log to a file.
+
+    Args:
+        file_name -- name of the file for saving
+        results -- tuple of the time taken for model run and end loss value
+        title -- title of the plot
+        rewards -- NumPy ndarray with the rewards (default=None)
     """
     with open(file_name, "wt") as f:
         f.write(title + "\n")
@@ -298,18 +304,27 @@ def save_log(file_name, results, title, rewards=None):
 
 def save_plot(file_name, x, y, xlabel, ylabel, title):
     """
-    Saves and shows the loss plot of train and test periods
+    Saves and (optionally) shows the loss plot of train and test periods.
+
+    Args:
+        file_name -- name of the file for saving
+        x -- data on the x-axis in a NumPy ndarray
+        y -- data on the y-axis in a NumPy ndarray
+        xlabel -- what else can it mean?
+        ylabel -- ditto
+        title -- title of the plot
     """
     # plot details
     loss_fig = plt.figure(1)
-    train_label, = plt.plot(x, y, "r-", label="Train Loss") 
+    train_label, = plt.plot(x, y, "r-", label="Train Loss")
+    plt.xlabel(xlabel) 
     plt.ylabel(ylabel)
     plt.grid(True, which="major", axis="both", color="k", ls="dotted", lw="1.0")
     plt.grid(True, which="minor", axis="y", color="k", ls="dotted", lw="0.5")
     plt.minorticks_on()
-    plt.xlabel(xlabel)
-
     plt.title(title)
+
+    # save and show
     loss_fig.savefig(file_name, bbox_inches="tight", dpi=200)
     if not args.hide_loss_plot:
         plt.show()
@@ -331,6 +346,8 @@ if __name__ == "__main__":
     transfer_time = time.time() - transfer_time
     
     if args.test:
+        # secondary function of the script -- calculate loss value for the 
+        # supplied data
         rewards = np.loadtxt(args.test, delimiter=" ")[:J]
         rewards = torchten(ad.normalize(rewards, using_max=False))
         if args.cuda:
@@ -343,12 +360,14 @@ if __name__ == "__main__":
             (forward_time, loss.data[0]), weights_file_name)
         sys.exit(0)
 
-    # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, nesterov=True)
+    # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
     lp_A, lp_c = lp.build_A(J), lp.build_c(J)
 
+    # refer to the report and Algorithm for Pricing Problem to understand the 
+    # logic flow: forward -> loop [backpropagate -> update -> constrain -> forward]
     best_loss, total_lp_time = float("inf"), 0
-    total_time = go_forward(net)
+    total_time = go_forward(net)    # start model and logging here
     total_time += transfer_time
     train_loss = [ loss.data[0] ]
 
@@ -367,10 +386,11 @@ if __name__ == "__main__":
         if e % 20 == 0:
             print("epoch=%5d, loss=%.10f, budget=%.10f" % \
                 (e, curr_loss, net.R.data.sum()))
+    best_rew = best_rew.cpu().numpy() * totalR  # de-normalize rewards
 
-    # save and plot
-    best_rew = best_rew.cpu().numpy() * totalR
+    # log and plot the results: epoch vs loss
 
+    # define file names
     if args.rand:
         file_pre = "randXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
     else:
@@ -379,7 +399,7 @@ if __name__ == "__main__":
         args.lr, best_loss, total_time, total_lp_time)
     epoch_data = np.arange(0, args.epochs + 1)
     fname = file_pre_gpu + file_pre + log_name
-
+    # save amd plot data
     save_plot("./stats/find_rewards/plots/" + fname + ".png", epoch_data, 
         train_loss, "epoch", "loss", log_name)
     save_log("./stats/find_rewards/logs/" + fname + ".txt", (total_time, best_loss),

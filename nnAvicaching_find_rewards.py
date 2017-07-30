@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # =============================================================================
-# nnAvicaching_find_weights.py
+# nnAvicaching_find_rewards.py
 # Author: Anmol Kabra -- github: @anmolkabra
 # Project: Solving the Avicaching Game Faster and Better (Summer 2017)
 # -----------------------------------------------------------------------------

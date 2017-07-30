@@ -1,3 +1,20 @@
+#!/usr/bin/env python
+
+# =============================================================================
+# test_lp_time_tf.py
+# Author: Anmol Kabra (slightly changed from an MNIST implementation on TensorFlow)
+# Project: Solving the Avicaching Game Faster and Better (Summer 2017)
+# -----------------------------------------------------------------------------
+# Purpose of the Script:
+#   Was trying to see if CPU "set" slowdown in LP was particular to PyTorch. 
+#   Abandoned this direction.
+# -----------------------------------------------------------------------------
+# Required Dependencies/Software:
+#   - Python 2.x (obviously, Anaconda environment used originally)
+#   - NumPy
+#   - TensorFlow
+# =============================================================================
+
 from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets("MNIST_data/", one_hot = True)
 import tensorflow as tf, numpy as np, lp, time

@@ -1,3 +1,22 @@
+#!/usr/bin/env python
+
+# =============================================================================
+# test_lp_time_pt.py
+# Author: Anmol Kabra (slightly changed from PyTorch's MNIST tutorial)
+# Project: Solving the Avicaching Game Faster and Better (Summer 2017)
+# -----------------------------------------------------------------------------
+# Purpose of the Script:
+#   Was trying to see if the CPU "set" synchronization delay was particular to 
+#   our model. Therefore, ran the LP interspersed with a MNIST network from 
+#   PyTorch's tutorial.
+# -----------------------------------------------------------------------------
+# Required Dependencies/Software:
+#   - Python 2.x (obviously, Anaconda environment used originally)
+#   - NumPy
+#   - PyTorch
+#   - Torchvision
+# =============================================================================
+
 from __future__ import print_function
 import argparse, time, lp
 import torch

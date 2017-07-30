@@ -1,3 +1,16 @@
+#!/usr/bin/env python
+
+# =============================================================================
+# map_plot_check.py
+# Author: Anmol Kabra -- github: @anmolkabra
+# Project: Solving the Avicaching Game Faster and Better (Summer 2017)
+# -----------------------------------------------------------------------------
+# Purpose of the Script:
+#   [For testing purposes] Plots the lat-long map of original dataset Y. See 
+#   nnAvicaching_find_weights.py for functions' descriptions. I'm too tired 
+#   to repeat them.
+# =============================================================================
+
 from __future__ import print_function
 import numpy as np, avicaching_data as ad
 import matplotlib.pyplot as plt
@@ -44,9 +57,10 @@ def plot_predicted_map(lat_long, point_info, plot_offset=0.05):
     plt.show()
     plt.close()
 
-X, Y, R = ad.read_XYR_file("./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", J, T)
+X, Y, R = ad.read_XYR_file(
+    "./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", 
+    J, T)
 
 Y = np.mean(Y, axis=0)
 plot_predicted_map(ad.read_lat_long_from_Ffile(
-    "./data/loc_feature_with_avicaching_combined.csv", J),
-            Y)
+    "./data/loc_feature_with_avicaching_combined.csv", J), Y)

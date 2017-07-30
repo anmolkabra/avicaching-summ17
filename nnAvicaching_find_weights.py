@@ -108,10 +108,11 @@ num_train = int(math.floor(args.train_percent * T))
 num_test = T - num_train
 
 # random datasets locations assigned to variables
-randXYR_file = "./data/random/randXYR" + str(J) + ".txt"
-randXYR_weights_file = "./data/random/randXYR" + str(J) + "_weights.txt"
-randF_file = "./data/random/randF" + str(J) + ".csv"
-randDIST_file = "./data/random/randDIST" + str(J) + ".txt"
+locs_in_file = 116  # change this to use a diff random file
+randXYR_file = "./data/random/randXYR" + str(locs_in_file) + ".txt"
+randXYR_weights_file = "./data/random/randXYR" + str(locs_in_file) + "_weights.txt"
+randF_file = "./data/random/randF" + str(locs_in_file) + ".csv"
+randDIST_file = "./data/random/randDIST" + str(locs_in_file) + ".txt"
 
 # =============================================================================
 # data input functions

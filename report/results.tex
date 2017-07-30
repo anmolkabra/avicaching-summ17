@@ -86,7 +86,7 @@ To check if the model was overfitting at learning rate = $10^{-3}$, we plotted l
 \end{figure}
 
 \subsection{GPU Speedup Results} \label{sec:IdProbRes - GPU}
-Running on batches of sizes $T = 17, 51, 85, 129, 173$ on a randomly generated dataset for 1000 epochs with both GPU and CPU ``set'' separately, we obtained information on full execution runtimes (combining training and testing runtimes). The average results (over 3 seeds for each batch) are plotted in \Cref{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}, which show promising GPU Speedup figures for any batch size; the GPU Speedup averaged over all tested batch-sizes is $\textbf{9.06}\pm\textbf{0.45}$.
+Running on batches of sizes $T = \{17, 51, 85, 129, 173\}$ on a randomly generated dataset for 1000 epochs with both GPU and CPU ``set'' separately, we obtained information on full execution runtimes (combining training and testing runtimes). The average results (over 3 seeds for each batch) are plotted in \Cref{fig:Execution Times of Different Batch-Sizes with GPU and CPU ``set'' Separately}, which show promising GPU Speedup figures for any batch size; the GPU Speedup averaged over all tested batch-sizes is $\textbf{9.06}\pm\textbf{0.45}$.
 \begin{figure}[!htbp]
     \centering
     \begin{subfigure}{.59\textwidth}
@@ -174,7 +174,7 @@ Compared to the proportional reward distribution (loss values calculated using s
 \end{table}
 
 \subsection{GPU Speedup Results} \label{sec:PriProbRes - GPU}
-After running on different batch-sizes $J = 11, 35, 55, 85, 116, 145, 174, 203, 232$, we \textbf{did not observe drastic GPU speedup} for the full model. \Cref{fig:Finding Rewards - Time Taken by the Full Model} shows the Speedup trend: GPU Speedup for the full model was a mere \textbf{1.53 $\pm$ 0.10}.
+After running on different batch-sizes $J = \{11, 37, 63, 90, 116, 145, 174, 203, 232\}$, we \textbf{did not observe drastic GPU speedup} for the full model. \Cref{fig:Finding Rewards - Time Taken by the Full Model} shows the Speedup trend: GPU Speedup for the full model was a mere \textbf{1.34 $\pm$ 0.16}.
 \begin{figure}[!htbp]
     \centering
     \begin{subfigure}{\textwidth}
@@ -198,31 +198,31 @@ After running on different batch-sizes $J = 11, 35, 55, 85, 116, 145, 174, 203, 
             \addplot+ [mark=*,
             nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit
             ] coordinates {
-                (11,13.08) +- (1.04, 1.04)
-                (35,50.51) +- (1.73, 1.73)
-                (55,88.95) +- (0.35, 0.35)
-                (85,185.34) +- (0.95, 0.95)
-                (116,346.34) +- (1.67, 1.67)
-                (145,431.32) +- (18.06,18.06)
-                (174,588.08) +- (10.16,10.16)
-                (203,766.37) +- (47.02,47.02)
-                (232,883.15) +- (38.00,38.00)
+                (11,9.95) +- (0.12,0.12)
+                (37,41.70) +- (0.18,0.18)
+                (63,83.69) +- (1.60,1.60)
+                (90,144.59) +- (1.37,1.37)
+                (116,234.69) +- (2.09,2.09)
+                (145,299.91) +- (2.46,2.46)
+                (174,390.79) +- (3.49,3.49)
+                (203,510.15) +- (4.29,4.29)
+                (232,651.64) +- (5.25,5.25)
             };  % cpu
             \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
-                (11,9.72) +- (0.08, 0.08)
-                (35,33.97) +- (0.26, 0.26)
-                (55,58.97) +- (0.19, 0.19)
-                (85,119.50) +- (0.35, 0.35)
-                (116,197.80) +- (4.02, 4.02)
-                (145,262.57) +- (8.04,8.04)
-                (174,368.62) +- (1.06,1.06)
-                (203,505.91) +- (6.38,6.38)
-                (232,671.28) +- (10.74,10.74)
+                (11,8.79) +- (0.07,0.07)
+                (37,29.43) +- (0.28,0.28)
+                (63,55.59) +- (0.20,0.20)
+                (90,94.10) +- (0.85,0.85)
+                (116,146.63) +- (0.42,0.42)
+                (145,223.77) +- (2.57,2.57)
+                (174,323.67) +- (9.67,9.67)
+                (203,432.95) +- (6.76,6.76)
+                (232,581.69) +- (15.66,15.66)
             };  % gpu
             \legend{CPU ``set'',GPU ``set''}
             \end{axis}
         \end{tikzpicture}
-        \caption{Time Taken by the Full Model: GPU Speedup over all batch-sizes is only \textbf{1.53 $\pm$ 0.10}.}
+        \caption{Time Taken by the Full Model: GPU Speedup over all batch-sizes is only \textbf{1.34 $\pm$ 0.16}.}
         \label{fig:Finding Rewards - Time Taken by the Full Model}
     \end{subfigure}\vspace*{1em}
     \begin{subfigure}{\textwidth}
@@ -245,38 +245,38 @@ After running on different batch-sizes $J = 11, 35, 55, 85, 116, 145, 174, 203, 
             \addplot+ [mark=*,
             nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit
             ] coordinates {
-                (11,11.93) +- (0.94, 0.94)
-                (35,48.76) +- (1.68, 1.68)
-                (55,86.49) +- (0.36, 0.36)
-                (85,180.60) +- (0.97, 0.97)
-                (116,336.23) +- (1.46, 1.46)
-                (145,418.71) +- (18.17,18.17)
-                (174,572.87) +- (10.35,10.35)
-                (203,745.87) +- (46.88,46.88)
-                (232,858.31) +- (37.18,37.18)
+                (11,9.14) +- (0.03,0.03)
+                (37,40.15) +- (0.18,0.18)
+                (63,81.03) +- (1.56,1.56)
+                (90,140.40) +- (1.37,1.37)
+                (116,228.46) +- (2.14,2.14)
+                (145,289.98) +- (2.38,2.38)
+                (174,379.11) +- (3.44,3.44)
+                (203,494.61) +- (4.16,4.16)
+                (232,631.07) +- (5.32,5.32)
             };  % cpu
             \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
-                (11,7.14) +- (0.08, 0.08)
-                (35,31.06) +- (0.26, 0.26)
-                (55,55.81) +- (0.19, 0.19)
-                (85,115.80) +- (0.35, 0.35)
-                (116,193.66) +- (4.02, 4.02)
-                (145,257.89) +- (8.01,8.01)
-                (174,363.32) +- (1.03,1.03)
-                (203,499.98) +- (6.37,6.37)
-                (232,664.85) +- (10.73,10.73)
+                (11,6.50) +- (0.07,0.07)
+                (37,26.82) +- (0.28,0.28)
+                (63,52.63) +- (0.20,0.20)
+                (90,90.71) +- (0.80,0.80)
+                (116,142.91) +- (0.42,0.42)
+                (145,219.35) +- (2.72,2.72)
+                (174,318.93) +- (9.69,9.69)
+                (203,427.58) +- (6.75,6.75)
+                (232,574.45) +- (16.02,16.02)
             };  % gpu
             \legend{CPU ``set'',GPU ``set''}
             \end{axis}
         \end{tikzpicture}
-        \caption[Time taken by the LP]{Time taken by the LP: GPU Speedup over all batch-sizes is only \textbf{1.56 $\pm$ 0.08}. As discussed in \Cref{sec:PriProbRes - GPU,app:GPU Speedup in LP Computation}, we shouldn't have witnessed this speedup as both configurations' LPs were computed on the CPU. Hence, we expected the GPU Speedup value for LP to be $\approx$ 1. }
+        \caption[Time taken by the LP]{Time taken by the LP: GPU Speedup over all batch-sizes is only \textbf{1.37 $\pm$ 0.16}. As discussed in \Cref{sec:PriProbRes - GPU,app:GPU Speedup in LP Computation}, we shouldn't have witnessed this speedup as both configurations' LPs were computed on the CPU. Hence, we expected the GPU Speedup value for LP to be $\approx$ 1. }
         \label{fig:Finding Rewards - Time taken by the LP}
     \end{subfigure}
     \caption{Finding Rewards -- Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately}
     \label{fig:Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPU ``set'' Separately}
 \end{figure}
 
-As the the low GPU Speedup was disappointing, we looked for operations that were causing the program to slow down on the GPU. Since the 2-layered network was quite small, we suspected the LP problem (\Cref{eqn:lp_math_constrain_rewards,eqn:lp_code_constrain_rewards}) to influence the runtimes. Thus, we recorded execution times for both the neural network and the LP separately. As we suspected, the LP did impact the runtime more than the neural networks did, and accounted for $\approx 90 \%$ of the total model runtime (\Cref{fig:Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPU ``set'' Separately}). However, the GPU Speedup in LP runtime was unusual.
+As the the low GPU Speedup was disappointing, we looked for operations that were causing the program to slow down on the GPU. Since the 2-layered network was quite small, we suspected the LP problem (\Cref{eqn:lp_math_constrain_rewards,eqn:lp_code_constrain_rewards}) to influence the runtimes. Thus, we recorded execution times for both the neural network and the LP separately. As we suspected, the LP did impact the runtime more than the neural networks did, and accounted for $\approx 94\%$ of the total model runtime (\Cref{fig:Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPU ``set'' Separately}). However, the GPU Speedup in LP runtime was unusual.
 
 \subsubsection{Strange GPU Speedup in LP Computation}
 The Speedup is exceptional as we intentionally transferred the needed matrices/tensors to the CPU for solving the LP using Simplex. Since SciPy's Optimize Module uses a single CPU core and does not utilize the GPU, we expected similar runtimes for both configurations. Our efforts to determine the reasons are collected in \Cref{app:GPU Speedup in LP Computation} instead of digressing here. As stated later in this section, we disregard the old GPU Speedup results for finding rewards and use the more suited ones.
@@ -311,31 +311,31 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         \addplot+ [mark=*,
         nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit
         ] coordinates {
-            (11,7.78) +- (0.03,0.03)
-            (35,31.74) +- (0.32,0.32)
-            (55,57.54) +- (0.14,0.14)
-            (85,118.20) +- (0.52,0.52)
-            (116,200.48) +- (0.78,0.78)
-            (145,258.43) +- (2.67,2.67)
-            (174,368.88) +- (1.71,1.71)
-            (203,503.00) +- (6.22,6.22)
-            (232,667.66) +- (5.78,5.78)
+            (11,7.03) +- (0.03,0.03)
+            (37,28.25) +- (0.28,0.28)
+            (63,54.18) +- (0.29,0.29)
+            (90,93.34) +- (0.39,0.39)
+            (116,147.15) +- (0.42,0.42)
+            (145,225.92) +- (1.74,1.74)
+            (174,322.61) +- (4.21,4.21)
+            (203,438.17) +- (1.56,1.56)
+            (232,583.95) +- (5.08,5.08)
         };  % cpu
         \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
-            (11,9.57) +- (0.03,0.03)
-            (35,34.03) +- (0.31,0.31)
-            (55,59.31) +- (0.14,0.14)
-            (85,119.41) +- (0.47,0.47)
-            (116,198.18) +- (2.04,2.04)
-            (145,257.62) +- (2.68,2.68)
-            (174,365.05) +- (3.55,3.55)
-            (203,500.76) +- (3.22,3.22)
-            (232,664.71) +- (13.16,13.16)
+            (11,8.52) +- (0.02,0.02)
+            (37,29.64) +- (0.16,0.16)
+            (63,55.25) +- (0.05,0.05)
+            (90,94.02) +- (0.87,0.87)
+            (116,146.52) +- (0.50,0.50)
+            (145,218.42) +- (0.81,0.81)
+            (174,317.33) +- (3.98,3.98)
+            (203,430.61) +- (2.55,2.55)
+            (232,573.49) +- (4.69,4.69)
         };  % gpu
         \legend{CPU ``set'',GPU ``set''}
         \end{axis}
         \end{tikzpicture}
-        \caption{Time Taken by the Full Model: GPU Speedup over all batch-sizes is only $\textbf{0.97}\pm\textbf{0.04}$ -- heavily impacted by LP runtimes.}
+        \caption{Time Taken by the Full Model: GPU Speedup over all batch-sizes is only \textbf{0.98 $\pm$ 0.04} -- heavily impacted by LP runtimes.}
         \label{fig:Restricted Finding Rewards - Time Taken by the Full Model}
     \end{subfigure}\vspace*{1em}
     \begin{subfigure}{\textwidth}
@@ -355,33 +355,33 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         nodes near coords,
         every node near coord/.append style={yshift=-0.7cm,/pgf/number format/.cd,fixed zerofill,precision=2}
         ]
-        \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit
+        \addplot+ [mark=*,nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit
         ] coordinates {
-            (11,7.09) +- (0.04,0.04)
-            (35,30.56) +- (0.32,0.32)
-            (55,55.74) +- (0.14,0.14)
-            (85,114.95) +- (0.49,0.49)
-            (116,194.84) +- (0.84,0.84)
-            (145,250.61) +- (2.47,2.47)
-            (174,358.35) +- (1.68,1.68)
-            (203,488.71) +- (5.74,5.74)
-            (232,649.55) +- (5.93,5.93)
+            (11,6.42) +- (0.03,0.03)
+            (37,27.16) +- (0.28,0.28)
+            (63,52.34) +- (0.28,0.28)
+            (90,90.18) +- (0.35,0.35)
+            (116,142.46) +- (0.42,0.42)
+            (145,218.63) +- (1.72,1.72)
+            (174,313.16) +- (4.22,4.22)
+            (203,425.66) +- (1.56,1.56)
+            (232,567.86) +- (5.10,5.10)
         };  % cpu
-        \addplot+ [mark=*,nodes near coords=\raisebox{0.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit] coordinates {
-            (11,7.15) +- (0.04,0.04)
-            (35,31.27) +- (0.30,0.30)
-            (55,56.25) +- (0.13,0.13)
-            (85,115.83) +- (0.47,0.47)
-            (116,194.19) +- (2.03,2.03)
-            (145,253.03) +- (2.67,2.67)
-            (174,359.90) +- (3.57,3.57)
-            (203,494.95) +- (3.20,3.20)
-            (232,658.40) +- (13.15,13.15)
+        \addplot+ [mark=*,error bars/.cd, y dir=both,y explicit] coordinates {
+            (11,6.37) +- (0.01,0.01)
+            (37,27.15) +- (0.16,0.16)
+            (63,52.42) +- (0.06,0.06)
+            (90,90.81) +- (0.87,0.87)
+            (116,142.90) +- (0.51,0.51)
+            (145,214.30) +- (0.81,0.81)
+            (174,312.71) +- (3.98,3.98)
+            (203,425.38) +- (2.58,2.58)
+            (232,567.77) +- (4.71,4.71)
         };  % gpu
         \legend{CPU ``set'',GPU ``set''}
         \end{axis}
         \end{tikzpicture}
-        \caption[Time taken by the LP]{Time taken by the LP: GPU Speedup over all batch-sizes is only $\textbf{0.99}\pm\textbf{0.005}$. Expectedly, there is no GPU Speedup in LP runtimes.}
+        \caption[Time taken by the LP]{Time taken by the LP: GPU Speedup over all batch-sizes is only \textbf{1.002 $\pm$ 0.005}. Expectedly, there is no GPU Speedup in LP runtimes.}
         \label{fig:Restricted Finding Rewards - Time taken by the LP}
     \end{subfigure}
 \end{figure}
@@ -407,31 +407,31 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         ]
         \addplot+ [mark=*,
         nodes near coords=\raisebox{1.8cm}{\pgfmathprintnumber\pgfplotspointmeta},error bars/.cd, y dir=both,y explicit] coordinates {
-            (11,0.69) +- (0.004,0.004)
-            (35,1.18) +- (0.002,0.002)
-            (55,1.80) +- (0.01,0.01)
-            (85,3.24) +- (0.03,0.03)
-            (116,5.63) +- (0.14,0.14)
-            (145,7.83) +- (0.22,0.22)
-            (174,10.54) +- (0.03,0.03)
-            (203,14.29) +- (0.48,0.48)
-            (232,18.11) +- (0.17,0.17)
+            (11,0.61) +- (0.01,0.01)
+            (37,1.09) +- (0.003,0.003)
+            (63,1.84) +- (0.01,0.01)
+            (90,3.16) +- (0.04,0.04)
+            (116,4.69) +- (0.004,0.004)
+            (145,7.28) +- (0.02,0.02)
+            (174,9.45) +- (0.02,0.02)
+            (203,12.51) +- (0.06,0.06)
+            (232,16.08) +- (0.04,0.04)
         };  % cpu
         \addplot+ [mark=*, error bars/.cd, y dir=both,y explicit] coordinates {
-            (11,2.42) +- (0.01,0.01)
-            (35,2.76) +- (0.01,0.01)
-            (55,3.06) +- (0.01, 0.01)
-            (85,3.58) +- (0.01,0.01)
-            (116,3.99) +- (0.01,0.01)
-            (145,4.59) +- (0.01,0.01)
-            (174,5.15) +- (0.02,0.02)
-            (203,5.80) +- (0.02,0.02)
-            (232,6.31) +- (0.005,0.005)
+            (11,2.15) +- (0.01,0.01)
+            (37,2.49) +- (0.006,0.006)
+            (63,2.84) +- (0.02,0.02)
+            (90,3.21) +- (0.01,0.01)
+            (116,3.62) +- (0.005,0.005)
+            (145,4.11) +- (0.02,0.02)
+            (174,4.62) +- (0.02,0.02)
+            (203,5.23) +- (0.05,0.05)
+            (232,5.72) +- (0.04,0.04)
         };  % gpu
         \legend{CPU ``set'',GPU ``set''}
         \end{axis}
         \end{tikzpicture}
-        \caption{Time taken by the Neural Network: GPU Speedup over all batch-sizes is $\textbf{1.41}\pm\textbf{0.76}$ -- as transfer time between RAM and GPU's internal memory dominates for smaller datasets. However, as batch-size increases, computation time dominates over transfer time -- GPU ``set'' performs better than CPU ``set''.}
+        \caption{Time taken by the Neural Network: GPU Speedup over all batch-sizes is \textbf{1.41 $\pm$ 0.75} -- as transfer time between RAM and GPU's internal memory dominates for smaller datasets. However, as batch-size increases, computation time dominates over transfer time -- GPU ``set'' performs better than CPU ``set''.}
         \label{fig:Restricted Finding Rewards - Time taken by the Neural Network}
     \end{subfigure}\vspace*{1em}
     \begin{subfigure}{0.3\textwidth}
@@ -452,15 +452,15 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         every node near coord/.append style={/pgf/number format/.cd,fixed zerofill,precision=2},
         ]
         \addplot+ coordinates {
-            (0.81,11)
-            (0.93,35)
-            (0.97,55)
-            (0.99,85)
-            (1.01,116)
-            (1.00,145)
-            (1.01,174)
-            (1.00,203)
-            (1.00,232)
+            (0.82,11)
+            (0.95,37)
+            (0.98,63)
+            (0.99,90)
+            (1.00,116)
+            (1.03,145)
+            (1.02,174)
+            (1.02,203)
+            (1.02,232)
         };
         \end{axis}
         \end{tikzpicture}
@@ -485,15 +485,15 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         every node near coord/.append style={/pgf/number format/.cd,fixed zerofill,precision=2},
         ]
         \addplot+ coordinates {
-            (0.99,11)
-            (0.97,35)
-            (0.99,55)
-            (0.99,85)
+            (1.01,11)
+            (1.00,37)
+            (1.00,63)
+            (0.99,90)
             (1.00,116)
-            (0.99,145)
+            (1.02,145)
             (1.00,174)
-            (0.99,203)
-            (0.99,232)
+            (1.00,203)
+            (1.00,232)
         };
         \end{axis}
         \end{tikzpicture}
@@ -519,21 +519,21 @@ We believe the first possibility to be the reason (elaborated in \Cref{app:GPU S
         ]
         \addplot+ coordinates {
             (0.28,11)
-            (0.43,35)
-            (0.59,55)
-            (0.91,85)
-            (1.41,116)
-            (1.70,145)
-            (2.05,174)
-            (2.46,203)
-            (2.87,232)
+            (0.44,37)
+            (0.65,63)
+            (0.98,90)
+            (1.30,116)
+            (1.77,145)
+            (2.04,174)
+            (2.39,203)
+            (2.81,232)
         };
         \end{axis}
         \end{tikzpicture}
         \caption{Speedup for the Neural Network}
         \label{fig:Restricted Finding Rewards - Speedup for the Neural Network}
     \end{subfigure}
-    \caption[Finding Rewards After Restricing Script's Access to CPU Cores -- Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately]{Finding Rewards After Restricing Script's Access to CPU Cores -- Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately: Scaling is strongly hampered by the LP solver. Comparing the contributions of LP and Neural Network to total runtime on GPU ``set'', LP accounts for $\textbf{94.57}\pm\textbf{5.01}\%$ of the total time.}
+    \caption[Finding Rewards After Restricing Script's Access to CPU Cores -- Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately]{Finding Rewards After Restricing Script's Access to CPU Cores -- Execution Times of Different Batch-Sizes $J$ with GPU and CPU ``set'' Separately: Scaling is strongly hampered by the LP solver. Comparing the contributions of LP and Neural Network to total runtime on GPU ``set'', LP accounts for \textbf{94.42 $\pm$ 5.00}\% of the total time.}
     \label{fig:Restricted Finding Rewards - Execution Times of Different Batch-Sizes J with GPU and CPUa ``set'' Separately}
 \end{figure}
 

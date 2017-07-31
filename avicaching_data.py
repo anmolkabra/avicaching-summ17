@@ -385,28 +385,51 @@ def make_rand_F_file(file_name, J):
 
 def make_rand_DIST_file(file_name, J):
     """
-    J x J random matrix max 100. diagonal elements 0
+    Creates random DIST file. J x J random matrix max 100. diagonal elements 0 
+
+    Args:
+        file_name -- (str) name of the file
+        J -- (int) J
     """
     data = np.random.rand(J, J) * 100
-    data[np.diag_indices(J)] = 0.0
+    data[np.diag_indices(J)] = 0.0  # distance[u][u] = 0
     np.savetxt(file_name, data, fmt="%.6f", delimiter=" ")
 
 def combine_lp_time_log(outfile, cpu_set, gpu_set, onlylp):
     """
-    combines lp runtime logs for tex-tikz input
+    Combines lp runtime logs of diff configs for tex-tikz input.
+
+    Args:
+        outfile -- (str) name of the output file (csv)
+        cpu_set -- (str) name of the file with CPU "set" info
+        gpu_set -- (str) name of the file with GPU "set" info
+        onlylp -- (str) name of the file with 'Only LP' info
     """
     with open(cpu_set, "r") as c, open(gpu_set, "r") as g, open(onlylp) as o,\
         open(outfile, "w") as out:
         out.write("epoch,cpuset,gpuset,onlylp\n")
-        e = 1
+        e = 1   # epoch
         for cline, gline, oline in zip(c, g, o):
             out.write("%d,%.6f,%.6f,%.6f\n" % \
-                (e, float(cline.split(",")[1]), float(gline.split(",")[1]), float(oline.split(",")[1])))
+                (e, float(cline.split(",")[1]), float(gline.split(",")[1]), 
+                    float(oline.split(",")[1])))
             e += 1
 
 def combine_lp_time_log_threads(outfile, thread1, thread3, thread5, thread7):
     """
-    combines lp runtime logs for tex-tikz input
+    Combines lp runtime logs of different CPU-access restriction levels 
+    for tex-tikz input.
+
+    Args:
+        outfile -- (str) name of the output file
+        thread1 -- (str) name of the file with info when the script was 
+            restricted to 1 thread only
+        thread1 -- (str) name of the file with info when the script was 
+            restricted to 3 thread only
+        thread5 -- (str) name of the file with info when the script was 
+            restricted to 5 thread only
+        thread7 -- (str) name of the file with info when the script was 
+            restricted to 7 thread only
     """
     with open(thread1, "r") as t1, open(thread3, "r") as t3, open(thread5) as t5,\
         open(thread7, "r") as t7, open(outfile, "w") as out:
@@ -419,14 +442,19 @@ def combine_lp_time_log_threads(outfile, thread1, thread3, thread5, thread7):
             e += 1
 
 def extract_python_processes(outfile, infile):
+    """
+    Collects CPU and RAM usage of python processes from the logs.
+
+    Args:
+        outfile -- (str) name of the output file
+        infile -- (str) name of the input file, which contains the logs
+    """
     with open(infile, "r") as i, open(outfile, "w") as o:
-        e = 1
+        e = 1   # epoch
         o.write("epoch,cpu,mem\n")
         for line in i:
             if "python" in line:
                 # pid, mem, cpu, name -- order of stored info
                 el = line.split(" ")
-                # print(elements[1], elements[2], elements[3])
-                o.write("%d,%.1f,%.1f\n" % \
-                    (e, float(el[1]), float(el[2])))
+                o.write("%d,%.1f,%.1f\n" % (e, float(el[1]), float(el[2])))
                 e += 1

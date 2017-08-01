@@ -108,7 +108,7 @@ num_train = int(math.floor(args.train_percent * T))
 num_test = T - num_train
 
 # random datasets locations assigned to variables
-locs_in_file = 116  # change this to use a diff random file
+locs_in_file = 232  # change this to use a diff random file
 randXYR_file = "./data/random/randXYR" + str(locs_in_file) + ".txt"
 randXYR_weights_file = "./data/random/randXYR" + str(locs_in_file) + "_weights.txt"
 randF_file = "./data/random/randF" + str(locs_in_file) + ".csv"
@@ -701,9 +701,9 @@ if __name__ == "__main__":
     fname = file_pre_gpu + file_pre + log_name
     # save amd plot data
     save_log(
-        "./stats/find_weights/logs/1_" + fname + ".txt", epoch_data, 
+        "./stats/find_weights/logs/" + fname + ".txt", epoch_data, 
         [train_time_loss, test_time_loss], log_name)
-    with open("./stats/find_weights/weights/1_" + fname + ".txt", "w") as f:
+    with open("./stats/find_weights/weights/" + fname + ".txt", "w") as f:
         # save w1
         w1 = net.w1.data.cpu().numpy()
         f.write('# w1 shape: {0}\n'.format(w1.shape))
@@ -718,10 +718,10 @@ if __name__ == "__main__":
     if not args.no_plots:
         # should plot
         save_plot(
-            "./stats/find_weights/plots/1_" + fname + ".png", epoch_data, 
+            "./stats/find_weights/plots/" + fname + ".png", epoch_data, 
             [train_time_loss, test_time_loss], "epoch", "loss", log_name)
         plot_predicted_map(
-            "./stats/find_weights/map_plots/1_" + fname + ".png", 
+            "./stats/find_weights/map_plots/" + fname + ".png", 
             lat_long, y_pred, log_name)
     
     print("---> " + fname + " DONE")

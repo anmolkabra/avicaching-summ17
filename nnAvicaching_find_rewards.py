@@ -174,17 +174,17 @@ def read_set_data():
     w2 = Variable(torchten(w2), requires_grad=False)
 
 # =============================================================================
-# MyNet class
+# PriProb class
 # =============================================================================
-class MyNet(nn.Module):
+class PriProb(nn.Module):
     """
     An instance of this class emulates the sub-model used in Pricing Problem to 
     calculate the loss function and update rewards. Constraining not done here.
     """
 
     def __init__(self):
-        """Initializes MyNet, creates the rewards dataset for the model."""
-        super(MyNet, self).__init__()
+        """Initializes PriProb, creates the rewards dataset for the model."""
+        super(PriProb, self).__init__()
         # initialize R: distribute totalR reward points in J locations randomly
         # self.r preserved for debugging, no real use in the script
         self.r = np.random.multinomial(totalR, [1 / float(J)] * J, size=1)
@@ -224,7 +224,7 @@ def go_forward(net):
     Feed forward the dataset in the model's network and calculate Y and loss.
 
     Args:
-        net -- An instance of MyNet class
+        net -- (PriProb instance)
 
     Returns:
         float -- time taken to go complete all operations in the network
@@ -242,11 +242,11 @@ def go_forward(net):
 
 def train(net, optimizer):
     """
-    Trains the Neural Network using MyNet on the training set.
+    Trains the Neural Network using PriProb on the training set.
 
     Args:
-        net -- MyNet instance
-        optimizer -- torch.optim instance of the Gradient-Descent function
+        net -- (PriProb instance)
+        optimizer -- (torch.optim instance) Gradient-Descent function
         
     Returns:
         3-tuple -- (Execution Time, End loss value, 
@@ -290,10 +290,10 @@ def save_log(file_name, results, title, rewards=None):
     Saves the log to a file.
 
     Args:
-        file_name -- name of the file for saving
-        results -- tuple of the time taken for model run and end loss value
-        title -- title of the plot
-        rewards -- NumPy ndarray with the rewards (default=None)
+        file_name -- (str) name of the file
+        results -- (tuple) time taken for model run and end loss value
+        title -- (str) title of the plot
+        rewards -- (NumPy ndarray or None) rewards (default=None)
     """
     with open(file_name, "wt") as f:
         f.write(title + "\n")
@@ -307,12 +307,12 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
     Saves and (optionally) shows the loss plot of train and test periods.
 
     Args:
-        file_name -- name of the file for saving
-        x -- data on the x-axis in a NumPy ndarray
-        y -- data on the y-axis in a NumPy ndarray
-        xlabel -- what else can it mean?
-        ylabel -- ditto
-        title -- title of the plot
+        file_name -- (str) name of the file
+        x -- (NumPy ndarray) data on the x-axis
+        y -- (NumPy ndarray) data on the y-axis
+        xlabel -- (str) label for the x-axis
+        ylabel -- (str) what else can it mean?
+        title -- (str) title of the plot
     """
     # plot details
     loss_fig = plt.figure(1)
@@ -335,7 +335,7 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
 # =============================================================================
 if __name__ == "__main__":
     read_set_data()
-    net = MyNet()
+    net = PriProb()
     transfer_time = time.time()
     if args.cuda:
         net.cuda()

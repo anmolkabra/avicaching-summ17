@@ -216,8 +216,8 @@ def make_rand_data(X_max=100.0, R_max=100.0):
     stores the weights in files before returning.
 
     Args:
-        X_max -- Maximum value of element in X dataset (default=100.0)
-        R_max -- Maximum value of element in R dataset (default=100.0)
+        X_max -- (float) Maximum value of element in X dataset (default=100.0)
+        R_max -- (float) Maximum value of element in R dataset (default=100.0)
 
     Returns:
         3-tuple -- (X, Y, R) (values are not de-normalized)
@@ -328,17 +328,17 @@ def test_given_data(X, Y, R, w1, w2, w3, J, T, u):
     print("Loss = %f" % loss.data[0])
 
 # =============================================================================
-# MyNet class
+# IdProb4 class
 # =============================================================================
-class MyNet(nn.Module):
+class IdProb4(nn.Module):
     """
     An instance of this class emulates the model used for Identification 
     Problem as a 4-layered network.
     """
 
     def __init__(self):
-        """Initializes MyNet, creates the sets of weights for the model."""
-        super(MyNet, self).__init__()
+        """Initializes IdProb4, creates the sets of weights for the model."""
+        super(IdProb4, self).__init__()
         self.w1 = nn.Parameter(torch.randn(J, numFeatures, numFeatures).type(
             torchten))
         self.w2 = nn.Parameter(torch.randn(J, numFeatures, numFeatures).type(
@@ -369,15 +369,14 @@ class MyNet(nn.Module):
 # =============================================================================
 def train(net, optimizer, loss_normalizer, u):
     """
-    Trains the Neural Network using MyNet on the training set.
+    Trains the Neural Network using IdProb4 on the training set.
 
     Args:
-        net -- MyNet instance
-        optimizer -- torch.optim instance of the Gradient-Descent function
-        loss_normalizer -- value to be divided stored in a Torch.Tensor 
-            variable
-        u -- weights to be multiplied when calculating the loss function, 
-            stored in a Torch.Tensor variable
+        net -- (IdProb4 instance)
+        optimizer -- (torch.optim instance) of the Gradient-Descent function
+        loss_normalizer -- (Torch.Tensor) value to be divided from the loss
+        u -- (Torch.Tensor) weights to be multiplied when calculating the loss 
+            function
 
     Returns:
         3-tuple -- (Execution Time, End loss value, 
@@ -422,14 +421,13 @@ def train(net, optimizer, loss_normalizer, u):
 
 def test(net, loss_normalizer, u):
     """
-    Tests the Neural Network using MyNet on the test set.
+    Tests the Neural Network using IdProb4 on the test set.
 
     Args:
-        net -- MyNet instance
-        loss_normalizer -- value to be divided stored in a Torch.Tensor 
-            variable
-        u -- weights to be multiplied when calculating the loss function, 
-            stored in a Torch.Tensor variable
+        net -- (IdProb4 instance)
+        loss_normalizer -- (Torch.Tensor) value to be divided from the loss
+        u -- (Torch.Tensor) weights to be multiplied when calculating the loss 
+            function
 
     Returns:
         3-tuple -- (Execution Time, End loss value, 
@@ -475,6 +473,10 @@ def build_input(rt):
     Builds and returns the input for the neural network. Joins F_DIST and R, 
     expanding R to fit the dimension.
 
+    Args:
+        rt -- (Torch.Tensor) rewards vector to be appended to form the full 
+            dataset
+    
     Returns:
         Torch.Tensor -- Input dataset for the neural network
     """
@@ -492,16 +494,16 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
     Saves and (optionally) shows the loss plot of train and test periods.
 
     Args:
-        file_name -- name of the file for saving
-        x -- data on the x-axis in a NumPy ndarray
-        y -- data on the y-axis. Should be a 3-d array/tuple. y[0] should be 
+        file_name -- (str) name of the file for saving
+        x -- (NumPy ndarray) data on the x-axis
+        y -- (3d array/tuple) data on the y-axis. y[0] should be 
             train results, y[1] should be test results obtained from the 
             functions. y[-][k] should be the results after the k+1 epoch 
             such that y[-][k][0] is the execution time and y[-][k][1] is the 
             end loss. See the main area of the script on how this is built.
-        xlabel -- what else can it mean?
-        ylabel -- ditto
-        title -- title of the plot
+        xlabel -- (str) label for the x-axis
+        ylabel -- (str) what else can it mean?
+        title -- (str) title of the plot
     """
     # get the losses from data
     train_losses = [i for j in y[0] for i in j][1::2]
@@ -535,10 +537,10 @@ def save_log(file_name, x, y, title):
     Saves the log of train and test periods to a file.
 
     Args:
-        file_name -- name of the file
-        x -- epoch data [1..number_of_epochs]
-        y -- same as that of save_plot()
-        title -- first line of the file
+        file_name -- (str) name of the file
+        x -- (NumPy ndarray) epoch data [1..number_of_epochs]
+        y -- (3d array/tuple) same as that of save_plot()
+        title -- (str) first line of the file
     """
     with open(file_name, "wt") as f:
         f.write(title + "\n")
@@ -558,8 +560,8 @@ def find_idx_of_nearest_el(array, value):
     array closest to value
 
     Args:
-        array -- NumPy array of numbers
-        value -- closest number in array found for this number
+        array -- (NumPy ndarray) array to be searched in
+        value -- (float) closest number in array found for this number
 
     Returns:
         int -- index of the closest number to value in array
@@ -568,20 +570,19 @@ def find_idx_of_nearest_el(array, value):
 
 def plot_predicted_map(file_name, lat_long, point_info, title, plot_offset=0.05):
     """
-    [This is a strange function]
     Plots the a scatter plot of point_info on the map specified by the latitudes
     and longitudes and saves the plot to a image file
 
     Args:
-        file_name -- (so far so good) file name of the plot
-        lat_long -- NumPy 2-d matrix of latitudes and longitudes of locations.
-            The first column contains latitudes, and the second column contains 
-            longitudes.
-        point_info -- NumPy array of Z values for all locations. The order of 
+        file_name -- (str) file name of the plot
+        lat_long -- (NumPy ndarray) 2-d matrix of latitudes and longitudes of 
+            locations. The first column contains latitudes, and the second 
+            column contains longitudes.
+        point_info -- (NumPy ndarray) Z values for all locations. The order of 
             locations must be same as the order in lat_long
-        title -- (phew) title of the plot
-        plot_offset -- padding value for latitude and longitude in the plot
-            (default=0.05)
+        title -- (str) title of the plot
+        plot_offset -- (float) padding value for latitude and longitude in the 
+            plot (default=0.05)
     """
     # extract latitude and longitude
     lati = lat_long[:,0]
@@ -629,9 +630,9 @@ def expand_R(rt, R_max=15):
     R_max is 15, rt[u] becomes [1 1 1 1 1 1 1 0 0 0 0 0 0 0 0].
 
     Args:
-        rt -- Torch.Tensor vector of rewards
-        R_max -- Number of elements for expansion (default=15). When using orig 
-            data, R_max must be greater than 15. It's also the max reward in 
+        rt -- (Torch.Tensor) vector of rewards
+        R_max -- (int) Number of elements for expansion (default=15). When using 
+            orig data, R_max must be greater than 15. It's also the max reward in 
             the rewards file
 
     Returns:
@@ -651,7 +652,7 @@ def expand_R(rt, R_max=15):
 if __name__ == "__main__":
     # READY!!
     read_set_data()
-    net = MyNet()
+    net = IdProb4()
     # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
 

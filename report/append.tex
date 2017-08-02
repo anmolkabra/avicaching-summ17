@@ -4,7 +4,7 @@ The code for the study, including all scripts and plotted results, is collected 
 
 Both the Identification and the Pricing Problem were programmed in Python 2.7 using NumPy 1.12.1, SciPy 0.19.0 and PyTorch 0.1.12 modules \cite{NPDocs,SCPOptimizeDocs,PTDocs} [results plotted with Matplotlib 2.0.2]. With some code optimizations, the input dataset $\tens{F}$ was built using NumPy's \texttt{ndarray} and PyTorch's \texttt{tensor} functions. Since PyTorch offers NumPy-like code base but with dedicated neural network functions and submodules, PyTorch's \texttt{relu} and \texttt{softmax} functions were used along with other matrix operations.
 
-\section{Specific Implementation Details for the Pricing Problem} \label{app:Specific Implementation Details for the Pricing Problem}
+\section{Specific Implementation Details} \label{app:Specific Implementation Details}
 Among all the code optimizations in both models, some in that for the Pricing Problem are worth discussing, as they drastically differ from \Cref{alg:Solving the Pricing Problem} or are intricate. Most optimizations relevant to the Identification Problem are trivial and relate directly to those for the Pricing Problem. Therefore, only those in the Pricing Problem model are discussed.
 
 \subsection{Building the Dataset $\tens{F}$} \label{app:Building the Dataset F}

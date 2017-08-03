@@ -54,7 +54,7 @@ On the algorithm side, we used Adam's algorithm for \textsc{Gradient-Descent}($\
 
 \section{Running the Identification Problem's Model} \label{sec:Running the Identification Problem's Model}
 \subsection{Optimizing the Original Dataset} \label{sec:Identification Problem-Optimizing the Original Dataset}
-The 3-layered neural network was run for 10000 epochs on the original dataset, which was split 80:20 for training and testing sets, with different learning rates = $\{10^{-2}, 10^{-3}, 10^{-4}, 10^{-5}\}$. Since we were aiming for optimization, we ran multiple tests (5 different seeds with each learning rate) of the model only with the GPU ``set''.
+The 3-layered neural network was run for 10000 epochs on the original dataset, which was split 80:20 along ($T$) for training and testing sets, with different learning rates = $\{10^{-2}, 10^{-3}, 10^{-4}, 10^{-5}\}$. Since we were aiming for optimization, we ran multiple tests (5 different seeds with each learning rate) of the model only with the GPU ``set''.
 
 To compare this model's optimization results with other model structures, the previously studied 2-layered network \cite{Xue2016Avi2} and a 4-layered neural network were used. The 4-layered network had another hidden layer with reLU, equivalent to the hidden layer in the current 3-layered network in \Cref{fig:3-dimensional view of the network slice taking in Fv}. The results from the 2-layered network were obtained from the previous study, and those from the 4-layered network were attained on the same original dataset with same specifications (learning rates, epochs etc.).
 

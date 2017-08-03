@@ -1,21 +1,22 @@
 \appendix
 \chapter{Implementation} \label{app:Implementation}
-The code for the study, including all scripts and plotted results, is collected in a \href{https://github.com/anmolkabra}{repository}.
+The code for the study, including all scripts and plotted results, is available in a \href{https://github.com/anmolkabra}{repository}.
 
 Both the Identification and the Pricing Problem were programmed in Python 2.7 using NumPy 1.12.1, SciPy 0.19.0 and PyTorch 0.1.12 modules \cite{NPDocs,SCPOptimizeDocs,PTDocs} [results plotted with Matplotlib 2.0.2]. With some code optimizations, the input dataset $\tens{F}$ was built using NumPy's \texttt{ndarray} and PyTorch's \texttt{tensor} functions. Since PyTorch offers NumPy-like code base but with dedicated neural network functions and submodules, PyTorch's \texttt{relu} and \texttt{softmax} functions were used along with other matrix operations.
 
 \section{Specific Implementation Details} \label{app:Specific Implementation Details}
-Among all the code optimizations in both models, some in that for the Pricing Problem are worth discussing, as they drastically differ from \Cref{alg:Solving the Pricing Problem} or are intricate. Most optimizations relevant to the Identification Problem are trivial and relate directly to those for the Pricing Problem. Therefore, only those in the Pricing Problem model are discussed.
+Among all the code optimizations in both models, some in that for the Pricing Problem are worth discussing, as they drastically differ from \Cref{alg:Solving the Pricing Problem} or are intricate. Most optimizations relevant to the Identification Problem are trivial and relate directly to those for the Pricing Problem.
 
 \subsection{Building the Dataset $\tens{F}$} \label{app:Building the Dataset F}
-Notice that we build the dataset $\tens{F}$ and batch-multiply it with $\matr{w_1}$ on each iteration/epoch (lines 2-3 of \Cref{alg:Solving the Pricing Problem}). Doing these steps is repetitive as most elements of $\tens{F}$ --- distances $\matr{D}$ and environmental feature vector $\vect{f}$ --- do not change unlike rewards $\vect{r}$. Moreover since $\matr{w_1}$ is fixed, Algorithm \Cref{alg:Solving the Pricing Problem} would repetitively multiply the $\vect{f}$ and $\matr{D}$ components of $\tens{F}$ with $\matr{w_1}$. To avoid these unnecessary computations, we preprocessed most of $\tens{F}$ by batch-multiplying with $\matr{w_1}$ and only multiplied $\vect{r}$ with the corresponding elements of $\matr{w_1}$. \Cref{fig:Splitting and Batch Multiplying F and w1} describes the process graphically.
+Notice that we build the dataset $\tens{F}$ and batch-multiply it with $\matr{w_1}$ on each iteration/epoch (lines 2-3 of \Cref{alg:Solving the Pricing Problem}). Doing these steps is repetitive as most elements of $\tens{F}$ --- distances $\matr{D}$ and environmental feature vector $\vect{f}$ --- do not change unlike rewards $\vect{r}$. Moreover since $\matr{w_1}$ is fixed, \Cref{alg:Solving the Pricing Problem} would repetitively multiply the $\vect{f}$ and $\matr{D}$ components of $\tens{F}$ with $\matr{w_1}$. To avoid these unnecessary computations, we preprocessed most of $\tens{F}$ by batch-multiplying with $\matr{w_1}$ and only multiplied $\vect{r}$ with the corresponding elements of $\matr{w_1}$. \Cref{fig:Splitting and Batch Multiplying F and w1} describes the process graphically.
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=.9\textwidth]{split_and_batch_multiply}
     \caption[Splitting and Batch Multiplying $\tens{F}$ and $\matr{w_1}$]{Splitting and Batch Multiplying $\tens{F}$ and $\matr{w_1}$: This splitting is possible if one thinks of these 3-D tensors as batches of slices 2-D matrices depicted by the dotted lines. For example, when the top figure is split into horizontal batches, we multiply a $J \times n_F$ with a $n_F \times n_F$ matrix.}
     \label{fig:Splitting and Batch Multiplying F and w1}
-\end{figure}    
-Although this preprocessing might seem applicable for the model in Identification Problem too, it does not apply fully. Since the weights $\matr{w_1}$ are updated on each iteration/epoch, we cannot multiply them with parts of $\tens{F}$ beforehand (\Cref{alg:Algorithm for the Identification Problem}). However, we can combine $\matr{D}$ and $\vect{f}$ in the preprocessing stage and simply append $\vect{r}[t]$ on each iteration, reducing execution time.
+\end{figure}
+
+This preprocessing partly applies the Identification Problem's model too. Since the weights $\matr{w_1}$ are updated on each iteration/epoch, we cannot multiply them with parts of $\tens{F}$ beforehand (\Cref{alg:Algorithm for the Identification Problem}). However, we can combine $\matr{D}$ and $\vect{f}$ in the preprocessing stage and simply append $\vect{r}[t]$ on each iteration, reducing execution time.
 
 \subsection{Modeling the Linear Programming Problem in the Standard Format} \label{app:Modeling the Linear Programming Problem in the Standard Format}
 The \texttt{scipy.optimize} module's \texttt{linprog} function requires that the arguments are in standard LP format. As discussed in \Cref{sec:Constraining Rewards}, \Cref{eqn:lp_code_constrain_rewards} resembles the standard format more closely than \Cref{eqn:lp_math_constrain_rewards}, but it may not be clear how so.

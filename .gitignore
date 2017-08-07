@@ -1,0 +1,36 @@
+# Ignore all
+*
+
+# Unignore all with extensions
+!*.*
+
+# Unignore all dirs
+!*/
+
+### unnecessary data
+report/relevant-papers
+report/external-figures
+
+### script temp files
+*.pyc
+*.swp
+
+*.xlsx#
+### tex temp files
+*.aux
+*.auxlock
+*.log
+*.lot
+*.lof
+*.nlo
+*.nls
+*.ilg
+*.out
+*.bbl
+*.bcf
+*.blg
+*.toc
+*.run.xml
+
+*.synctex
+*.synctex.gz

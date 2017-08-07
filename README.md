@@ -49,5 +49,5 @@ For example, previous models for Avicaching, when deployed across 100+ sites in 
 
 ### Miscellaneous files:
 * `test_lp_time.py` - light version of `nnAvicaching_find_rewards.py` specifically for logging LP runtimes (Appendix B of report)
-* `log_ram_usage_rewards.py` - logs CPU, RAM, GPU Usage while `./test_lp_time.py` is running
+* `log_ram_usage_rewards.py` - logs CPU, RAM, GPU Usage while `test_lp_time.py` is running
 * `multiple_run.sh` - runs multiple test scripts on the machine

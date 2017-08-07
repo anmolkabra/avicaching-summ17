@@ -10,7 +10,6 @@
 ### unnecessary data
 report/relevant-papers
 report/external-figures
-..bfg-report
 
 ### script temp files
 *.pyc

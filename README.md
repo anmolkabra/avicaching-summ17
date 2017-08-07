@@ -1,8 +1,19 @@
 # Avicaching Scripts, Data, Files, Stats
 
-#### Summer 2017 Project by [Anmol Kabra](https://anmolkabra.com), [Yexiang Xue](https://www.cs.cornell.edu/~yexiang), and [Prof. Carla Gomes](https://www.cs.cornell.edu/gomes) at [Cornell University, Ithaca, NY](https://www.cornell.edu)
+**Summer 2017 Project by [Anmol Kabra](https://anmolkabra.com), [Yexiang Xue](https://www.cs.cornell.edu/~yexiang), and [Prof. Carla Gomes](https://www.cs.cornell.edu/gomes) at [Cornell University, Ithaca, NY](https://www.cornell.edu)**
 
 Refer to the [**project report**](~link~). [Email me](mailto:ak2426@cornell.edu?Subject=Request%20Original%20Data%20of%20Summ17-Avicaching) to request eBird data used in this project.
+
+Table of Contents
+=================
+
+* [Overview of the Project](#overview-of-the-project)
+    * [What is Avicaching?](#what-is-avicaching)
+* [Dependencies:](#dependencies)
+* [File Listing:](#file-listing)
+    * [Identification Problem files:](#identification-problem-files)
+    * [Pricing Problem files:](#pricing-problem-files)
+    * [Miscellaneous files:](#miscellaneous-files)
 
 ## Overview of the Project
 This research project focused on speeding up computation for the Avicaching game in eBird, enabling the organizers to get better results than before as well as scaling the game to a larger number of locations.

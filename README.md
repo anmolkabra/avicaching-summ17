@@ -1,5 +1,7 @@
 # Avicaching Scripts, Data, Files, Stats
 
+**Note:** This is a _big_ repository (~ 500 MB), mostly due to test results present in `stats/` directory. The summer work is tagged as [`v1.0`](https://github.com/anmolkabra/avicaching-summ17/releases/tag/v1.0).
+
 **Summer 2017 Project by [Anmol Kabra](https://anmolkabra.com), [Yexiang Xue](https://www.cs.cornell.edu/~yexiang), and [Prof. Carla Gomes](https://www.cs.cornell.edu/gomes) at [Cornell University, Ithaca, NY](https://www.cornell.edu)**
 
 Refer to the [**project report**](~link~). [Email me](mailto:ak2426@cornell.edu?Subject=Request%20Original%20Data%20of%20Summ17-Avicaching) to request eBird data used in this project.

@@ -4,7 +4,7 @@
 
 **Summer 2017 Project by [Anmol Kabra](https://anmolkabra.com), [Yexiang Xue](https://www.cs.cornell.edu/~yexiang), and [Prof. Carla Gomes](https://www.cs.cornell.edu/gomes) at [Cornell University, Ithaca, NY](https://www.cornell.edu)**
 
-Refer to the [**project report**](~link~). [Email me](mailto:ak2426@cornell.edu?Subject=Request%20Original%20Data%20of%20Summ17-Avicaching) to request eBird data used in this project.
+Refer to the [**Project Report**](https://anmolkabra.com/docs/avicaching-summ17-report.pdf). [Email me](mailto:ak2426@cornell.edu?Subject=Request%20Original%20Data%20of%20Summ17-Avicaching) to request eBird data used in this project.
 
 Table of Contents
 =================

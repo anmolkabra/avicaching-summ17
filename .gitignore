@@ -10,6 +10,7 @@
 ### unnecessary data
 report/relevant-papers
 report/external-figures
+.vscode
 
 ### script temp files
 *.pyc

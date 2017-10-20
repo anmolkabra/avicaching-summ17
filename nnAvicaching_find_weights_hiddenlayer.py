@@ -130,7 +130,9 @@ def read_set_data():
     # - X, Y: T x J
     # - R: T x J [x 15]
     # - net.w1: J x numF x numF
-    # - net.w2: J x numF x 1
+    # - net.w2: J x numF x numF
+    # - net.w3: J x numF x numF
+    # - net.w4: J x numF x 1
     # - F_DIST: J x J x numF
 
     # read f and DIST datasets from file, operate on them
@@ -231,7 +233,8 @@ def make_rand_data(X_max=100.0, R_max=100.0):
     R = torchten(ad.normalize(origR, along_dim=0, using_max=False))
     w1 = Variable(torch.randn(J, numFeatures, numFeatures).type(torchten))
     w2 = Variable(torch.randn(J, numFeatures, numFeatures).type(torchten))
-    w3 = Variable(torch.randn(J, numFeatures, 1).type(torchten))
+    w3 = Variable(torch.randn(J, numFeatures, numFeatures).type(torchten))
+    w4 = Variable(torch.randn(J, numFeatures, 1).type(torchten))
 
     # convert to torch tensor and create placeholder for Y
     Y = np.empty([T, J])
@@ -253,7 +256,8 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         # feed in data
         inp = torchfun.relu(torch.bmm(inp, w1)) # first weights
         inp = torchfun.relu(torch.bmm(inp, w2)) # second weights
-        inp = torch.bmm(inp, w3).view(-1, J)    # third weights
+        inp = torchfun.relu(torch.bmm(inp, w3)) # third weights
+        inp = torch.bmm(inp, w4).view(-1, J)    # fourth weights
         # add eta to inp[u][u]
         # eta_matrix = Variable(eta * torch.eye(J).type(torchten))
         # if args.cuda:
@@ -267,7 +271,8 @@ def make_rand_data(X_max=100.0, R_max=100.0):
     # for verification of random data, save weights ---------------------------
     w1_matrix = w1.data.cpu().numpy()
     w2_matrix = w2.data.cpu().numpy()
-    w3_matrix = w3.data.view(-1, numFeatures).cpu().numpy()
+    w3_matrix = w3.data.cpu().numpy()
+    w4_matrix = w4.data.view(-1, numFeatures).cpu().numpy()
 
     with open(randXYR_weights_file, "w") as f:
         # save w1
@@ -281,15 +286,21 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         for data_slice in w2_matrix:
             f.write('# New slice\n')
             np.savetxt(f, data_slice, fmt="%.15f", delimiter=" ")
-
+        
         # save w3
         f.write('# w3 shape: {0}\n'.format(w3.shape))
-        np.savetxt(f, w3_matrix, fmt="%.15f", delimiter=" ")
+        for data_slice in w3_matrix:
+            f.write('# New slice\n')
+            np.savetxt(f, data_slice, fmt="%.15f", delimiter=" ")
+
+        # save w4
+        f.write('# w4 shape: {0}\n'.format(w4.shape))
+        np.savetxt(f, w4_matrix, fmt="%.15f", delimiter=" ")
     # -------------------------------------------------------------------------
 
     return (X.data.cpu().numpy(), Y.data.cpu().numpy(), R.cpu().numpy())
 
-def test_given_data(X, Y, R, w1, w2, w3, J, T, u):
+def test_given_data(X, Y, R, w1, w2, w3, w4, J, T, u):
     """
     Tests a given set of datasets, printing the loss value after one
     forward propagation.
@@ -313,7 +324,8 @@ def test_given_data(X, Y, R, w1, w2, w3, J, T, u):
         # feed in data
         inp = torchfun.relu(torch.bmm(inp, w1)) # first weights
         inp = torchfun.relu(torch.bmm(inp, w2)) # second weights
-        inp = torch.bmm(inp, w3).view(-1, J)    # third weights
+        inp = torchfun.relu(torch.bmm(inp, w3)) # third weights
+        inp = torch.bmm(inp, w4).view(-1, J)    # fourth weights
         # add eta to inp[u][u]
         # eta_matrix = Variable(eta * torch.eye(J).type(torchten))
         # if args.cuda:
@@ -331,7 +343,7 @@ def test_given_data(X, Y, R, w1, w2, w3, J, T, u):
 # =============================================================================
 # IdProb4 class
 # =============================================================================
-class IdProb4(nn.Module):
+class IdProb5(nn.Module):
     """
     An instance of this class emulates the model used for Identification
     Problem as a 4-layered network.
@@ -339,12 +351,14 @@ class IdProb4(nn.Module):
 
     def __init__(self):
         """Initializes IdProb4, creates the sets of weights for the model."""
-        super(IdProb4, self).__init__()
+        super(IdProb5, self).__init__()
         self.w1 = nn.Parameter(torch.randn(J, numFeatures, numFeatures).type(
             torchten))
         self.w2 = nn.Parameter(torch.randn(J, numFeatures, numFeatures).type(
             torchten))
-        self.w3 = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
+        self.w3 = nn.Parameter(torch.randn(J, numFeatures, numFeatures).type(
+            torchten))
+        self.w4 = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
 
     def forward(self, inp):
         """
@@ -356,7 +370,8 @@ class IdProb4(nn.Module):
         """
         inp = torchfun.relu(torch.bmm(inp, self.w1))    # first weights
         inp = torchfun.relu(torch.bmm(inp, self.w2))    # second weights
-        inp = torch.bmm(inp, self.w3).view(-1, J)       # third weights
+        inp = torchfun.relu(torch.bmm(inp, self.w3))    # third weights
+        inp = torch.bmm(inp, self.w4).view(-1, J)       # fourth weights
 
         # add eta to inp[u][u]
         # eta_matrix = Variable(eta * torch.eye(J).type(torchten))
@@ -373,7 +388,7 @@ def train(net, optimizer, loss_normalizer, u):
     Trains the Neural Network using IdProb4 on the training set.
 
     Args:
-        net -- (IdProb4 instance)
+        net -- (IdProb5 instance)
         optimizer -- (torch.optim instance) of the Gradient-Descent function
         loss_normalizer -- (Torch.Tensor) value to be divided from the loss
         u -- (Torch.Tensor) weights to be multiplied when calculating the loss
@@ -425,7 +440,7 @@ def test(net, loss_normalizer, u):
     Tests the Neural Network using IdProb4 on the test set.
 
     Args:
-        net -- (IdProb4 instance)
+        net -- (IdProb5 instance)
         loss_normalizer -- (Torch.Tensor) value to be divided from the loss
         u -- (Torch.Tensor) weights to be multiplied when calculating the loss
             function
@@ -653,7 +668,7 @@ def expand_R(rt, R_max=15):
 if __name__ == "__main__":
     # READY!!
     read_set_data()
-    net = IdProb4()
+    net = IdProb5()
     # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
 
@@ -721,7 +736,7 @@ if __name__ == "__main__":
     log_name = "train=%3.0f%%, lr=%.3e, time=%.4f sec" % (
         args.train_percent * 100, args.lr, total_time)
     epoch_data = np.arange(1, args.epochs + 1)
-    fname = "4layer_" + file_pre_gpu + file_pre + log_name
+    fname = "5layer_" + file_pre_gpu + file_pre + log_name
     # save amd plot data
     save_log(
         "./stats/find_weights/logs/" + fname + ".txt", epoch_data,
@@ -742,9 +757,16 @@ if __name__ == "__main__":
             np.savetxt(f, data_slice, fmt="%.15f", delimiter=" ")
 
         # save w3
-        w3 = net.w3.data.view(-1, numFeatures).cpu().numpy()
+        w3 = net.w3.data.cpu().numpy()
         f.write('# w3 shape: {0}\n'.format(w3.shape))
-        np.savetxt(f, w3, fmt="%.15f", delimiter=" ")
+        for data_slice in w3:
+            f.write('# New slice\n')
+            np.savetxt(f, data_slice, fmt="%.15f", delimiter=" ")
+
+        # save w4
+        w4 = net.w4.data.view(-1, numFeatures).cpu().numpy()
+        f.write('# w4 shape: {0}\n'.format(w4.shape))
+        np.savetxt(f, w4, fmt="%.15f", delimiter=" ")
     if not args.no_plots:
         # should plot
         save_plot(

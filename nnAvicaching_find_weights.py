@@ -139,9 +139,9 @@ def read_set_data():
         DIST = ad.read_dist_file(randDIST_file, J)
     else:
         F = ad.read_F_file(
-            "./data/loc_feature_with_avicaching_combined.csv", J)
+            "../sensitive-avicaching/data/loc_feature_with_avicaching_combined.csv", J)
         DIST = ad.read_dist_file(
-            "./data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", 
+            "../sensitive-avicaching/data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", 
             J)
     F = ad.normalize(F, along_dim=0, using_max=True)    # normalize using max
     DIST = ad.normalize(DIST, using_max=True)   # normalize using max
@@ -161,7 +161,7 @@ def read_set_data():
         X, Y, R = ad.read_XYR_file(randXYR_file, J, T)
     else:
         X, Y, R = ad.read_XYR_file(
-            "./data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", 
+            "../sensitive-avicaching/data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", 
             J, T)
     
     u = np.sum(Y, axis=1)   # u weights for calculating losses
@@ -695,7 +695,7 @@ if __name__ == "__main__":
     else:
         file_pre = "origXYR_seed=%d, epochs=%d, " % (args.seed, args.epochs)
         lat_long = ad.read_lat_long_from_Ffile(
-            "./data/loc_feature_with_avicaching_combined.csv", J)
+            "../sensitive-avicaching/data/loc_feature_with_avicaching_combined.csv", J)
     log_name = "train=%3.0f%%, lr=%.3e, time=%.4f sec" % (
         args.train_percent * 100, args.lr, total_time)
     epoch_data = np.arange(1, args.epochs + 1)

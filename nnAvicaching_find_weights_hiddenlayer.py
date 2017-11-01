@@ -340,11 +340,12 @@ class IdProb4(nn.Module):
     def __init__(self):
         """Initializes IdProb4, creates the sets of weights for the model."""
         super(IdProb4, self).__init__()
-        self.w1 = nn.Parameter(torch.randn(J, numFeatures, numFeatures).type(
-            torchten))
-        self.w2 = nn.Parameter(torch.randn(J, numFeatures, numFeatures).type(
-            torchten))
-        self.w3 = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
+        self.w1 = nn.Parameter(torchten(J, numFeatures, numFeatures))
+        self.w2 = nn.Parameter(torchten(J, numFeatures, numFeatures))
+        self.w3 = nn.Parameter(torchten(J, numFeatures, 1))
+        torch.nn.init.xavier_uniform(self.w1)
+        torch.nn.init.xavier_uniform(self.w2)
+        torch.nn.init.xavier_uniform(self.w3)
 
     def forward(self, inp):
         """

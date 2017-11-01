@@ -693,9 +693,9 @@ if __name__ == "__main__":
         # print results, some quirky arguments to print for nice console printing
         if e % 20 == 0:
             print("e= %2d, loss=%.8f" % (e, train_res[1]), end="")
-            print("w1", net.w1[0][0])
-            print("w2", net.w2[0][0])
-            print("w3", net.w3[0])
+            print("\tw1_grad_norm", torch.norm(net.w1.grad.data), end="")
+            print("\tw2_grad_norm", torch.norm(net.w2.grad.data), end="")
+            print("\tw3_grad_norm", torch.norm(net.w3.grad.data))
 
         if args.should_test:
             # test

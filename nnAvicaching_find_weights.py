@@ -702,7 +702,7 @@ if __name__ == "__main__":
     log_name = "train=%3.0f%%, lr=%.3e, time=%.4f sec" % (
         args.train_percent * 100, args.lr, total_time)
     epoch_data = np.arange(1, args.epochs + 1)
-    fname = file_pre_gpu + file_pre + log_name
+    fname = "adaptive_lr_" + file_pre_gpu + file_pre + log_name
     # save amd plot data
     save_log(
         "./stats/find_weights/logs/" + fname + ".txt", epoch_data, 

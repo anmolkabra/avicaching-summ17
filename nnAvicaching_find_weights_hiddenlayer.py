@@ -657,6 +657,7 @@ if __name__ == "__main__":
     net = IdProb4()
     # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=20)
 
     # SET!!
     # oops, realized that we skipped measuring the transfer time while
@@ -685,6 +686,7 @@ if __name__ == "__main__":
 
     # GO!!
     train_time_loss, test_time_loss, total_time = [], [], 0.0
+    lr_epoch = []
     for e in xrange(1, args.epochs + 1):
         # train
         train_res = train(net, optimizer, train_loss_normalizer, u_train)
@@ -703,10 +705,16 @@ if __name__ == "__main__":
             test_res = test(net, test_loss_normalizer, u_test)
             test_time_loss.append(test_res[0:2])
             total_time += test_res[0]
+
+            scheduler.step(test_res[1]) # change the lr based on plateau-ing
+
             if e % 20 == 0:
                 print(", testloss=%.8f\n" % (test_res[1]), end="")
         else:
             print("\n", end="")
+
+        print(float(optimizer.param_groups))
+        # lr_epoch.append(float(optimizer.param_groups))
 
         if e == args.epochs:
             # Network's final prediction
@@ -725,7 +733,7 @@ if __name__ == "__main__":
     log_name = "train=%3.0f%%, lr=%.3e, time=%.4f sec" % (
         args.train_percent * 100, args.lr, total_time)
     epoch_data = np.arange(1, args.epochs + 1)
-    fname = "4layer_" + file_pre_gpu + file_pre + log_name
+    fname = "4layer_adaptive_lr_" + file_pre_gpu + file_pre + log_name
     # save amd plot data
     save_log(
         "./stats/find_weights/logs/" + fname + ".txt", epoch_data,

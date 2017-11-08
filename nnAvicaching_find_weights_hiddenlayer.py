@@ -364,7 +364,7 @@ class IdProb4(nn.Module):
         # if args.cuda:
         # 	 eta_matrix = eta_matrix.cuda()
         # inp += eta_matrix
-        return torchfun.softmax(inp)
+        return torchfun.softmax(inp, dim=0)
 
 # =============================================================================
 # training and testing routines
@@ -534,7 +534,7 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
         plt.show()
     plt.close()
 
-def save_log(file_name, x, y, title):
+def save_log(file_name, x, y, lr_per_epoch, title):
     """
     Saves the log of train and test periods to a file.
 
@@ -554,6 +554,7 @@ def save_log(file_name, x, y, title):
             if args.should_test:
                 f.write("\t\ttestloss = %.4f, testtime = %.4f" % (
                     y[1][i][1], y[1][i][0]))
+            f.write("\t\tlr = %.5e" % (lr_epoch[i]))
             f.write("\n")
 
 def find_idx_of_nearest_el(array, value):
@@ -657,7 +658,7 @@ if __name__ == "__main__":
     net = IdProb4()
     # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=20)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=10)
 
     # SET!!
     # oops, realized that we skipped measuring the transfer time while
@@ -698,8 +699,9 @@ if __name__ == "__main__":
             print("e= %2d, loss=%.8f" % (e, train_res[1]), end="")
             print("\tw1_grad_norm", torch.norm(net.w1.grad.data), end="")
             print("\tw2_grad_norm", torch.norm(net.w2.grad.data), end="")
-            print("\tw3_grad_norm", torch.norm(net.w3.grad.data))
+            print("\tw3_grad_norm", torch.norm(net.w3.grad.data), end="")
 
+        lr = float(optimizer.param_groups[0]['lr'])
         if args.should_test:
             # test
             test_res = test(net, test_loss_normalizer, u_test)
@@ -709,12 +711,11 @@ if __name__ == "__main__":
             scheduler.step(test_res[1]) # change the lr based on plateau-ing
 
             if e % 20 == 0:
-                print(", testloss=%.8f\n" % (test_res[1]), end="")
+                print(", testloss=%.8f, lr=%.8e\n" % (test_res[1], lr), end="")
         else:
             print("\n", end="")
 
-        print(float(optimizer.param_groups))
-        # lr_epoch.append(float(optimizer.param_groups))
+        lr_epoch.append(lr)
 
         if e == args.epochs:
             # Network's final prediction
@@ -737,7 +738,7 @@ if __name__ == "__main__":
     # save amd plot data
     save_log(
         "./stats/find_weights/logs/" + fname + ".txt", epoch_data,
-        [train_time_loss, test_time_loss], log_name)
+        [train_time_loss, test_time_loss], lr_epoch, log_name)
     with open("./stats/find_weights/weights/" + fname + ".txt", "w") as f:
         # save w1
         w1 = net.w1.data.cpu().numpy()

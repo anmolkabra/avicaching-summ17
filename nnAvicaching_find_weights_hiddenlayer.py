@@ -286,7 +286,7 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         for data_slice in w2_matrix:
             f.write('# New slice\n')
             np.savetxt(f, data_slice, fmt="%.15f", delimiter=" ")
-        
+
         # save w3
         f.write('# w3 shape: {0}\n'.format(w3.shape))
         for data_slice in w3_matrix:
@@ -352,13 +352,14 @@ class IdProb5(nn.Module):
     def __init__(self):
         """Initializes IdProb4, creates the sets of weights for the model."""
         super(IdProb5, self).__init__()
-        self.w1 = nn.Parameter(torch.randn(J, numFeatures, numFeatures).type(
-            torchten))
-        self.w2 = nn.Parameter(torch.randn(J, numFeatures, numFeatures).type(
-            torchten))
-        self.w3 = nn.Parameter(torch.randn(J, numFeatures, numFeatures).type(
-            torchten))
-        self.w4 = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
+        self.w1 = nn.Parameter(torchten(J, numFeatures, numFeatures))
+        self.w2 = nn.Parameter(torchten(J, numFeatures, numFeatures))
+        self.w3 = nn.Parameter(torchten(J, numFeatures, numFeatures))
+        self.w4 = nn.Parameter(torchten(J, numFeatures, 1))
+        torch.nn.init.xavier_uniform(self.w1)
+        torch.nn.init.xavier_uniform(self.w2)
+        torch.nn.init.xavier_uniform(self.w3)
+        torch.nn.init.xavier_uniform(self.w4)
 
     def forward(self, inp):
         """
@@ -378,7 +379,7 @@ class IdProb5(nn.Module):
         # if args.cuda:
         # 	 eta_matrix = eta_matrix.cuda()
         # inp += eta_matrix
-        return torchfun.softmax(inp)
+        return torchfun.softmax(inp, dim=1)
 
 # =============================================================================
 # training and testing routines

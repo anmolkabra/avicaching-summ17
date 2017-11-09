@@ -325,10 +325,11 @@ class IdProb3(nn.Module):
     def __init__(self):
         """Initializes IdProb3, creates the sets of weights for the model."""
         super(IdProb3, self).__init__()
-        self.w1 = nn.Parameter(torch.randn(J, numFeatures, numFeatures).type(
-            torchten))
-        self.w2 = nn.Parameter(torch.randn(J, numFeatures, 1).type(torchten))
-
+        self.w1 = nn.Parameter(torchten(J, numFeatures, numFeatures))
+        self.w2 = nn.Parameter(torchten(J, numFeatures, 1))
+        torch.nn.init.xavier_uniform(self.w1)
+        torch.nn.init.xavier_uniform(self.w2)
+        
     def forward(self, inp):
         """
         Goes forward in the network -- multiply the weights, apply relu, 
@@ -345,7 +346,7 @@ class IdProb3(nn.Module):
         # if args.cuda:
         # 	 eta_matrix = eta_matrix.cuda()
         # inp += eta_matrix
-        return torchfun.softmax(inp)
+        return torchfun.softmax(inp, dim=1)
 
 # =============================================================================
 # training and testing routines

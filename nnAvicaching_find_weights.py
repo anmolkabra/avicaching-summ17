@@ -6,9 +6,9 @@
 # Project: Solving the Avicaching Game Faster and Better (Summer 2017)
 # -----------------------------------------------------------------------------
 # Purpose of the Script:
-#   Refer to the Report (link) for detailed explanation. In a gist, this script 
-#   learns the weights that highlight the change of eBird agents' behavior 
-#   after certain rewards are applied. The model uses a **3-layered** neural 
+#   Refer to the Report (link) for detailed explanation. In a gist, this script
+#   learns the weights that highlight the change of eBird agents' behavior
+#   after certain rewards are applied. The model uses a **3-layered** neural
 #   network.
 # -----------------------------------------------------------------------------
 # Required Dependencies/Software:
@@ -141,7 +141,7 @@ def read_set_data():
         F = ad.read_F_file(
             "../sensitive-avicaching/data/loc_feature_with_avicaching_combined.csv", J)
         DIST = ad.read_dist_file(
-            "../sensitive-avicaching/data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt", 
+            "../sensitive-avicaching/data/site_distances_km_drastic_price_histlong_0327_0813_combined.txt",
             J)
     F = ad.normalize(F, along_dim=0, using_max=True)    # normalize using max
     DIST = ad.normalize(DIST, using_max=True)   # normalize using max
@@ -161,9 +161,9 @@ def read_set_data():
         X, Y, R = ad.read_XYR_file(randXYR_file, J, T)
     else:
         X, Y, R = ad.read_XYR_file(
-            "../sensitive-avicaching/data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt", 
+            "../sensitive-avicaching/data/density_shift_histlong_as_previous_loc_classical_drastic_price_0327_0813.txt",
             J, T)
-    
+
     u = np.sum(Y, axis=1)   # u weights for calculating losses
 
     # normalize X, Y using sum along rows
@@ -235,7 +235,7 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         # transfer to GPU
         X, Y, R, F_DIST = X.cuda(), Y.cuda(), R.cuda(), F_DIST.cuda()
         w1, w2 = w1.cuda(), w2.cuda()
-    
+
     # build Y
     for t in xrange(T):
         # build the input by appending testR[t]
@@ -243,7 +243,7 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         if args.cuda:
             inp = inp.cuda()
         inp = Variable(inp)
-        
+
         # feed in data
         inp = torchfun.relu(torch.bmm(inp, w1)) # first weights
         inp = torch.bmm(inp, w2).view(-1, J)    # second weights
@@ -253,7 +253,7 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         #    eta_matrix = eta_matrix.cuda()
         # inp += eta_matrix
         P = torchfun.softmax(inp).t()
-        
+
         # calculate Y
         Y[t] = torch.mv(P, X[t])
 
@@ -267,7 +267,7 @@ def make_rand_data(X_max=100.0, R_max=100.0):
         for data_slice in w1_matrix:
             f.write('# New slice\n')
             np.savetxt(f, data_slice, fmt="%.15f", delimiter=" ")
-            
+
         # save w2
         f.write('# w2 shape: {0}\n'.format(w2.data.shape))
         np.savetxt(f, w2_matrix, fmt="%.15f", delimiter=" ")
@@ -295,7 +295,7 @@ def test_given_data(X, Y, R, w1, w2, J, T, u):
         if args.cuda:
             inp = inp.cuda()
         inp = Variable(inp)
-        
+
         # feed in data
         inp = torchfun.relu(torch.bmm(inp, w1)) # first weights
         inp = torch.bmm(inp, w2).view(-1, J)    # second weights
@@ -305,7 +305,7 @@ def test_given_data(X, Y, R, w1, w2, J, T, u):
         #    eta_matrix = eta_matrix.cuda()
         # inp += eta_matrix
         P = torchfun.softmax(inp).t()
-        
+
         # calculate loss
         Pxt = torch.mv(P, X[t])
         loss += (u[t] * (Y[t] - Pxt)).pow(2).sum()
@@ -346,7 +346,7 @@ class IdProb3(nn.Module):
         # if args.cuda:
         # 	 eta_matrix = eta_matrix.cuda()
         # inp += eta_matrix
-        return torchfun.softmax(inp)
+        return torchfun.softmax(inp, dim=1)
 
 # =============================================================================
 # training and testing routines
@@ -372,20 +372,20 @@ def train(net, optimizer, loss_normalizer, u):
     for t in xrange(num_train):
         # build the input by appending trainR[t] to F_DIST
         inp = build_input(trainR[t])
-        
+
         loop_start = time.time()
         if args.cuda:
             inp = inp.cuda()
         inp = Variable(inp)
-        
+
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
-    
+
         # calculate loss
         Pxt = torch.mv(P, trainX[t])
         P_data[t] = Pxt.data
         loss += (u[t] * (trainY[t] - Pxt)).pow(2).sum()
-        
+
         loop_time += (time.time() - loop_start)
 
     # loss += args.lambda_L1 * torch.norm(net.w.data)
@@ -398,7 +398,7 @@ def train(net, optimizer, loss_normalizer, u):
     optimizer.step()
 
     end_time = (time.time() - start_outside) + loop_time
-    return (end_time, loss.data[0], 
+    return (end_time, loss.data[0],
         torch.mean(P_data, dim=0).squeeze().cpu().numpy())
 
 def test(net, loss_normalizer, u):
@@ -417,19 +417,19 @@ def test(net, loss_normalizer, u):
     """
     loss, loop_time = 0, 0
     P_data = torch.zeros(num_test, J)
-    
+
     for t in xrange(num_test):
         # build the input by appending testR[t]
         inp = build_input(testR[t])
-        
+
         loop_start = time.time()
         if args.cuda:
             inp = inp.cuda()
         inp = Variable(inp)
-        
+
         # feed in data
         P = net(inp).t()    # P is now weighted -> softmax
-        
+
         # calculate loss
         Pxt = torch.mv(P, testX[t])
         P_data[t] = Pxt.data
@@ -442,7 +442,7 @@ def test(net, loss_normalizer, u):
     loss /= loss_normalizer
 
     end_time = (time.time() - start_outside) + loop_time
-    return (end_time, loss.data[0], 
+    return (end_time, loss.data[0],
         torch.mean(P_data, dim=0).squeeze().cpu().numpy())
 
 # =============================================================================
@@ -488,10 +488,10 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
     # get the loss values from data
     train_losses = [i for j in y[0] for i in j][1::2]
     test_losses = [i for j in y[1] for i in j][1::2]
-    
+
     # plot details
     loss_fig = plt.figure(1)
-    train_label, = plt.plot(x, train_losses, "r-", label="Train Loss") 
+    train_label, = plt.plot(x, train_losses, "r-", label="Train Loss")
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.grid(True, which="major", axis="both", color="k", ls="dotted", lw="1.0")
@@ -505,14 +505,14 @@ def save_plot(file_name, x, y, xlabel, ylabel, title):
         plt.legend(handles=[train_label, test_label])
     else:
         plt.legend(handles=[train_label])
-    
+
     # save and show
     loss_fig.savefig(file_name, bbox_inches="tight", dpi=200)
     if not args.hide_loss_plot:
         plt.show()
     plt.close()
 
-def save_log(file_name, x, y, title):
+def save_log(file_name, x, y, lr_per_epoch, title):
     """
     Saves the log of train and test periods to a file.
 
@@ -532,6 +532,7 @@ def save_log(file_name, x, y, title):
             if args.should_test:
                 f.write("\t\ttestloss = %.4f, testtime = %.4f" % (
                     y[1][i][1], y[1][i][0]))
+            f.write("\t\tlr = %.5e" % (lr_per_epoch[i]))
             f.write("\n")
 
 def find_idx_of_nearest_el(array, value):
@@ -567,7 +568,7 @@ def plot_predicted_map(file_name, lat_long, point_info, title, plot_offset=0.05)
     # extract latitude and longitude
     lati = lat_long[:,0]
     longi = lat_long[:,1]
-    # calculate plot dimensions - select between latitude/longitude based on 
+    # calculate plot dimensions - select between latitude/longitude based on
     # their span over earth. The greater span is the basis
     lo_min, lo_max = min(longi) - plot_offset, max(longi) + plot_offset
     la_min, la_max = min(lati) - plot_offset, max(lati) + plot_offset
@@ -635,6 +636,8 @@ if __name__ == "__main__":
     net = IdProb3()
     # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', \
+            patience=100, threshold=1e-3)
 
     # SET!!
     transfer_time = time.time()
@@ -659,9 +662,10 @@ if __name__ == "__main__":
     if args.should_test:
         test_loss_normalizer = (torch.mv(torch.t(testY \
             - torch.mean(testY).expand_as(testY)).data, u_test)).pow(2).sum()
-    
+
     # GO!!
     train_time_loss, test_time_loss, total_time = [], [], transfer_time
+    lr_epoch = []
     for e in xrange(1, args.epochs + 1):
         # train
         train_res = train(net, optimizer, train_loss_normalizer, u_train)
@@ -672,22 +676,29 @@ if __name__ == "__main__":
         if e % 20 == 0:
             print("e= %2d, loss=%.8f" % (e, train_res[1]), end="")
             print("\tw1_grad_norm", torch.norm(net.w1.grad.data), end="")
-            print("\tw2_grad_norm", torch.norm(net.w2.grad.data))
+            print("\tw2_grad_norm", torch.norm(net.w2.grad.data), end="")
 
+        lr = float(optimizer.param_groups[0]['lr'])
         if args.should_test:
             # test
             test_res = test(net, test_loss_normalizer, u_test)
             test_time_loss.append(test_res[0:2])
             total_time += test_res[0]
+
+            scheduler.step(test_res[1])  # change the lr based on plateau-ing
+
             if e % 20 == 0:
-                print(", testloss=%.8f\n" % (test_res[1]), end="")
+                print(", testloss=%.8f, lr=%.8e\n" % (test_res[1], lr), end="")
         else:
             print("\n", end="")
+
+        print("testloss = %.8f" % test_res[1])
+        lr_epoch.append(lr)
 
         if e == args.epochs:
             # Network's final prediction
             y_pred = test_res[2] if args.should_test else train_res[2]
-        
+
     # FINISH!!
     # log and plot the results: epoch vs loss
 
@@ -705,8 +716,8 @@ if __name__ == "__main__":
     fname = "adaptive_lr_" + file_pre_gpu + file_pre + log_name
     # save amd plot data
     save_log(
-        "./stats/find_weights/logs/" + fname + ".txt", epoch_data, 
-        [train_time_loss, test_time_loss], log_name)
+        "./stats/find_weights/logs/" + fname + ".txt", epoch_data,
+        [train_time_loss, test_time_loss], lr_epoch, log_name)
     with open("./stats/find_weights/weights/" + fname + ".txt", "w") as f:
         # save w1
         w1 = net.w1.data.cpu().numpy()
@@ -714,7 +725,7 @@ if __name__ == "__main__":
         for data_slice in w1:
             f.write('# New slice\n')
             np.savetxt(f, data_slice, fmt="%.15f", delimiter=" ")
-            
+
         # save w2
         w2 = net.w2.data.view(-1, numFeatures).cpu().numpy()
         f.write('# w2 shape: {0}\n'.format(w2.shape))
@@ -722,10 +733,10 @@ if __name__ == "__main__":
     if not args.no_plots:
         # should plot
         save_plot(
-            "./stats/find_weights/plots/" + fname + ".png", epoch_data, 
+            "./stats/find_weights/plots/" + fname + ".png", epoch_data,
             [train_time_loss, test_time_loss], "epoch", "loss", log_name)
         plot_predicted_map(
-            "./stats/find_weights/map_plots/" + fname + ".png", 
+            "./stats/find_weights/map_plots/" + fname + ".png",
             lat_long, y_pred, log_name)
-    
+
     print("---> " + fname + " DONE")

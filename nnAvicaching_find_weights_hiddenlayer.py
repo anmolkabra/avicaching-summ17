@@ -364,7 +364,7 @@ class IdProb4(nn.Module):
         # if args.cuda:
         # 	 eta_matrix = eta_matrix.cuda()
         # inp += eta_matrix
-        return torchfun.softmax(inp, dim=0)
+        return torchfun.softmax(inp, dim=1)
 
 # =============================================================================
 # training and testing routines
@@ -554,7 +554,7 @@ def save_log(file_name, x, y, lr_per_epoch, title):
             if args.should_test:
                 f.write("\t\ttestloss = %.4f, testtime = %.4f" % (
                     y[1][i][1], y[1][i][0]))
-            f.write("\t\tlr = %.5e" % (lr_epoch[i]))
+            f.write("\t\tlr = %.5e" % (lr_per_epoch[i]))
             f.write("\n")
 
 def find_idx_of_nearest_el(array, value):
@@ -658,7 +658,8 @@ if __name__ == "__main__":
     net = IdProb4()
     # optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum)
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=10)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', \
+        patience=100, threshold=1e-5)
 
     # SET!!
     # oops, realized that we skipped measuring the transfer time while
@@ -715,6 +716,7 @@ if __name__ == "__main__":
         else:
             print("\n", end="")
 
+        print("testloss = %.8f" % test_res[1])
         lr_epoch.append(lr)
 
         if e == args.epochs:
